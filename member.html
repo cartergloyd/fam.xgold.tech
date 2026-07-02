@@ -3,52 +3,677 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>fam.xgold.tech</title>
+  <title>fam.xgold.tech — Home</title>
   <link rel="stylesheet" href="/styles.css" />
   <style>
-    /* member-page extras */
-    .member-card { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
-    .btn-signout {
-      display: inline-block;
-      padding: 0.65em 1.5em;
-      border: 1px solid var(--c-border);
-      border-radius: var(--radius-pill);
-      background: transparent;
-      color: var(--c-text);
-      font-size: 0.9375rem;
-      font-family: inherit;
-      cursor: pointer;
-      transition: background 200ms var(--ease-out), border-color 200ms var(--ease-out);
-      width: auto;
+    /* ── HeroHub — override base body for full-bleed hero ──────────────── */
+    body {
+      display: block;
+      padding: 0;
+      overflow-x: hidden;
     }
-    .btn-signout:hover { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.25); }
-    @media (prefers-reduced-motion: reduce) { .btn-signout { transition: none; } }
+
+    /* ── Hero shell ────────────────────────────────────────────────────── */
+    .hero {
+      position: relative;
+      width: 100%;
+      height: 100dvh;
+      min-height: 580px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Animated background ───────────────────────────────────────────── */
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background: #020a14;
+      z-index: 0;
+    }
+
+    /* Subtle grid lines — suggest tech/structure */
+    .hero-bg::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        repeating-linear-gradient(0deg,  transparent, transparent 48px, rgba(255,255,255,.018) 48px, rgba(255,255,255,.018) 49px),
+        repeating-linear-gradient(90deg, transparent, transparent 48px, rgba(255,255,255,.018) 48px, rgba(255,255,255,.018) 49px);
+    }
+
+    /* Floating blurred color orbs — suggest media, gaming, travel worlds */
+    .bg-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(100px);
+      opacity: 0.2;
+      will-change: transform;
+    }
+
+    .bg-orb--cyan {
+      width: 60vw; height: 60vw;
+      background: radial-gradient(circle, #00d4ff 0%, #0077b6 60%, transparent 100%);
+      top: -20%; left: -12%;
+      animation: drift-a 24s ease-in-out infinite alternate;
+    }
+
+    .bg-orb--green {
+      width: 46vw; height: 46vw;
+      background: radial-gradient(circle, #4ade80 0%, #15803d 60%, transparent 100%);
+      bottom: -12%; right: -8%;
+      animation: drift-b 30s ease-in-out infinite alternate;
+    }
+
+    .bg-orb--amber {
+      width: 38vw; height: 38vw;
+      background: radial-gradient(circle, #fbbf24 0%, #b45309 60%, transparent 100%);
+      top: 28%; right: 12%;
+      opacity: 0.14;
+      animation: drift-c 20s ease-in-out infinite alternate;
+    }
+
+    @keyframes drift-a { from { transform: translate(0,0) scale(1); }    to { transform: translate(9%,13%)  scale(1.14); } }
+    @keyframes drift-b { from { transform: translate(0,0) scale(1); }    to { transform: translate(-11%,-9%) scale(1.09); } }
+    @keyframes drift-c { from { transform: translate(0,0) scale(1); }    to { transform: translate(-7%,11%)  scale(0.9);  } }
+
+    /* Pause animation when .anim-paused is toggled via JS */
+    .hero.anim-paused .bg-orb,
+    .hero.anim-paused .badge-dot { animation-play-state: paused; }
+
+    /* ── Dark gradient overlay — ensures text readability ──────────────── */
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background:
+        linear-gradient(145deg, rgba(2,10,20,.88) 0%, rgba(2,10,20,.42) 55%, rgba(2,10,20,.18) 100%),
+        linear-gradient(to top,  rgba(2,10,20,.95) 0%, rgba(2,10,20,.28) 55%, transparent 100%);
+    }
+
+    /* ── Nav ribbon ────────────────────────────────────────────────────── */
+    .hero-topbar {
+      position: relative;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 1rem;
+      padding: .75rem 2rem;
+      background: rgba(2,10,20,.55);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border-bottom: 1px solid rgba(255,255,255,.07);
+    }
+
+    .hero-wordmark {
+      font-size: .8125rem;
+      font-weight: 500;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: rgba(245,245,247,.4);
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    /* ── Center nav links ───────────────────────────────────────────────── */
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: .125rem;
+    }
+
+    .nav-link {
+      padding: .36em .9em;
+      border-radius: var(--radius-pill);
+      font-size: .875rem;
+      font-weight: 450;
+      color: rgba(245,245,247,.58);
+      text-decoration: none;
+      white-space: nowrap;
+      transition: background var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out);
+    }
+    .nav-link:hover { background: rgba(255,255,255,.09); color: #f5f5f7; }
+    .nav-link--active { background: rgba(255,255,255,.13); color: #f5f5f7; }
+
+    /* ── Right: avatar + dropdown ───────────────────────────────────────── */
+    .nav-right {
+      display: flex;
+      justify-content: flex-end;
+      position: relative;
+    }
+
+    .avatar-btn {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,.22);
+      background: rgba(255,255,255,.1);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      cursor: pointer;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(245,245,247,.65);
+      flex-shrink: 0;
+      transition: border-color var(--dur-micro) var(--ease-out), background var(--dur-micro) var(--ease-out);
+      padding: 0;
+    }
+    .avatar-btn:hover { border-color: rgba(255,255,255,.5); background: rgba(255,255,255,.16); }
+
+    /* Loaded profile photo fills the button */
+    .avatar-img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Fallback person icon shown before photo loads */
+    .avatar-icon { pointer-events: none; }
+
+    /* Dropdown menu */
+    .avatar-dropdown {
+      position: absolute;
+      top: calc(100% + .5rem);
+      right: 0;
+      min-width: 148px;
+      background: rgba(16,24,38,.96);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255,255,255,.11);
+      border-radius: 14px;
+      padding: .375rem;
+      animation: dropdown-in 160ms var(--ease-out) forwards;
+    }
+    .avatar-dropdown[hidden] { display: none; }
+
+    @keyframes dropdown-in {
+      from { opacity: 0; transform: translateY(-6px) scale(.97); }
+      to   { opacity: 1; transform: translateY(0)   scale(1);   }
+    }
+
+    .dropdown-item {
+      display: block;
+      width: 100%;
+      padding: .52em .875em;
+      background: none;
+      border: none;
+      border-radius: 9px;
+      color: rgba(245,245,247,.85);
+      font-family: inherit;
+      font-size: .875rem;
+      text-align: left;
+      cursor: pointer;
+      transition: background var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out);
+    }
+    .dropdown-item:hover { background: rgba(255,255,255,.1); color: #f5f5f7; }
+    .dropdown-item--danger { color: rgba(255,80,70,.85); }
+    .dropdown-item--danger:hover { background: rgba(255,69,58,.12); color: #ff6961; }
+
+    /* ── Main content — pinned to lower-left on desktop ────────────────── */
+    .hero-content {
+      position: relative;
+      z-index: 10;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 0 2.5rem 3rem;
+      max-width: 840px;
+    }
+
+    /* ── Status badges ─────────────────────────────────────────────────── */
+    .hero-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;
+      margin-bottom: 1.375rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .45em;
+      padding: .28em .8em;
+      border-radius: var(--radius-pill);
+      font-size: .72rem;
+      font-weight: 500;
+      letter-spacing: .02em;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid;
+    }
+
+    /* Animated live dot (separate element so JS can pause it via class) */
+    .badge-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      animation: pulse-dot 2.6s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: .4; transform: scale(.65); }
+    }
+    .badge--cyan  { background: rgba(0,180,216,.12); border-color: rgba(0,180,216,.32); color: #7dd3ea; }
+    .badge--cyan  .badge-dot { background: #00d4ff; }
+    .badge--green { background: rgba(74,222,128,.1);  border-color: rgba(74,222,128,.28); color: #86efac; }
+    .badge--green .badge-dot { background: #4ade80; animation-delay: .6s; }
+    .badge--amber { background: rgba(251,191,36,.1);  border-color: rgba(251,191,36,.28); color: #fcd34d; }
+    .badge--amber .badge-dot { background: #fbbf24; animation-delay: 1.2s; }
+
+    /* ── Headline & sub ────────────────────────────────────────────────── */
+    .hero-headline {
+      font-size: clamp(2.4rem, 5.8vw, 4.125rem);
+      font-weight: 600;
+      letter-spacing: -.032em;
+      line-height: 1.05;
+      color: #f5f5f7;
+      margin-bottom: .9rem;
+    }
+
+    .hero-sub {
+      font-size: clamp(.9375rem, 1.75vw, 1.0625rem);
+      color: rgba(245,245,247,.5);
+      max-width: 50ch;
+      line-height: 1.62;
+      margin-bottom: 1.875rem;
+    }
+
+    /* ── CTA buttons ───────────────────────────────────────────────────── */
+    .hero-ctas {
+      display: flex;
+      gap: .75rem;
+      flex-wrap: wrap;
+      margin-bottom: 2.25rem;
+    }
+
+    /* Override .btn's width:100% from global styles for inline hero buttons */
+    .hero-ctas .btn {
+      width: auto;
+      padding: .65em 1.5em;
+      font-size: .9375rem;
+    }
+
+    .hero-ctas .btn-primary { background: #f5f5f7; color: #000; }
+    .hero-ctas .btn-primary:hover { background: #d8d8da; }
+
+    .hero-ctas .btn-secondary {
+      background: rgba(255,255,255,.09);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,.18);
+      color: #f5f5f7;
+    }
+    .hero-ctas .btn-secondary:hover { background: rgba(255,255,255,.17); border-color: rgba(255,255,255,.32); }
+
+    /* ── Service cards ─────────────────────────────────────────────────── */
+    .service-cards {
+      display: flex;
+      gap: .625rem;
+      flex-wrap: nowrap;
+    }
+
+    .service-card {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: .35rem;
+      padding: .875rem 1rem;
+      border-radius: var(--radius-card);
+      background: rgba(255,255,255,.05);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border: 1px solid rgba(255,255,255,.1);
+      text-decoration: none;
+      color: inherit;
+      transition:
+        background   var(--dur-micro) var(--ease-out),
+        border-color var(--dur-micro) var(--ease-out),
+        transform    var(--dur-micro) var(--ease-out);
+    }
+    .service-card:hover { background: rgba(255,255,255,.1); transform: translateY(-2px); }
+    .service-card:active { transform: scale(.98); }
+
+    .service-card__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: .2rem;
+    }
+
+    .service-card__icon { font-size: 1.2rem; line-height: 1; }
+
+    .service-card__dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .service-card__name {
+      display: block;
+      font-size: .875rem;
+      font-weight: 600;
+      color: #f5f5f7;
+      letter-spacing: -.01em;
+    }
+
+    .service-card__desc {
+      display: block;
+      font-size: .7rem;
+      color: rgba(245,245,247,.42);
+      line-height: 1.45;
+    }
+
+    .service-card__status {
+      display: inline-block;
+      font-size: .6875rem;
+      font-weight: 500;
+      padding: .18em .6em;
+      border-radius: var(--radius-pill);
+      margin-top: .3rem;
+      align-self: flex-start;
+    }
+
+    /* Per-service accent colors — pulled from badge palette above */
+    .service-card--cyan  { border-color: rgba(0,180,216,.18); }
+    .service-card--cyan:hover  { border-color: rgba(0,180,216,.4); }
+    .service-card--cyan  .service-card__dot    { background: #00d4ff; }
+    .service-card--cyan  .service-card__status { background: rgba(0,180,216,.14); color: #7dd3ea; }
+
+    .service-card--green { border-color: rgba(74,222,128,.18); }
+    .service-card--green:hover { border-color: rgba(74,222,128,.4); }
+    .service-card--green .service-card__dot    { background: #4ade80; }
+    .service-card--green .service-card__status { background: rgba(74,222,128,.12); color: #86efac; }
+
+    .service-card--amber { border-color: rgba(251,191,36,.18); }
+    .service-card--amber:hover { border-color: rgba(251,191,36,.4); }
+    .service-card--amber .service-card__dot    { background: #fbbf24; }
+    .service-card--amber .service-card__status { background: rgba(251,191,36,.12); color: #fcd34d; }
+
+    /* ── Pause / play control (lower-right) ────────────────────────────── */
+    .hero-motion-btn {
+      position: absolute;
+      right: 2rem;
+      bottom: 2.75rem;
+      z-index: 10;
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.07);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      color: rgba(245,245,247,.65);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background var(--dur-micro) var(--ease-out), border-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out);
+    }
+    .hero-motion-btn:hover { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.32); color: #f5f5f7; }
+
+    /* ── Responsive ────────────────────────────────────────────────────── */
+    @media (max-width: 1068px) {
+      .hero-content { max-width: 680px; }
+      .nav-link { font-size: .8125rem; padding: .34em .75em; }
+    }
+
+    @media (max-width: 734px) {
+      /* Collapse to: wordmark | scrollable nav | avatar */
+      .hero-topbar {
+        grid-template-columns: auto 1fr auto;
+        gap: .5rem;
+        padding: .625rem 1rem;
+      }
+      .nav-links {
+        overflow-x: auto;
+        scrollbar-width: none;
+        justify-content: flex-start;
+        gap: .0625rem;
+      }
+      .nav-links::-webkit-scrollbar { display: none; }
+      .nav-link { font-size: .78rem; padding: .3em .65em; }
+      .hero-wordmark { font-size: .6875rem; }
+      .hero-content { padding: 0 1.25rem 2.5rem; max-width: 100%; }
+      .hero-ctas    { flex-direction: column; }
+      .hero-ctas .btn { width: 100%; text-align: center; }
+      .service-cards  { flex-direction: column; flex-wrap: nowrap; }
+      .hero-motion-btn { display: none; }
+    }
+
+    @media (max-width: 480px) {
+      /* Hide wordmark to give nav more room on very small screens */
+      .hero-wordmark { display: none; }
+      .hero-topbar { grid-template-columns: 1fr auto; }
+    }
+
+    @media (max-width: 320px) {
+      .hero-topbar  { padding: .875rem 1rem; }
+      .hero-content { padding: 0 1rem 4rem; }
+    }
+
+    /* ── Reduced motion ────────────────────────────────────────────────── */
+    @media (prefers-reduced-motion: reduce) {
+      .bg-orb, .badge-dot { animation: none; }
+      .avatar-dropdown { animation: none; }
+      .service-card, .service-card:hover { transition: none; transform: none; }
+      .nav-link, .avatar-btn, .dropdown-item, .hero-ctas .btn, .hero-motion-btn { transition: none; }
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <p class="wordmark">fam.xgold.tech</p>
-    <div class="member-card">
-      <h1>Welcome home.</h1>
-      <p class="subtitle">
-        More coming soon. This space is for family &amp; friends — we're glad you're here.
-      </p>
-      <button class="btn-signout" id="logout-btn">Sign out</button>
+
+  <section class="hero" id="hero" aria-label="Home hub dashboard">
+
+    <!-- Decorative animated background -->
+    <div class="hero-bg" aria-hidden="true">
+      <div class="bg-orb bg-orb--cyan"></div>
+      <div class="bg-orb bg-orb--green"></div>
+      <div class="bg-orb bg-orb--amber"></div>
     </div>
-  </div>
+    <div class="hero-overlay" aria-hidden="true"></div>
+
+    <!-- Nav ribbon: wordmark | nav links | avatar -->
+    <header class="hero-topbar">
+      <span class="hero-wordmark">fam.xgold.tech</span>
+
+      <nav class="nav-links" aria-label="Main navigation">
+        <a href="/member"    class="nav-link nav-link--active">Home</a>
+        <a href="/streaming" class="nav-link">Streaming</a>
+        <a href="/fantasy"   class="nav-link">Fantasy Football</a>
+        <a href="/minecraft" class="nav-link">Minecraft</a>
+        <a href="/trips"     class="nav-link">Trips</a>
+      </nav>
+
+      <!-- Avatar — TODO: load photo from /api/me response -->
+      <div class="nav-right">
+        <button
+          class="avatar-btn"
+          id="avatar-btn"
+          aria-label="User menu"
+          aria-expanded="false"
+          aria-haspopup="true"
+        >
+          <!-- Profile photo (hidden until loaded) -->
+          <img class="avatar-img" id="avatar-img" src="" alt="" hidden />
+          <!-- Fallback person icon -->
+          <svg class="avatar-icon" id="avatar-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="8" r="4" fill="currentColor" opacity=".85"/>
+            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity=".7"/>
+          </svg>
+        </button>
+
+        <div class="avatar-dropdown" id="avatar-dropdown" hidden role="menu">
+          <button class="dropdown-item" id="logout-btn" role="menuitem">Sign out</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Primary content — lower-left -->
+    <main class="hero-content">
+
+      <!-- Live status badges -->
+      <!-- TODO: Replace static labels with data from /api/status -->
+      <div class="hero-badges" role="list" aria-label="Service status">
+        <span class="badge badge--cyan" role="listitem">
+          <span class="badge-dot" aria-hidden="true"></span>Jellyfin Online
+        </span>
+        <span class="badge badge--green" role="listitem">
+          <span class="badge-dot" aria-hidden="true"></span>Minecraft Live
+        </span>
+        <span class="badge badge--amber" role="listitem">
+          <span class="badge-dot" aria-hidden="true"></span>Trip Planner
+        </span>
+      </div>
+
+      <h1 class="hero-headline">Your home hub,<br>ready for anything.</h1>
+      <p class="hero-sub">Stream your library, jump into the world, and keep every trip detail in one place.</p>
+
+      <!-- CTA row -->
+      <div class="hero-ctas">
+        <a href="/dashboard" class="btn btn-primary">Open Dashboard</a>
+        <a href="/status"    class="btn btn-secondary">View Server Status</a>
+      </div>
+
+      <!-- Service cards -->
+      <div class="service-cards" role="list" aria-label="Services">
+
+        <!-- Jellyfin -->
+        <!-- TODO: Replace "Online" with live Jellyfin health endpoint -->
+        <a href="/jellyfin" class="service-card service-card--cyan" role="listitem">
+          <div class="service-card__header">
+            <span class="service-card__icon" aria-hidden="true">🎬</span>
+            <span class="service-card__dot"  aria-hidden="true"></span>
+          </div>
+          <span class="service-card__name">Jellyfin</span>
+          <span class="service-card__desc">Movies, shows, music, and watch progress</span>
+          <span class="service-card__status">Online</span>
+        </a>
+
+        <!-- Minecraft -->
+        <!-- TODO: Replace "4 players online" with live server query result -->
+        <a href="/minecraft" class="service-card service-card--green" role="listitem">
+          <div class="service-card__header">
+            <span class="service-card__icon" aria-hidden="true">⛏️</span>
+            <span class="service-card__dot"  aria-hidden="true"></span>
+          </div>
+          <span class="service-card__name">Minecraft</span>
+          <span class="service-card__desc">Server status, players online, and world info</span>
+          <span class="service-card__status">4 players online</span>
+        </a>
+
+        <!-- Trips -->
+        <!-- TODO: Replace "12 days" with days-to-next-trip from trips API -->
+        <a href="/trips" class="service-card service-card--amber" role="listitem">
+          <div class="service-card__header">
+            <span class="service-card__icon" aria-hidden="true">✈️</span>
+            <span class="service-card__dot"  aria-hidden="true"></span>
+          </div>
+          <span class="service-card__name">Trips</span>
+          <span class="service-card__desc">Itineraries, packing lists, bookings, and maps</span>
+          <span class="service-card__status">Next trip in 12 days</span>
+        </a>
+
+      </div>
+    </main>
+
+    <!-- Background animation pause / play -->
+    <button
+      class="hero-motion-btn"
+      id="motion-btn"
+      aria-label="Pause background animation"
+      aria-pressed="false"
+    >
+      <svg id="motion-icon" width="12" height="14" viewBox="0 0 12 14" fill="none" aria-hidden="true">
+        <rect x="1"   y="1" width="3.5" height="12" rx="1" fill="currentColor"/>
+        <rect x="7.5" y="1" width="3.5" height="12" rx="1" fill="currentColor"/>
+      </svg>
+    </button>
+
+  </section>
 
   <script>
     const API = 'https://api.fam.xgold.tech';
 
-    // Verify session before showing the page; redirect if not logged in
+    // Verify session; redirect to login if unauthenticated.
+    // TODO: when /api/me returns a photo URL or initials, pass to setAvatar().
     fetch(API + '/api/me', { credentials: 'include' })
-      .then(res => { if (!res.ok) window.location.href = '/'; })
+      .then(res => {
+        if (!res.ok) { window.location.href = '/'; return; }
+        return res.json();
+      })
+      .then(user => {
+        if (!user) return;
+        // TODO: if user.avatarUrl exists, call setAvatar(user.avatarUrl)
+        // TODO: if user.name exists, set avatar-btn aria-label to user.name
+      })
       .catch(() => { window.location.href = '/'; });
 
+    function setAvatar(url) {
+      const img  = document.getElementById('avatar-img');
+      const icon = document.getElementById('avatar-icon');
+      img.src = url;
+      img.hidden = false;
+      icon.hidden = true;
+    }
+
+    // Sign out
     document.getElementById('logout-btn').addEventListener('click', async () => {
       await fetch(API + '/api/logout', { method: 'POST', credentials: 'include' });
       window.location.href = '/';
     });
+
+    // Avatar dropdown toggle
+    const avatarBtn      = document.getElementById('avatar-btn');
+    const avatarDropdown = document.getElementById('avatar-dropdown');
+
+    avatarBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      const open = !avatarDropdown.hidden;
+      avatarDropdown.hidden = open;
+      avatarBtn.setAttribute('aria-expanded', String(!open));
+    });
+
+    // Close dropdown on outside click or Escape
+    document.addEventListener('click', () => {
+      avatarDropdown.hidden = true;
+      avatarBtn.setAttribute('aria-expanded', 'false');
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        avatarDropdown.hidden = true;
+        avatarBtn.setAttribute('aria-expanded', 'false');
+        avatarBtn.focus();
+      }
+    });
+
+    // Background animation pause / play toggle
+    const hero      = document.getElementById('hero');
+    const motionBtn = document.getElementById('motion-btn');
+    const motionIcon = document.getElementById('motion-icon');
+
+    const PAUSE_SVG = `<rect x="1" y="1" width="3.5" height="12" rx="1" fill="currentColor"/><rect x="7.5" y="1" width="3.5" height="12" rx="1" fill="currentColor"/>`;
+    const PLAY_SVG  = `<polygon points="2,1 11,7 2,13" fill="currentColor"/>`;
+
+    let paused = false;
+
+    function setMotion(shouldPause) {
+      paused = shouldPause;
+      hero.classList.toggle('anim-paused', paused);
+      motionBtn.setAttribute('aria-pressed', String(paused));
+      motionBtn.setAttribute('aria-label', paused ? 'Play background animation' : 'Pause background animation');
+      motionIcon.innerHTML = paused ? PLAY_SVG : PAUSE_SVG;
+    }
+
+    motionBtn.addEventListener('click', () => setMotion(!paused));
+
+    // Start paused and hide the control if the OS prefers reduced motion
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setMotion(true);
+      motionBtn.hidden = true;
+    }
   </script>
 </body>
 </html>
