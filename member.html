@@ -1,679 +1,642 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>fam.xgold.tech — Home</title>
-  <link rel="stylesheet" href="/styles.css" />
   <style>
-    /* ── HeroHub — override base body for full-bleed hero ──────────────── */
-    body {
-      display: block;
-      padding: 0;
-      overflow-x: hidden;
-    }
+:root {
+  --bg: #f5f5f7;
+  --ink: #1d1d1f;
+  --muted: #6e6e73;
+  --line: rgba(0, 0, 0, .14);
+  --blue: #0071e3;
+  --blue-dark: #005bb5;
+  --apple-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+    "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --nyt-serif: Georgia, "Times New Roman", Times, serif;
+  --shadow: 0 18px 50px rgba(0, 0, 0, .08);
+  --ease-out: cubic-bezier(0.25, 0.1, 0.25, 1);
+}
 
-    /* ── Hero shell ────────────────────────────────────────────────────── */
-    .hero {
-      position: relative;
-      width: 100%;
-      height: 100dvh;
-      min-height: 580px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* ── Animated background ───────────────────────────────────────────── */
-    .hero-bg {
-      position: absolute;
-      inset: 0;
-      background: #020a14;
-      z-index: 0;
-    }
+html { -webkit-font-smoothing: antialiased; }
 
-    /* Subtle grid lines — suggest tech/structure */
-    .hero-bg::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background-image:
-        repeating-linear-gradient(0deg,  transparent, transparent 48px, rgba(255,255,255,.018) 48px, rgba(255,255,255,.018) 49px),
-        repeating-linear-gradient(90deg, transparent, transparent 48px, rgba(255,255,255,.018) 48px, rgba(255,255,255,.018) 49px);
-    }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--apple-sans);
+}
 
-    /* Floating blurred color orbs — suggest media, gaming, travel worlds */
-    .bg-orb {
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(100px);
-      opacity: 0.2;
-      will-change: transform;
-    }
+a { color: inherit; text-decoration: none; }
 
-    .bg-orb--cyan {
-      width: 60vw; height: 60vw;
-      background: radial-gradient(circle, #00d4ff 0%, #0077b6 60%, transparent 100%);
-      top: -20%; left: -12%;
-      animation: drift-a 24s ease-in-out infinite alternate;
-    }
+/* ── Nav ──────────────────────────────────────────────────────────────────── */
+.site-nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.5rem;
+  background: rgba(251, 251, 253, 0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+}
 
-    .bg-orb--green {
-      width: 46vw; height: 46vw;
-      background: radial-gradient(circle, #4ade80 0%, #15803d 60%, transparent 100%);
-      bottom: -12%; right: -8%;
-      animation: drift-b 30s ease-in-out infinite alternate;
-    }
+.site-wordmark {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  user-select: none;
+}
 
-    .bg-orb--amber {
-      width: 38vw; height: 38vw;
-      background: radial-gradient(circle, #fbbf24 0%, #b45309 60%, transparent 100%);
-      top: 28%; right: 12%;
-      opacity: 0.14;
-      animation: drift-c 20s ease-in-out infinite alternate;
-    }
+.btn-signout {
+  padding: 0.38em 1em;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--apple-sans);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 200ms var(--ease-out), border-color 200ms var(--ease-out), color 200ms var(--ease-out);
+}
+.btn-signout:hover { background: rgba(0,0,0,.06); border-color: rgba(0,0,0,.3); color: var(--ink); }
 
-    @keyframes drift-a { from { transform: translate(0,0) scale(1); }    to { transform: translate(9%,13%)  scale(1.14); } }
-    @keyframes drift-b { from { transform: translate(0,0) scale(1); }    to { transform: translate(-11%,-9%) scale(1.09); } }
-    @keyframes drift-c { from { transform: translate(0,0) scale(1); }    to { transform: translate(-7%,11%)  scale(0.9);  } }
+/* ── Content containers ───────────────────────────────────────────────────── */
+.container {
+  width: min(100% - 32px, 1180px);
+  margin-inline: auto;
+}
 
-    /* Pause animation when .anim-paused is toggled via JS */
-    .hero.anim-paused .bg-orb,
-    .hero.anim-paused .badge-dot { animation-play-state: paused; }
+.copy-container {
+  width: 100%;
+  max-width: 760px;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 
-    /* ── Dark gradient overlay — ensures text readability ──────────────── */
-    .hero-overlay {
-      position: absolute;
-      inset: 0;
-      z-index: 1;
-      background:
-        linear-gradient(145deg, rgba(2,10,20,.88) 0%, rgba(2,10,20,.42) 55%, rgba(2,10,20,.18) 100%),
-        linear-gradient(to top,  rgba(2,10,20,.95) 0%, rgba(2,10,20,.28) 55%, transparent 100%);
-    }
+/* ── Hero slideshow ───────────────────────────────────────────────────────── */
+.hero-showcase {
+  --slide-count: 4;
+  position: relative;
+  /* top padding offsets the fixed nav (~48px) */
+  padding-top: 48px;
+  min-height: 690px;
+  overflow: hidden;
+  background: #fbfbfd;
+  border-bottom: 12px solid #fff;
+}
 
-    /* ── Nav ribbon ────────────────────────────────────────────────────── */
-    .hero-topbar {
-      position: relative;
-      z-index: 10;
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      align-items: center;
-      gap: 1rem;
-      padding: .75rem 2rem;
-      background: rgba(2,10,20,.55);
-      backdrop-filter: blur(22px);
-      -webkit-backdrop-filter: blur(22px);
-      border-bottom: 1px solid rgba(255,255,255,.07);
-    }
+.hero-slide {
+  --duration: 28s;
+  --slide-index: 0;
 
-    .hero-wordmark {
-      font-size: .8125rem;
-      font-weight: 500;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      color: rgba(245,245,247,.4);
-      user-select: none;
-      white-space: nowrap;
-    }
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 112px 22px 0; /* 66px + 48px nav offset */
 
-    /* ── Center nav links ───────────────────────────────────────────────── */
-    .nav-links {
-      display: flex;
-      align-items: center;
-      gap: .125rem;
-    }
+  opacity: 0;
+  transform: translateX(4%);
+  animation: heroSlide var(--duration) infinite;
+  animation-delay: calc(var(--slide-index) * 7s);
+  pointer-events: none;
 
-    .nav-link {
-      padding: .36em .9em;
-      border-radius: var(--radius-pill);
-      font-size: .875rem;
-      font-weight: 450;
-      color: rgba(245,245,247,.58);
-      text-decoration: none;
-      white-space: nowrap;
-      transition: background var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out);
-    }
-    .nav-link:hover { background: rgba(255,255,255,.09); color: #f5f5f7; }
-    .nav-link--active { background: rgba(255,255,255,.13); color: #f5f5f7; }
+  background:
+    radial-gradient(circle at 50% 108%, rgba(0, 113, 227, .16), transparent 35%),
+    linear-gradient(#fbfbfd 0%, #f5f5f7 78%);
+}
 
-    /* ── Right: avatar + dropdown ───────────────────────────────────────── */
-    .nav-right {
-      display: flex;
-      justify-content: flex-end;
-      position: relative;
-    }
+.hero-slide.dark {
+  color: #f5f5f7;
+  background:
+    radial-gradient(circle at 50% 100%, rgba(0, 113, 227, .22), transparent 35%),
+    linear-gradient(180deg, #101014, #000);
+}
 
-    .avatar-btn {
-      width: 34px; height: 34px;
-      border-radius: 50%;
-      border: 1.5px solid rgba(255,255,255,.22);
-      background: rgba(255,255,255,.1);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      cursor: pointer;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: rgba(245,245,247,.65);
-      flex-shrink: 0;
-      transition: border-color var(--dur-micro) var(--ease-out), background var(--dur-micro) var(--ease-out);
-      padding: 0;
-    }
-    .avatar-btn:hover { border-color: rgba(255,255,255,.5); background: rgba(255,255,255,.16); }
+.hero-slide.blue {
+  background:
+    radial-gradient(circle at 50% 86%, rgba(0, 113, 227, .22), transparent 37%),
+    linear-gradient(180deg, #e8f6ff, #fbfbfd);
+}
 
-    /* Loaded profile photo fills the button */
-    .avatar-img {
-      width: 100%; height: 100%;
-      object-fit: cover;
-      display: block;
-    }
+.hero-slide.travel {
+  background:
+    radial-gradient(circle at 70% 58%, rgba(255, 216, 115, .38), transparent 18%),
+    linear-gradient(180deg, #dff5ff, #fbfbfd 74%);
+}
 
-    /* Fallback person icon shown before photo loads */
-    .avatar-icon { pointer-events: none; }
+@keyframes heroSlide {
+  0%   { opacity: 0; transform: translateX(4%);  pointer-events: none; }
+  5%   { opacity: 1; transform: translateX(0);   pointer-events: auto; }
+  22%  { opacity: 1; transform: translateX(0);   pointer-events: auto; }
+  27%  { opacity: 0; transform: translateX(-4%); pointer-events: none; }
+  100% { opacity: 0; transform: translateX(-4%); pointer-events: none; }
+}
 
-    /* Dropdown menu */
-    .avatar-dropdown {
-      position: absolute;
-      top: calc(100% + .5rem);
-      right: 0;
-      min-width: 148px;
-      background: rgba(16,24,38,.96);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      border: 1px solid rgba(255,255,255,.11);
-      border-radius: 14px;
-      padding: .375rem;
-      animation: dropdown-in 160ms var(--ease-out) forwards;
-    }
-    .avatar-dropdown[hidden] { display: none; }
+.hero-content {
+  width: min(1180px, 100%);
+  min-height: 610px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 
-    @keyframes dropdown-in {
-      from { opacity: 0; transform: translateY(-6px) scale(.97); }
-      to   { opacity: 1; transform: translateY(0)   scale(1);   }
-    }
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -.02em;
+}
 
-    .dropdown-item {
-      display: block;
-      width: 100%;
-      padding: .52em .875em;
-      background: none;
-      border: none;
-      border-radius: 9px;
-      color: rgba(245,245,247,.85);
-      font-family: inherit;
-      font-size: .875rem;
-      text-align: left;
-      cursor: pointer;
-      transition: background var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out);
-    }
-    .dropdown-item:hover { background: rgba(255,255,255,.1); color: #f5f5f7; }
-    .dropdown-item--danger { color: rgba(255,80,70,.85); }
-    .dropdown-item--danger:hover { background: rgba(255,69,58,.12); color: #ff6961; }
+.dark .eyebrow,
+.dark .hero-copy-text { color: rgba(255, 255, 255, .74); }
 
-    /* ── Main content — pinned to lower-left on desktop ────────────────── */
-    .hero-content {
-      position: relative;
-      z-index: 10;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      padding: 0 2.5rem 3rem;
-      max-width: 840px;
-    }
+.hero-content h1 {
+  margin: 0;
+  max-width: 860px;
+  font-size: clamp(54px, 8vw, 104px);
+  line-height: .92;
+  letter-spacing: -.065em;
+  font-weight: 700;
+}
 
-    /* ── Status badges ─────────────────────────────────────────────────── */
-    .hero-badges {
-      display: flex;
-      flex-wrap: wrap;
-      gap: .5rem;
-      margin-bottom: 1.375rem;
-    }
+.hero-copy-text {
+  margin: 18px auto 0;
+  max-width: 640px;
+  font-size: clamp(22px, 3vw, 34px);
+  line-height: 1.1;
+  letter-spacing: -.045em;
+  color: var(--ink);
+}
 
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: .45em;
-      padding: .28em .8em;
-      border-radius: var(--radius-pill);
-      font-size: .72rem;
-      font-weight: 500;
-      letter-spacing: .02em;
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid;
-    }
+.dark .hero-copy-text { color: rgba(255, 255, 255, .74); }
 
-    /* Animated live dot (separate element so JS can pause it via class) */
-    .badge-dot {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      flex-shrink: 0;
-      animation: pulse-dot 2.6s ease-in-out infinite;
-    }
-    @keyframes pulse-dot {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50%       { opacity: .4; transform: scale(.65); }
-    }
-    .badge--cyan  { background: rgba(0,180,216,.12); border-color: rgba(0,180,216,.32); color: #7dd3ea; }
-    .badge--cyan  .badge-dot { background: #00d4ff; }
-    .badge--green { background: rgba(74,222,128,.1);  border-color: rgba(74,222,128,.28); color: #86efac; }
-    .badge--green .badge-dot { background: #4ade80; animation-delay: .6s; }
-    .badge--amber { background: rgba(251,191,36,.1);  border-color: rgba(251,191,36,.28); color: #fcd34d; }
-    .badge--amber .badge-dot { background: #fbbf24; animation-delay: 1.2s; }
+.actions {
+  margin-top: 22px;
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
 
-    /* ── Headline & sub ────────────────────────────────────────────────── */
-    .hero-headline {
-      font-size: clamp(2.4rem, 5.8vw, 4.125rem);
-      font-weight: 600;
-      letter-spacing: -.032em;
-      line-height: 1.05;
-      color: #f5f5f7;
-      margin-bottom: .9rem;
-    }
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 22px;
+  border-radius: 999px;
+  border: 1px solid var(--blue);
+  color: var(--blue);
+  font-size: 17px;
+  letter-spacing: -.02em;
+  transition: background 150ms var(--ease-out), color 150ms var(--ease-out), border-color 150ms var(--ease-out);
+}
 
-    .hero-sub {
-      font-size: clamp(.9375rem, 1.75vw, 1.0625rem);
-      color: rgba(245,245,247,.5);
-      max-width: 50ch;
-      line-height: 1.62;
-      margin-bottom: 1.875rem;
-    }
+.button.primary { background: var(--blue); color: white; }
+.button:hover   { border-color: var(--blue-dark); color: var(--blue-dark); }
+.button.primary:hover { background: var(--blue-dark); color: white; }
 
-    /* ── CTA buttons ───────────────────────────────────────────────────── */
-    .hero-ctas {
-      display: flex;
-      gap: .75rem;
-      flex-wrap: wrap;
-      margin-bottom: 2.25rem;
-    }
+/* Hero artwork */
+.hero-art {
+  position: relative;
+  margin-top: auto;
+  width: min(930px, 96vw);
+  height: 305px;
+}
 
-    /* Override .btn's width:100% from global styles for inline hero buttons */
-    .hero-ctas .btn {
-      width: auto;
-      padding: .65em 1.5em;
-      font-size: .9375rem;
-    }
+.device-card {
+  position: absolute;
+  bottom: -22px;
+  width: 210px;
+  height: 300px;
+  border-radius: 38px;
+  background: linear-gradient(145deg, #222735, #5a6477);
+  box-shadow:
+    inset 0 0 0 5px rgba(255,255,255,.1),
+    0 28px 55px rgba(0,0,0,.18);
+}
 
-    .hero-ctas .btn-primary { background: #f5f5f7; color: #000; }
-    .hero-ctas .btn-primary:hover { background: #d8d8da; }
+.device-card::after {
+  content: "";
+  position: absolute;
+  inset: 28px;
+  border-radius: 28px;
+  background: linear-gradient(160deg, rgba(255,255,255,.12), rgba(255,255,255,0));
+}
 
-    .hero-ctas .btn-secondary {
-      background: rgba(255,255,255,.09);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255,255,255,.18);
-      color: #f5f5f7;
-    }
-    .hero-ctas .btn-secondary:hover { background: rgba(255,255,255,.17); border-color: rgba(255,255,255,.32); }
+.device-card.one  { left: 21%; transform: translateX(-50%) rotate(-1deg); }
+.device-card.two  { left: 46%; width: 190px; height: 280px; background: linear-gradient(145deg, #fafafa, #d9d9d9); }
+.device-card.three{ left: 62%; width: 170px; height: 270px; background: linear-gradient(145deg, #ffe3ea, #e6c4cd); transform: rotate(-1deg); }
+.device-card.four { left: 75%; width: 58px;  height: 285px; border-radius: 18px; background: linear-gradient(90deg, #f4f4f4, #bdbdbd, #fff); transform: rotate(.3deg); }
 
-    /* ── Service cards ─────────────────────────────────────────────────── */
-    .service-cards {
-      display: flex;
-      gap: .625rem;
-      flex-wrap: nowrap;
-    }
+.camera { position: absolute; width: 108px; height: 104px; top: 18px; left: 16px; border-radius: 26px; background: rgba(255,255,255,.08); }
+.lens   { position: absolute; width: 38px; height: 38px; border-radius: 50%; background: radial-gradient(circle at 40% 40%, #404a5d, #07080b 55%, #252b35 56%); box-shadow: 0 0 0 4px rgba(255,255,255,.14); }
+.lens.a { top: 10px; left: 10px; }
+.lens.b { top: 55px; left: 10px; }
+.lens.c { top: 33px; left: 58px; }
 
-    .service-card {
-      flex: 1;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      gap: .35rem;
-      padding: .875rem 1rem;
-      border-radius: var(--radius-card);
-      background: rgba(255,255,255,.05);
-      backdrop-filter: blur(22px);
-      -webkit-backdrop-filter: blur(22px);
-      border: 1px solid rgba(255,255,255,.1);
-      text-decoration: none;
-      color: inherit;
-      transition:
-        background   var(--dur-micro) var(--ease-out),
-        border-color var(--dur-micro) var(--ease-out),
-        transform    var(--dur-micro) var(--ease-out);
-    }
-    .service-card:hover { background: rgba(255,255,255,.1); transform: translateY(-2px); }
-    .service-card:active { transform: scale(.98); }
+.cinema-art {
+  width: min(880px, 94vw); height: 310px;
+  border-radius: 34px 34px 0 0;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px) 0 0 / 42px 100%,
+    radial-gradient(circle at 50% 22%, rgba(0,113,227,.34), transparent 28%),
+    linear-gradient(150deg, #15161b, #353b4a);
+  box-shadow: 0 30px 80px rgba(0,0,0,.46);
+  overflow: hidden;
+}
 
-    .service-card__header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: .2rem;
-    }
+.cinema-art::before {
+  content: "";
+  position: absolute;
+  width: 72%; height: 72%;
+  left: 14%; top: 20%;
+  border-radius: 28px 28px 0 0;
+  background: linear-gradient(135deg, rgba(255,255,255,.18), rgba(255,255,255,.02));
+  border: 1px solid rgba(255,255,255,.16);
+}
 
-    .service-card__icon { font-size: 1.2rem; line-height: 1; }
+.minecraft-art {
+  width: min(890px, 94vw); height: 315px;
+  border-radius: 34px 34px 0 0;
+  background:
+    linear-gradient(45deg, #5c8d37 25%, transparent 25%) 0 0 / 48px 48px,
+    linear-gradient(45deg, transparent 75%, #6fa542 75%) 0 0 / 48px 48px,
+    linear-gradient(45deg, transparent 75%, #436b2a 75%) 24px 24px / 48px 48px,
+    #5f8f3b;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
 
-    .service-card__dot {
-      width: 7px; height: 7px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
+.minecraft-art::before {
+  content: "Dynmap";
+  position: absolute;
+  left: 50%; top: 44%;
+  transform: translate(-50%, -50%);
+  padding: 16px 26px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.86);
+  color: #1d1d1f;
+  font-weight: 700;
+  letter-spacing: -.03em;
+  font-size: 26px;
+}
 
-    .service-card__name {
-      display: block;
-      font-size: .875rem;
-      font-weight: 600;
-      color: #f5f5f7;
-      letter-spacing: -.01em;
-    }
+.travel-art {
+  width: min(880px, 94vw); height: 315px;
+  border-radius: 34px 34px 0 0;
+  background:
+    radial-gradient(circle at 74% 28%, #ffd873 0 48px, transparent 50px),
+    linear-gradient(160deg, #bde9ff 0 48%, #ffffff 49% 52%, #9bd484 53%);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
 
-    .service-card__desc {
-      display: block;
-      font-size: .7rem;
-      color: rgba(245,245,247,.42);
-      line-height: 1.45;
-    }
+.travel-art::before {
+  content: "";
+  position: absolute;
+  width: 82%; height: 80px;
+  left: 9%; bottom: 44px;
+  border-radius: 24px;
+  background: rgba(255,255,255,.72);
+  box-shadow: 0 18px 40px rgba(0,0,0,.12);
+}
 
-    .service-card__status {
-      display: inline-block;
-      font-size: .6875rem;
-      font-weight: 500;
-      padding: .18em .6em;
-      border-radius: var(--radius-pill);
-      margin-top: .3rem;
-      align-self: flex-start;
-    }
+/* Slide progress dots */
+.slide-dots {
+  position: absolute;
+  z-index: 5;
+  left: 50%; bottom: 22px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.62);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(0,0,0,.06);
+}
 
-    /* Per-service accent colors — pulled from badge palette above */
-    .service-card--cyan  { border-color: rgba(0,180,216,.18); }
-    .service-card--cyan:hover  { border-color: rgba(0,180,216,.4); }
-    .service-card--cyan  .service-card__dot    { background: #00d4ff; }
-    .service-card--cyan  .service-card__status { background: rgba(0,180,216,.14); color: #7dd3ea; }
+.slide-dots span {
+  width: 42px; height: 4px;
+  border-radius: 999px;
+  background: rgba(0,0,0,.18);
+  overflow: hidden;
+  position: relative;
+}
 
-    .service-card--green { border-color: rgba(74,222,128,.18); }
-    .service-card--green:hover { border-color: rgba(74,222,128,.4); }
-    .service-card--green .service-card__dot    { background: #4ade80; }
-    .service-card--green .service-card__status { background: rgba(74,222,128,.12); color: #86efac; }
+.slide-dots span::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: rgba(0,0,0,.76);
+  animation: dotFill 28s infinite;
+  animation-delay: calc(var(--dot-index) * 7s);
+}
 
-    .service-card--amber { border-color: rgba(251,191,36,.18); }
-    .service-card--amber:hover { border-color: rgba(251,191,36,.4); }
-    .service-card--amber .service-card__dot    { background: #fbbf24; }
-    .service-card--amber .service-card__status { background: rgba(251,191,36,.12); color: #fcd34d; }
+@keyframes dotFill {
+  0%, 4%    { transform: translateX(-100%); }
+  5%, 22%   { transform: translateX(0); }
+  23%, 100% { transform: translateX(100%); }
+}
 
-    /* ── Pause / play control (lower-right) ────────────────────────────── */
-    .hero-motion-btn {
-      position: absolute;
-      right: 2rem;
-      bottom: 2.75rem;
-      z-index: 10;
-      width: 38px; height: 38px;
-      border-radius: 50%;
-      border: 1px solid rgba(255,255,255,.18);
-      background: rgba(255,255,255,.07);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      color: rgba(245,245,247,.65);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background var(--dur-micro) var(--ease-out), border-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out);
-    }
-    .hero-motion-btn:hover { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.32); color: #f5f5f7; }
+/* ── NYT-style cards ──────────────────────────────────────────────────────── */
+.nyt-section {
+  padding: 48px 0 56px;
+  background: #fff;
+  border-top: 1px solid var(--line);
+}
 
-    /* ── Responsive ────────────────────────────────────────────────────── */
-    @media (max-width: 1068px) {
-      .hero-content { max-width: 680px; }
-      .nav-link { font-size: .8125rem; padding: .34em .75em; }
-    }
+.section-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid #111;
+  padding-bottom: 8px;
+  margin-bottom: 14px;
+}
 
-    @media (max-width: 734px) {
-      /* Collapse to: wordmark | scrollable nav | avatar */
-      .hero-topbar {
-        grid-template-columns: auto 1fr auto;
-        gap: .5rem;
-        padding: .625rem 1rem;
-      }
-      .nav-links {
-        overflow-x: auto;
-        scrollbar-width: none;
-        justify-content: flex-start;
-        gap: .0625rem;
-      }
-      .nav-links::-webkit-scrollbar { display: none; }
-      .nav-link { font-size: .78rem; padding: .3em .65em; }
-      .hero-wordmark { font-size: .6875rem; }
-      .hero-content { padding: 0 1.25rem 2.5rem; max-width: 100%; }
-      .hero-ctas    { flex-direction: column; }
-      .hero-ctas .btn { width: 100%; text-align: center; }
-      .service-cards  { flex-direction: column; flex-wrap: nowrap; }
-      .hero-motion-btn { display: none; }
-    }
+.section-head h2 {
+  margin: 0;
+  font-family: var(--nyt-serif);
+  font-size: clamp(28px, 3.6vw, 44px);
+  font-weight: 400;
+  letter-spacing: -.035em;
+  line-height: .96;
+}
 
-    @media (max-width: 480px) {
-      /* Hide wordmark to give nav more room on very small screens */
-      .hero-wordmark { display: none; }
-      .hero-topbar { grid-template-columns: 1fr auto; }
-    }
+.section-head p {
+  margin: 0;
+  color: var(--muted);
+  max-width: 420px;
+  font-size: 12px;
+  line-height: 1.3;
+}
 
-    @media (max-width: 320px) {
-      .hero-topbar  { padding: .875rem 1rem; }
-      .hero-content { padding: 0 1rem 4rem; }
-    }
+.nyt-grid {
+  display: grid;
+  grid-template-columns: 1.35fr .76fr .58fr;
+  grid-auto-flow: dense;
+  gap: 0;
+}
 
-    /* ── Reduced motion ────────────────────────────────────────────────── */
-    @media (prefers-reduced-motion: reduce) {
-      .bg-orb, .badge-dot { animation: none; }
-      .avatar-dropdown { animation: none; }
-      .service-card, .service-card:hover { transition: none; transform: none; }
-      .nav-link, .avatar-btn, .dropdown-item, .hero-ctas .btn, .hero-motion-btn { transition: none; }
-    }
+.nyt-card {
+  min-height: 0;
+  padding: 0 14px 15px;
+  margin: 0 0 15px;
+  border-bottom: 1px solid #d8d8d8;
+  position: relative;
+}
+
+.nyt-card:not(:nth-child(3n)) { border-right: 1px solid #d8d8d8; }
+.nyt-card.lead  { grid-row: span 3; padding-left: 0; padding-right: 18px; border-right: 1px solid #d8d8d8; }
+.nyt-card.feature { grid-row: span 2; }
+.nyt-card.compact { padding-bottom: 12px; margin-bottom: 12px; }
+
+.nyt-image {
+  height: 76px; width: 112px;
+  float: right;
+  margin: 3px 0 6px 12px;
+  background: linear-gradient(135deg, rgba(0,0,0,.08), rgba(0,0,0,0)), linear-gradient(150deg, #e8e8ed, #fff);
+}
+
+.nyt-card.lead .nyt-image    { float: none; width: 100%; height: clamp(260px, 31vw, 430px); margin: 0 0 12px; }
+.nyt-card.feature .nyt-image { float: none; width: 100%; height: 218px; margin: 0 0 12px; }
+.nyt-card.no-image .nyt-image { display: none; }
+
+.nyt-image.family   { background: radial-gradient(circle at 75% 35%, #ffe1c7 0 52px, transparent 53px), linear-gradient(145deg, #1d1d1f, #5f6675); }
+.nyt-image.travel   { background: radial-gradient(circle at 78% 28%, #ffd873 0 34px, transparent 35px), linear-gradient(155deg, #bde9ff 0 48%, #fff 49% 52%, #9bd484 53%); }
+.nyt-image.minecraft{ background: linear-gradient(45deg, #5c8d37 25%, transparent 25%) 0 0 / 28px 28px, linear-gradient(45deg, transparent 75%, #6fa542 75%) 0 0 / 28px 28px, #5f8f3b; }
+.nyt-image.cinema   { background: radial-gradient(circle at 50% 20%, rgba(0,113,227,.28), transparent 30%), linear-gradient(150deg, #15161b, #515a70); }
+
+.nyt-card h3 { margin: 0; font-family: var(--nyt-serif); font-weight: 400; font-size: 24px; line-height: .98; letter-spacing: -.035em; }
+.nyt-card.lead h3    { font-size: clamp(30px, 3vw, 40px); line-height: .98; letter-spacing: -.04em; }
+.nyt-card.feature h3 { font-size: 28px; line-height: .99; }
+.nyt-card.compact h3 { font-size: 22px; line-height: .98; }
+
+.nyt-card .dek { margin: 8px 0 0; font-family: var(--nyt-serif); font-weight: 400; font-size: 16px; line-height: 1.22; letter-spacing: -.01em; max-width: 520px; }
+.nyt-card.lead .dek    { font-size: 17px; line-height: 1.24; }
+.nyt-card.compact .dek { font-size: 15px; line-height: 1.22; }
+
+.nyt-card .topic { clear: both; margin-top: 8px; font-family: var(--apple-sans); color: #777; font-weight: 500; font-size: 12px; letter-spacing: -.01em; }
+.nyt-card .topic::before { content: "· "; color: #8a8a8e; font-weight: 700; }
+.nyt-card::after { content: ""; display: block; clear: both; }
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 920px) {
+  .hero-showcase { min-height: 670px; }
+  .hero-content  { min-height: 590px; }
+  .nyt-grid { grid-template-columns: 1fr; }
+  .section-head { align-items: start; flex-direction: column; }
+  .nyt-card:not(:nth-child(3n)), .nyt-card.lead { border-right: 0; }
+}
+
+@media (max-width: 560px) {
+  .hero-showcase { min-height: 620px; }
+  .hero-slide    { padding-top: 96px; }
+  .hero-art      { transform: scale(.78); transform-origin: bottom center; }
+  .nyt-card.lead h3 { font-size: 34px; }
+  .nyt-card.lead .nyt-image,
+  .nyt-card.feature .nyt-image { height: 220px; }
+  .nyt-image     { width: 112px; height: 76px; }
+  .slide-dots span { width: 28px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-slide { position: relative; opacity: 1; transform: none; animation: none; display: none; }
+  .hero-slide:first-child { display: grid; }
+  .slide-dots { display: none; }
+  .btn-signout, .button { transition: none; }
+}
   </style>
 </head>
 <body>
 
-  <section class="hero" id="hero" aria-label="Home hub dashboard">
+  <!-- Minimal nav: wordmark left, sign-out right -->
+  <nav class="site-nav">
+    <span class="site-wordmark">fam.xgold.tech</span>
+    <button class="btn-signout" id="logout-btn">Sign out</button>
+  </nav>
 
-    <!-- Decorative animated background -->
-    <div class="hero-bg" aria-hidden="true">
-      <div class="bg-orb bg-orb--cyan"></div>
-      <div class="bg-orb bg-orb--green"></div>
-      <div class="bg-orb bg-orb--amber"></div>
-    </div>
-    <div class="hero-overlay" aria-hidden="true"></div>
+  <!-- Hero slideshow -->
+  <section class="hero-showcase" aria-label="Gold Family featured slideshow">
 
-    <!-- Nav ribbon: wordmark | nav links | avatar -->
-    <header class="hero-topbar">
-      <span class="hero-wordmark">fam.xgold.tech</span>
-
-      <nav class="nav-links" aria-label="Main navigation">
-        <a href="/member"    class="nav-link nav-link--active">Home</a>
-        <a href="/streaming" class="nav-link">Streaming</a>
-        <a href="/fantasy"   class="nav-link">Fantasy Football</a>
-        <a href="/minecraft" class="nav-link">Minecraft</a>
-        <a href="/trips"     class="nav-link">Trips</a>
-      </nav>
-
-      <!-- Avatar — TODO: load photo from /api/me response -->
-      <div class="nav-right">
-        <button
-          class="avatar-btn"
-          id="avatar-btn"
-          aria-label="User menu"
-          aria-expanded="false"
-          aria-haspopup="true"
-        >
-          <!-- Profile photo (hidden until loaded) -->
-          <img class="avatar-img" id="avatar-img" src="" alt="" hidden />
-          <!-- Fallback person icon -->
-          <svg class="avatar-icon" id="avatar-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle cx="12" cy="8" r="4" fill="currentColor" opacity=".85"/>
-            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity=".7"/>
-          </svg>
-        </button>
-
-        <div class="avatar-dropdown" id="avatar-dropdown" hidden role="menu">
-          <button class="dropdown-item" id="logout-btn" role="menuitem">Sign out</button>
+    <article class="hero-slide" style="--slide-index: 0;">
+      <div class="hero-content">
+        <div class="copy-container">
+          <p class="eyebrow">Gold Family Homepage</p>
+          <h1>Home, beautifully organized.</h1>
+          <p class="hero-copy-text">
+            Family news, movie nights, Minecraft worlds, holidays, and everything we keep coming back to.
+          </p>
+          <div class="actions">
+            <a class="button primary" href="#news">Read the news</a>
+            <a class="button" href="#services">Open services</a>
+          </div>
+        </div>
+        <div class="hero-art family-art" aria-hidden="true">
+          <div class="device-card one">
+            <div class="camera">
+              <div class="lens a"></div>
+              <div class="lens b"></div>
+              <div class="lens c"></div>
+            </div>
+          </div>
+          <div class="device-card two"></div>
+          <div class="device-card three"></div>
+          <div class="device-card four"></div>
         </div>
       </div>
-    </header>
+    </article>
 
-    <!-- Primary content — lower-left -->
-    <main class="hero-content">
+    <article class="hero-slide dark" style="--slide-index: 1;">
+      <div class="hero-content">
+        <div class="copy-container">
+          <p class="eyebrow">Streaming</p>
+          <h1>Movie night starts here.</h1>
+          <p class="hero-copy-text">
+            Browse recently added movies, family favorites, watchlists, and Friday-night picks.
+          </p>
+          <div class="actions">
+            <a class="button primary" href="#">Launch Streaming</a>
+            <a class="button" href="#news">See what's new</a>
+          </div>
+        </div>
+        <div class="hero-art cinema-art" aria-hidden="true"></div>
+      </div>
+    </article>
 
-      <!-- Live status badges -->
-      <!-- TODO: Replace static labels with data from /api/status -->
-      <div class="hero-badges" role="list" aria-label="Service status">
-        <span class="badge badge--cyan" role="listitem">
-          <span class="badge-dot" aria-hidden="true"></span>Jellyfin Online
-        </span>
-        <span class="badge badge--green" role="listitem">
-          <span class="badge-dot" aria-hidden="true"></span>Minecraft Live
-        </span>
-        <span class="badge badge--amber" role="listitem">
-          <span class="badge-dot" aria-hidden="true"></span>Trip Planner
-        </span>
+    <article class="hero-slide blue" style="--slide-index: 2;">
+      <div class="hero-content">
+        <div class="copy-container">
+          <p class="eyebrow">Minecraft Server</p>
+          <h1>Explore the world.</h1>
+          <p class="hero-copy-text">
+            Open the dynmap, check server amenities, find landmarks, and plan the next family build.
+          </p>
+          <div class="actions">
+            <a class="button primary" href="#">Open Dynmap</a>
+            <a class="button" href="#">Server guide</a>
+          </div>
+        </div>
+        <div class="hero-art minecraft-art" aria-hidden="true"></div>
+      </div>
+    </article>
+
+    <article class="hero-slide travel" style="--slide-index: 3;">
+      <div class="hero-content">
+        <div class="copy-container">
+          <p class="eyebrow">Holidays</p>
+          <h1>Every holiday in one place.</h1>
+          <p class="hero-copy-text">
+            Holiday menus, gatherings, gift lists, travel details, calendars, and family ideas.
+          </p>
+          <div class="actions">
+            <a class="button primary" href="#holidays">Open Holidays</a>
+            <a class="button" href="#">Add a note</a>
+          </div>
+        </div>
+        <div class="hero-art travel-art" aria-hidden="true"></div>
+      </div>
+    </article>
+
+    <div class="slide-dots" aria-hidden="true">
+      <span style="--dot-index: 0;"></span>
+      <span style="--dot-index: 1;"></span>
+      <span style="--dot-index: 2;"></span>
+      <span style="--dot-index: 3;"></span>
+    </div>
+  </section>
+
+  <!-- NYT-style news cards -->
+  <section class="nyt-section" id="news">
+    <div class="container">
+
+      <div class="section-head">
+        <h2>The Gold Family Times</h2>
+        <p>
+          Compact family updates for streaming, Minecraft, holidays, reminders,
+          milestones, and stories worth saving.
+        </p>
       </div>
 
-      <h1 class="hero-headline">Your home hub,<br>ready for anything.</h1>
-      <p class="hero-sub">Stream your library, jump into the world, and keep every trip detail in one place.</p>
+      <div class="nyt-grid">
+        <article class="nyt-card lead">
+          <div class="nyt-image family" aria-hidden="true"></div>
+          <h3>One Homepage Brings Every Family Plan Into View</h3>
+          <p class="dek">
+            The week's updates, movie nights, Minecraft builds, holiday ideas,
+            and family notes now have one clean front page.
+          </p>
+          <div class="topic">Family</div>
+        </article>
 
-      <!-- CTA row -->
-      <div class="hero-ctas">
-        <a href="/dashboard" class="btn btn-primary">Open Dashboard</a>
-        <a href="/status"    class="btn btn-secondary">View Server Status</a>
+        <article class="nyt-card feature">
+          <div class="nyt-image travel" aria-hidden="true"></div>
+          <h3>Holiday Ideas Move From Group Chat to Itinerary</h3>
+          <p class="dek">
+            Menus, gatherings, travel details, and day-by-day notes can live in one holiday board.
+          </p>
+          <div class="topic">Holidays</div>
+        </article>
+
+        <article class="nyt-card compact">
+          <div class="nyt-image cinema" aria-hidden="true"></div>
+          <h3>Movie Night Queue Gets a Cleaner Look</h3>
+          <p class="dek">Streaming picks and recently added titles are ready for Friday.</p>
+          <div class="topic">Streaming</div>
+        </article>
+
+        <article class="nyt-card compact">
+          <div class="nyt-image minecraft" aria-hidden="true"></div>
+          <h3>Dynmap Opens a Window Into the Family Server</h3>
+          <p class="dek">Check bases, portals, towns, landmarks, and the next community build.</p>
+          <div class="topic">Minecraft</div>
+        </article>
+
+        <article class="nyt-card compact no-image">
+          <h3>Holiday Planning Starts Earlier This Year</h3>
+          <p class="dek">Menus, gift lists, dates, and traditions are collected before the calendar fills up.</p>
+          <div class="topic">Holidays</div>
+        </article>
+
+        <article class="nyt-card compact no-image">
+          <h3>Server Amenities Get Their Own Guide</h3>
+          <p class="dek">Rules, links, commands, backups, and helpful notes can be found without digging.</p>
+          <div class="topic">Minecraft</div>
+        </article>
       </div>
 
-      <!-- Service cards -->
-      <div class="service-cards" role="list" aria-label="Services">
-
-        <!-- Jellyfin -->
-        <!-- TODO: Replace "Online" with live Jellyfin health endpoint -->
-        <a href="/jellyfin" class="service-card service-card--cyan" role="listitem">
-          <div class="service-card__header">
-            <span class="service-card__icon" aria-hidden="true">🎬</span>
-            <span class="service-card__dot"  aria-hidden="true"></span>
-          </div>
-          <span class="service-card__name">Jellyfin</span>
-          <span class="service-card__desc">Movies, shows, music, and watch progress</span>
-          <span class="service-card__status">Online</span>
-        </a>
-
-        <!-- Minecraft -->
-        <!-- TODO: Replace "4 players online" with live server query result -->
-        <a href="/minecraft" class="service-card service-card--green" role="listitem">
-          <div class="service-card__header">
-            <span class="service-card__icon" aria-hidden="true">⛏️</span>
-            <span class="service-card__dot"  aria-hidden="true"></span>
-          </div>
-          <span class="service-card__name">Minecraft</span>
-          <span class="service-card__desc">Server status, players online, and world info</span>
-          <span class="service-card__status">4 players online</span>
-        </a>
-
-        <!-- Trips -->
-        <!-- TODO: Replace "12 days" with days-to-next-trip from trips API -->
-        <a href="/trips" class="service-card service-card--amber" role="listitem">
-          <div class="service-card__header">
-            <span class="service-card__icon" aria-hidden="true">✈️</span>
-            <span class="service-card__dot"  aria-hidden="true"></span>
-          </div>
-          <span class="service-card__name">Trips</span>
-          <span class="service-card__desc">Itineraries, packing lists, bookings, and maps</span>
-          <span class="service-card__status">Next trip in 12 days</span>
-        </a>
-
-      </div>
-    </main>
-
-    <!-- Background animation pause / play -->
-    <button
-      class="hero-motion-btn"
-      id="motion-btn"
-      aria-label="Pause background animation"
-      aria-pressed="false"
-    >
-      <svg id="motion-icon" width="12" height="14" viewBox="0 0 12 14" fill="none" aria-hidden="true">
-        <rect x="1"   y="1" width="3.5" height="12" rx="1" fill="currentColor"/>
-        <rect x="7.5" y="1" width="3.5" height="12" rx="1" fill="currentColor"/>
-      </svg>
-    </button>
-
+    </div>
   </section>
 
   <script>
     const API = 'https://api.fam.xgold.tech';
 
-    // Verify session; redirect to login if unauthenticated.
-    // TODO: when /api/me returns a photo URL or initials, pass to setAvatar().
+    // Redirect to login if session is invalid
     fetch(API + '/api/me', { credentials: 'include' })
-      .then(res => {
-        if (!res.ok) { window.location.href = '/'; return; }
-        return res.json();
-      })
-      .then(user => {
-        if (!user) return;
-        // TODO: if user.avatarUrl exists, call setAvatar(user.avatarUrl)
-        // TODO: if user.name exists, set avatar-btn aria-label to user.name
-      })
+      .then(res => { if (!res.ok) window.location.href = '/'; })
       .catch(() => { window.location.href = '/'; });
 
-    function setAvatar(url) {
-      const img  = document.getElementById('avatar-img');
-      const icon = document.getElementById('avatar-icon');
-      img.src = url;
-      img.hidden = false;
-      icon.hidden = true;
-    }
-
-    // Sign out
     document.getElementById('logout-btn').addEventListener('click', async () => {
       await fetch(API + '/api/logout', { method: 'POST', credentials: 'include' });
       window.location.href = '/';
     });
-
-    // Avatar dropdown toggle
-    const avatarBtn      = document.getElementById('avatar-btn');
-    const avatarDropdown = document.getElementById('avatar-dropdown');
-
-    avatarBtn.addEventListener('click', e => {
-      e.stopPropagation();
-      const open = !avatarDropdown.hidden;
-      avatarDropdown.hidden = open;
-      avatarBtn.setAttribute('aria-expanded', String(!open));
-    });
-
-    // Close dropdown on outside click or Escape
-    document.addEventListener('click', () => {
-      avatarDropdown.hidden = true;
-      avatarBtn.setAttribute('aria-expanded', 'false');
-    });
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') {
-        avatarDropdown.hidden = true;
-        avatarBtn.setAttribute('aria-expanded', 'false');
-        avatarBtn.focus();
-      }
-    });
-
-    // Background animation pause / play toggle
-    const hero      = document.getElementById('hero');
-    const motionBtn = document.getElementById('motion-btn');
-    const motionIcon = document.getElementById('motion-icon');
-
-    const PAUSE_SVG = `<rect x="1" y="1" width="3.5" height="12" rx="1" fill="currentColor"/><rect x="7.5" y="1" width="3.5" height="12" rx="1" fill="currentColor"/>`;
-    const PLAY_SVG  = `<polygon points="2,1 11,7 2,13" fill="currentColor"/>`;
-
-    let paused = false;
-
-    function setMotion(shouldPause) {
-      paused = shouldPause;
-      hero.classList.toggle('anim-paused', paused);
-      motionBtn.setAttribute('aria-pressed', String(paused));
-      motionBtn.setAttribute('aria-label', paused ? 'Play background animation' : 'Pause background animation');
-      motionIcon.innerHTML = paused ? PLAY_SVG : PAUSE_SVG;
-    }
-
-    motionBtn.addEventListener('click', () => setMotion(!paused));
-
-    // Start paused and hide the control if the OS prefers reduced motion
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setMotion(true);
-      motionBtn.hidden = true;
-    }
   </script>
 </body>
 </html>
