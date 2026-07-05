@@ -1,0 +1,864 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gold Family Hero + Cards</title>
+  <style>
+:root {
+  --bg: #f5f5f7;
+  --panel: #ffffff;
+  --ink: #1d1d1f;
+  --muted: #6e6e73;
+  --line: rgba(0, 0, 0, .14);
+  --blue: #0071e3;
+  --blue-dark: #005bb5;
+  --apple-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+    "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --nyt-serif: Georgia, "Times New Roman", Times, serif;
+  --shadow: 0 18px 50px rgba(0, 0, 0, .08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--apple-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* =========================
+   CONTENT CONTAINERS
+   Constrain text to readable widths; images and full-bleed sections
+   are intentionally excluded from these constraints.
+   ========================= */
+
+/*
+ * .container — outer page wrapper, mirrors the 1180px Apple grid.
+ * Use on section-level wrappers. Not applied to hero backgrounds or art.
+ */
+.container {
+  width: min(100% - 32px, 1180px);
+  margin-inline: auto;
+}
+
+/*
+ * .copy-container — constrains hero text blocks (eyebrow + heading + copy + actions)
+ * to a readable width while the hero artwork remains full-bleed behind it.
+ */
+.copy-container {
+  width: 100%;
+  max-width: 760px;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/*
+ * .section-copy — centered editorial intro text inside a section.
+ * Tighter than .copy-container, appropriate for sub-headings and standfirsts.
+ */
+.section-copy {
+  max-width: 680px;
+  margin-inline: auto;
+  text-align: center;
+}
+
+/*
+ * .feature-copy — constrains body copy inside individual cards/tiles.
+ */
+.feature-copy {
+  max-width: 520px;
+}
+
+/* =========================
+   APPLE-STYLE HERO SLIDESHOW
+   ========================= */
+
+.hero-showcase {
+  --slide-count: 4;
+  position: relative;
+  min-height: 690px;
+  overflow: hidden;
+  background: #fbfbfd;
+  border-bottom: 12px solid #fff;
+}
+
+.hero-slide {
+  --duration: 28s;
+  --slide-index: 0;
+
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  /* Reduced top padding now that copy-container handles internal spacing */
+  padding: 66px 22px 0;
+
+  opacity: 0;
+  transform: translateX(4%);
+  animation: heroSlide var(--duration) infinite;
+  animation-delay: calc(var(--slide-index) * 7s);
+  pointer-events: none;
+
+  background:
+    radial-gradient(circle at 50% 108%, rgba(0, 113, 227, .16), transparent 35%),
+    linear-gradient(#fbfbfd 0%, #f5f5f7 78%);
+}
+
+.hero-slide.dark {
+  color: #f5f5f7;
+  background:
+    radial-gradient(circle at 50% 100%, rgba(0, 113, 227, .22), transparent 35%),
+    linear-gradient(180deg, #101014, #000);
+}
+
+.hero-slide.blue {
+  background:
+    radial-gradient(circle at 50% 86%, rgba(0, 113, 227, .22), transparent 37%),
+    linear-gradient(180deg, #e8f6ff, #fbfbfd);
+}
+
+.hero-slide.travel {
+  background:
+    radial-gradient(circle at 70% 58%, rgba(255, 216, 115, .38), transparent 18%),
+    linear-gradient(180deg, #dff5ff, #fbfbfd 74%);
+}
+
+@keyframes heroSlide {
+  0% {
+    opacity: 0;
+    transform: translateX(4%);
+    pointer-events: none;
+  }
+  5% {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+  }
+  22% {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+  }
+  27% {
+    opacity: 0;
+    transform: translateX(-4%);
+    pointer-events: none;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-4%);
+    pointer-events: none;
+  }
+}
+
+/* hero-content is the full-width flex column; copy-container inside it
+   constrains only the text to max-width: 760px */
+.hero-content {
+  width: min(1180px, 100%);
+  min-height: 610px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -.02em;
+}
+
+.dark .eyebrow,
+.dark .hero-copy-text {
+  color: rgba(255, 255, 255, .74);
+}
+
+/* h1 constrained to 860px so it wraps gracefully on large screens */
+.hero-content h1 {
+  margin: 0;
+  max-width: 860px;
+  font-size: clamp(54px, 8vw, 104px);
+  line-height: .92;
+  letter-spacing: -.065em;
+  font-weight: 700;
+}
+
+/* .hero-copy-text carries the per-slide descriptor paragraph */
+.hero-copy-text {
+  margin: 18px auto 0;
+  max-width: 640px;
+  font-size: clamp(22px, 3vw, 34px);
+  line-height: 1.1;
+  letter-spacing: -.045em;
+  color: var(--ink);
+}
+
+.dark .hero-copy-text {
+  color: rgba(255, 255, 255, .74);
+}
+
+.actions {
+  margin-top: 22px;
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 22px;
+  border-radius: 999px;
+  border: 1px solid var(--blue);
+  color: var(--blue);
+  font-size: 17px;
+  letter-spacing: -.02em;
+}
+
+.button.primary {
+  background: var(--blue);
+  color: white;
+}
+
+.button:hover {
+  border-color: var(--blue-dark);
+  color: var(--blue-dark);
+}
+
+.button.primary:hover {
+  background: var(--blue-dark);
+  color: white;
+}
+
+/* Hero artwork — intentionally outside .copy-container so it
+   can fill the full hero-content width */
+.hero-art {
+  position: relative;
+  margin-top: auto;
+  width: min(930px, 96vw);
+  height: 305px;
+}
+
+.device-card {
+  position: absolute;
+  bottom: -22px;
+  width: 210px;
+  height: 300px;
+  border-radius: 38px;
+  background: linear-gradient(145deg, #222735, #5a6477);
+  box-shadow:
+    inset 0 0 0 5px rgba(255, 255, 255, .1),
+    0 28px 55px rgba(0, 0, 0, .18);
+}
+
+.device-card::after {
+  content: "";
+  position: absolute;
+  inset: 28px;
+  border-radius: 28px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, 0));
+}
+
+.device-card.one {
+  left: 21%;
+  transform: translateX(-50%) rotate(-1deg);
+}
+
+.device-card.two {
+  left: 46%;
+  width: 190px;
+  height: 280px;
+  background: linear-gradient(145deg, #fafafa, #d9d9d9);
+}
+
+.device-card.three {
+  left: 62%;
+  width: 170px;
+  height: 270px;
+  background: linear-gradient(145deg, #ffe3ea, #e6c4cd);
+  transform: rotate(-1deg);
+}
+
+.device-card.four {
+  left: 75%;
+  width: 58px;
+  height: 285px;
+  border-radius: 18px;
+  background: linear-gradient(90deg, #f4f4f4, #bdbdbd, #fff);
+  transform: rotate(.3deg);
+}
+
+.camera {
+  position: absolute;
+  width: 108px;
+  height: 104px;
+  top: 18px;
+  left: 16px;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, .08);
+}
+
+.lens {
+  position: absolute;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #404a5d, #07080b 55%, #252b35 56%);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, .14);
+}
+
+.lens.a { top: 10px; left: 10px; }
+.lens.b { top: 55px; left: 10px; }
+.lens.c { top: 33px; left: 58px; }
+
+.cinema-art {
+  width: min(880px, 94vw);
+  height: 310px;
+  border-radius: 34px 34px 0 0;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, .06) 1px, transparent 1px) 0 0 / 42px 100%,
+    radial-gradient(circle at 50% 22%, rgba(0, 113, 227, .34), transparent 28%),
+    linear-gradient(150deg, #15161b, #353b4a);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, .46);
+  overflow: hidden;
+}
+
+.cinema-art::before {
+  content: "";
+  position: absolute;
+  width: 72%;
+  height: 72%;
+  left: 14%;
+  top: 20%;
+  border-radius: 28px 28px 0 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, .18), rgba(255, 255, 255, .02));
+  border: 1px solid rgba(255, 255, 255, .16);
+}
+
+.minecraft-art {
+  width: min(890px, 94vw);
+  height: 315px;
+  border-radius: 34px 34px 0 0;
+  background:
+    linear-gradient(45deg, #5c8d37 25%, transparent 25%) 0 0 / 48px 48px,
+    linear-gradient(45deg, transparent 75%, #6fa542 75%) 0 0 / 48px 48px,
+    linear-gradient(45deg, transparent 75%, #436b2a 75%) 24px 24px / 48px 48px,
+    #5f8f3b;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.minecraft-art::before {
+  content: "Dynmap";
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  transform: translate(-50%, -50%);
+  padding: 16px 26px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .86);
+  color: #1d1d1f;
+  font-weight: 700;
+  letter-spacing: -.03em;
+  font-size: 26px;
+}
+
+.travel-art {
+  width: min(880px, 94vw);
+  height: 315px;
+  border-radius: 34px 34px 0 0;
+  background:
+    radial-gradient(circle at 74% 28%, #ffd873 0 48px, transparent 50px),
+    linear-gradient(160deg, #bde9ff 0 48%, #ffffff 49% 52%, #9bd484 53%);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.travel-art::before {
+  content: "";
+  position: absolute;
+  width: 82%;
+  height: 80px;
+  left: 9%;
+  bottom: 44px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, .72);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, .12);
+}
+
+/* Slide progress dots */
+.slide-dots {
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .62);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(0, 0, 0, .06);
+}
+
+.slide-dots span {
+  width: 42px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, .18);
+  overflow: hidden;
+  position: relative;
+}
+
+.slide-dots span::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: rgba(0, 0, 0, .76);
+  animation: dotFill 28s infinite;
+  animation-delay: calc(var(--dot-index) * 7s);
+}
+
+@keyframes dotFill {
+  0%, 4%  { transform: translateX(-100%); }
+  5%, 22% { transform: translateX(0); }
+  23%, 100% { transform: translateX(100%); }
+}
+
+/* =========================
+   NYT-STYLE CARDS
+   ========================= */
+
+.nyt-section {
+  /* Generous vertical padding so the section feels deliberate, not cramped */
+  padding: 48px 0 56px;
+  background: #fff;
+  border-top: 1px solid var(--line);
+}
+
+/* .container on the inner wrapper replaces the repeated
+   width: min(1180px, 100%) + margin: 0 auto pattern */
+.section-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid #111;
+  padding-bottom: 8px;
+  margin-bottom: 14px;
+}
+
+.section-head h2 {
+  margin: 0;
+  font-family: var(--nyt-serif);
+  font-size: clamp(28px, 3.6vw, 44px);
+  font-weight: 400;
+  letter-spacing: -.035em;
+  line-height: .96;
+}
+
+/* Constrain the section subtitle to a readable max-width */
+.section-head p {
+  margin: 0;
+  color: var(--muted);
+  max-width: 420px;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.nyt-grid {
+  display: grid;
+  grid-template-columns: 1.35fr .76fr .58fr;
+  grid-auto-flow: dense;
+  gap: 0;
+}
+
+.nyt-card {
+  min-height: 0;
+  padding: 0 14px 15px;
+  margin: 0 0 15px;
+  border-bottom: 1px solid #d8d8d8;
+  position: relative;
+}
+
+.nyt-card:not(:nth-child(3n)) {
+  border-right: 1px solid #d8d8d8;
+}
+
+.nyt-card.lead {
+  grid-row: span 3;
+  padding-left: 0;
+  padding-right: 18px;
+  border-right: 1px solid #d8d8d8;
+}
+
+.nyt-card.feature {
+  grid-row: span 2;
+}
+
+.nyt-card.compact {
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+}
+
+.nyt-image {
+  height: 76px;
+  width: 112px;
+  float: right;
+  margin: 3px 0 6px 12px;
+  background:
+    linear-gradient(135deg, rgba(0, 0, 0, .08), rgba(0, 0, 0, 0)),
+    linear-gradient(150deg, #e8e8ed, #fff);
+}
+
+.nyt-card.lead .nyt-image {
+  float: none;
+  width: 100%;
+  height: clamp(260px, 31vw, 430px);
+  margin: 0 0 12px;
+}
+
+.nyt-card.feature .nyt-image {
+  float: none;
+  width: 100%;
+  height: 218px;
+  margin: 0 0 12px;
+}
+
+.nyt-card.no-image .nyt-image {
+  display: none;
+}
+
+.nyt-image.family {
+  background:
+    radial-gradient(circle at 75% 35%, #ffe1c7 0 52px, transparent 53px),
+    linear-gradient(145deg, #1d1d1f, #5f6675);
+}
+
+.nyt-image.travel {
+  background:
+    radial-gradient(circle at 78% 28%, #ffd873 0 34px, transparent 35px),
+    linear-gradient(155deg, #bde9ff 0 48%, #fff 49% 52%, #9bd484 53%);
+}
+
+.nyt-image.minecraft {
+  background:
+    linear-gradient(45deg, #5c8d37 25%, transparent 25%) 0 0 / 28px 28px,
+    linear-gradient(45deg, transparent 75%, #6fa542 75%) 0 0 / 28px 28px,
+    #5f8f3b;
+}
+
+.nyt-image.cinema {
+  background:
+    radial-gradient(circle at 50% 20%, rgba(0, 113, 227, .28), transparent 30%),
+    linear-gradient(150deg, #15161b, #515a70);
+}
+
+/* Card text uses .feature-copy-width max-width implicitly via column sizing;
+   explicit max-width is enforced on the lead card's body copy below */
+.nyt-card h3 {
+  margin: 0;
+  font-family: var(--nyt-serif);
+  font-weight: 400;
+  font-size: 24px;
+  line-height: .98;
+  letter-spacing: -.035em;
+}
+
+.nyt-card.lead h3 {
+  font-size: clamp(30px, 3vw, 40px);
+  line-height: .98;
+  letter-spacing: -.04em;
+}
+
+.nyt-card.feature h3 {
+  font-size: 28px;
+  line-height: .99;
+}
+
+.nyt-card.compact h3 {
+  font-size: 22px;
+  line-height: .98;
+}
+
+.nyt-card .dek {
+  margin: 8px 0 0;
+  font-family: var(--nyt-serif);
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.22;
+  letter-spacing: -.01em;
+  /* Constrain dek copy to ~520px for comfortable reading */
+  max-width: 520px;
+}
+
+.nyt-card.lead .dek {
+  font-size: 17px;
+  line-height: 1.24;
+}
+
+.nyt-card.compact .dek {
+  font-size: 15px;
+  line-height: 1.22;
+}
+
+.nyt-card .topic {
+  clear: both;
+  margin-top: 8px;
+  font-family: var(--apple-sans);
+  color: #777;
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: -.01em;
+}
+
+.nyt-card .topic::before {
+  content: "· ";
+  color: #8a8a8e;
+  font-weight: 700;
+}
+
+.nyt-card::after {
+  content: "";
+  display: block;
+  clear: both;
+}
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+
+@media (max-width: 920px) {
+  .hero-showcase  { min-height: 670px; }
+  .hero-content   { min-height: 590px; }
+
+  .nyt-grid { grid-template-columns: 1fr; }
+
+  .section-head {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .nyt-card:not(:nth-child(3n)),
+  .nyt-card.lead { border-right: 0; }
+}
+
+@media (max-width: 560px) {
+  .hero-showcase { min-height: 620px; }
+  .hero-slide    { padding-top: 50px; }
+  .hero-art      { transform: scale(.78); transform-origin: bottom center; }
+
+  .nyt-card.lead h3        { font-size: 34px; }
+  .nyt-card.lead .nyt-image,
+  .nyt-card.feature .nyt-image { height: 220px; }
+  .nyt-image               { width: 112px; height: 76px; }
+  .slide-dots span          { width: 28px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Show only the first slide; stop all animation */
+  .hero-slide { position: relative; opacity: 1; transform: none; animation: none; display: none; }
+  .hero-slide:first-child { display: grid; }
+  .slide-dots { display: none; }
+}
+  </style>
+</head>
+<body>
+
+  <!-- =========================
+       HERO SLIDESHOW
+       hero-content holds the full 1180px column.
+       copy-container inside it constrains only the text to 760px max-width,
+       leaving the hero-art free to span the full hero-content width.
+       ========================= -->
+  <section class="hero-showcase" aria-label="Gold Family featured slideshow">
+
+    <article class="hero-slide" style="--slide-index: 0;">
+      <div class="hero-content">
+        <div class="copy-container">
+          <p class="eyebrow">Gold Family Homepage</p>
+          <h1>Home, beautifully organized.</h1>
+          <p class="hero-copy-text">
+            Family news, movie nights, Minecraft worlds, holidays, and everything we keep coming back to.
+          </p>
+          <div class="actions">
+            <a class="button primary" href="#news">Read the news</a>
+            <a class="button" href="#services">Open services</a>
+          </div>
+        </div>
+
+        <div class="hero-art family-art" aria-hidden="true">
+          <div class="device-card one">
+            <div class="camera">
+              <div class="lens a"></div>
+              <div class="lens b"></div>
+              <div class="lens c"></div>
+            </div>
+          </div>
+          <div class="device-card two"></div>
+          <div class="device-card three"></div>
+          <div class="device-card four"></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="hero-slide dark" style="--slide-index: 1;">
+      <div class="hero-content">
+        <div class="copy-container">
+          <p class="eyebrow">Streaming</p>
+          <h1>Movie night starts here.</h1>
+          <p class="hero-copy-text">
+            Browse recently added movies, family favorites, watchlists, and Friday-night picks.
+          </p>
+          <div class="actions">
+            <a class="button primary" href="#">Launch Streaming</a>
+            <a class="button" href="#news">See what's new</a>
+          </div>
+        </div>
+
+        <div class="hero-art cinema-art" aria-hidden="true"></div>
+      </div>
+    </article>
+
+    <article class="hero-slide blue" style="--slide-index: 2;">
+      <div class="hero-content">
+        <div class="copy-container">
+          <p class="eyebrow">Minecraft Server</p>
+          <h1>Explore the world.</h1>
+          <p class="hero-copy-text">
+            Open the dynmap, check server amenities, find landmarks, and plan the next family build.
+          </p>
+          <div class="actions">
+            <a class="button primary" href="#">Open Dynmap</a>
+            <a class="button" href="#">Server guide</a>
+          </div>
+        </div>
+
+        <div class="hero-art minecraft-art" aria-hidden="true"></div>
+      </div>
+    </article>
+
+    <article class="hero-slide travel" style="--slide-index: 3;">
+      <div class="hero-content">
+        <div class="copy-container">
+          <p class="eyebrow">Holidays</p>
+          <h1>Every holiday in one place.</h1>
+          <p class="hero-copy-text">
+            Holiday menus, gatherings, gift lists, travel details, calendars, and family ideas.
+          </p>
+          <div class="actions">
+            <a class="button primary" href="#holidays">Open Holidays</a>
+            <a class="button" href="#">Add a note</a>
+          </div>
+        </div>
+
+        <div class="hero-art travel-art" aria-hidden="true"></div>
+      </div>
+    </article>
+
+    <div class="slide-dots" aria-hidden="true">
+      <span style="--dot-index: 0;"></span>
+      <span style="--dot-index: 1;"></span>
+      <span style="--dot-index: 2;"></span>
+      <span style="--dot-index: 3;"></span>
+    </div>
+  </section>
+
+  <!-- =========================
+       NYT-STYLE NEWS CARDS
+       .container wraps both section-head and nyt-grid so they share
+       the same 1180px boundary and 16px gutters without repeating
+       width/margin on each child.
+       ========================= -->
+  <section class="nyt-section" id="news">
+    <div class="container">
+
+      <div class="section-head">
+        <h2>The Gold Family Times</h2>
+        <p>
+          Compact family updates for streaming, Minecraft, holidays, reminders,
+          milestones, and stories worth saving.
+        </p>
+      </div>
+
+      <div class="nyt-grid">
+        <article class="nyt-card lead">
+          <div class="nyt-image family" aria-hidden="true"></div>
+          <h3>One Homepage Brings Every Family Plan Into View</h3>
+          <p class="dek">
+            The week's updates, movie nights, Minecraft builds, holiday ideas,
+            and family notes now have one clean front page.
+          </p>
+          <div class="topic">Family</div>
+        </article>
+
+        <article class="nyt-card feature">
+          <div class="nyt-image travel" aria-hidden="true"></div>
+          <h3>Holiday Ideas Move From Group Chat to Itinerary</h3>
+          <p class="dek">
+            Menus, gatherings, travel details, and day-by-day notes can live in one holiday board.
+          </p>
+          <div class="topic">Holidays</div>
+        </article>
+
+        <article class="nyt-card compact">
+          <div class="nyt-image cinema" aria-hidden="true"></div>
+          <h3>Movie Night Queue Gets a Cleaner Look</h3>
+          <p class="dek">
+            Streaming picks and recently added titles are ready for Friday.
+          </p>
+          <div class="topic">Streaming</div>
+        </article>
+
+        <article class="nyt-card compact">
+          <div class="nyt-image minecraft" aria-hidden="true"></div>
+          <h3>Dynmap Opens a Window Into the Family Server</h3>
+          <p class="dek">
+            Check bases, portals, towns, landmarks, and the next community build.
+          </p>
+          <div class="topic">Minecraft</div>
+        </article>
+
+        <article class="nyt-card compact no-image">
+          <div class="nyt-image" aria-hidden="true"></div>
+          <h3>Holiday Planning Starts Earlier This Year</h3>
+          <p class="dek">
+            Menus, gift lists, dates, and traditions are collected before the calendar fills up.
+          </p>
+          <div class="topic">Holidays</div>
+        </article>
+
+        <article class="nyt-card compact no-image">
+          <div class="nyt-image" aria-hidden="true"></div>
+          <h3>Server Amenities Get Their Own Guide</h3>
+          <p class="dek">
+            Rules, links, commands, backups, and helpful notes can be found without digging.
+          </p>
+          <div class="topic">Minecraft</div>
+        </article>
+      </div>
+
+    </div>
+  </section>
+
+</body>
+</html>
