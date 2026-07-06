@@ -513,7 +513,7 @@ a { color: inherit; text-decoration: none; }
             Browse recently added movies, family favorites, watchlists, and Friday-night picks.
           </p>
           <div class="actions">
-            <a class="button primary" href="#">Launch Streaming</a>
+            <a class="button primary" href="https://streaming.xgold.tech" data-streaming>Launch Streaming</a>
             <a class="button" href="#news">See what's new</a>
           </div>
         </div>
@@ -597,7 +597,7 @@ a { color: inherit; text-decoration: none; }
 
         <article class="nyt-card compact">
           <div class="nyt-image cinema" aria-hidden="true"></div>
-          <h3>Movie Night Queue Gets a Cleaner Look</h3>
+          <h3><a href="https://streaming.xgold.tech" data-streaming>Movie Night Queue Gets a Cleaner Look</a></h3>
           <p class="dek">Streaming picks and recently added titles are ready for Friday.</p>
           <div class="topic">Streaming</div>
         </article>
@@ -636,6 +636,52 @@ a { color: inherit; text-decoration: none; }
     document.getElementById('logout-btn').addEventListener('click', async () => {
       await fetch(API + '/api/logout', { method: 'POST', credentials: 'include' });
       window.location.href = '/';
+    });
+
+    // ── Streaming / Jellyfin links ────────────────────────────────────────────
+    // Desktop → opens streaming.xgold.tech in a new tab.
+    // Mobile iOS → tries to open Swiftfin via swiftfin:// deep link;
+    //              if app isn't installed, redirects to the App Store after 1.5 s.
+    // Mobile Android → tries jellyfin:// deep link;
+    //                  falls back to Google Play after 1.5 s.
+    function openStreaming(e) {
+      e.preventDefault();
+
+      const ua = navigator.userAgent;
+      const isIOS     = /iPhone|iPad|iPod/i.test(ua);
+      const isAndroid = /Android/i.test(ua);
+      const isMobile  = isIOS || isAndroid;
+
+      if (!isMobile) {
+        window.open('https://streaming.xgold.tech', '_blank');
+        return;
+      }
+
+      const appStore = isIOS
+        ? 'https://apps.apple.com/app/swiftfin/id1604098728'
+        : 'https://play.google.com/store/apps/details?id=org.jellyfin.mobile';
+
+      const appScheme = isIOS ? 'swiftfin://' : 'jellyfin://';
+
+      // If the app isn't installed the deep-link silently fails and the page
+      // stays visible — the timeout then sends the user to the store instead.
+      const fallback = setTimeout(() => {
+        window.location.href = appStore;
+      }, 1500);
+
+      // App opened → page goes hidden; cancel the store redirect.
+      document.addEventListener('visibilitychange', function handler() {
+        if (document.hidden) {
+          clearTimeout(fallback);
+          document.removeEventListener('visibilitychange', handler);
+        }
+      });
+
+      window.location.href = appScheme;
+    }
+
+    document.querySelectorAll('[data-streaming]').forEach(el => {
+      el.addEventListener('click', openStreaming);
     });
   </script>
 </body>
