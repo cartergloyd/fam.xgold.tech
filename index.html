@@ -44,6 +44,7 @@
     var c = {
       doc: function (id) { return { set: function (d) { return mutate(name, id, d); }, delete: function () { return mutate(name, id, null, true); } }; },
       add: function (d) { return mutate(name, uid(), d); },
+      get: function () { return load(name); },
       orderBy: function (f) { order = f; return c; },
       onSnapshot: function (cb, err) { watch(name, order, cb, err); }
     };
@@ -329,8 +330,19 @@ h1 { margin: 0; font-size: clamp(2.75rem, 10.5vw, 7rem); line-height: 1.04; font
 .gate .back:hover { text-decoration: underline; }
 .gate .back:focus-visible { outline: 3px solid rgba(0,113,227,.45); }
 .gate .err { margin: 0; min-height: 1.3em; font-size: 14px; color: #e30000; text-align: center; }
+.gate .err { text-align: center; }
 .gate .err:not(:empty) { animation: gshake .4s ease; }
 .gate #g-close { margin-top: 12px; color: var(--g-mut); }
+.gate [hidden] { display: none !important; }
+.g-res { display: grid; gap: 12px; }
+.g-res:empty { display: none; }
+.g-known { display: grid; justify-items: center; gap: 14px; padding: 8px 0 0; text-align: center; }
+.g-known img { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; box-shadow: 0 8px 28px rgba(0,0,0,.18); animation: gpop .45s cubic-bezier(.2,1.4,.4,1) both; }
+.g-welcome { margin: 0; font-size: 1.5rem; font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; }
+.g-known .go, .g-new .go, .step2 .go { width: 100%; }
+.g-new { display: grid; gap: 12px; text-align: center; animation: gstep .35s cubic-bezier(.2,.8,.2,1) both; }
+.g-new p { margin: 0; color: var(--g-mut); font-size: 1.0625rem; }
+.g-note { margin: 0; color: var(--g-mut); font-size: 14px; text-align: center; }
 .dd { position: relative; }
 .dd-btn { font: inherit; font-size: 17px; width: 100%; min-height: 60px; display: flex; align-items: center; gap: 12px; padding: 0 16px 0 10px; color: var(--g-ink); background: #fff; border: 1px solid var(--g-line); border-radius: 14px; cursor: pointer; text-align: left; transition: border-color .2s, box-shadow .2s; }
 .dd-btn:hover { border-color: #a1a1a6; }
@@ -354,7 +366,7 @@ h1 { margin: 0; font-size: clamp(2.75rem, 10.5vw, 7rem); line-height: 1.04; font
 @keyframes gdrop { from { opacity: 0; transform: translateY(-8px) scale(.98) } to { opacity: 1; transform: none } }
 @keyframes gpop { from { opacity: 0; transform: scale(.5) } to { opacity: 1; transform: none } }
 @keyframes gshake { 20% { transform: translateX(-6px) } 40% { transform: translateX(6px) } 60% { transform: translateX(-3px) } 80% { transform: translateX(3px) } }
-@media (prefers-reduced-motion: reduce) { .gate, .gate-in, .gate form, .gate .step2, .dd-list, .dd-btn img, .gate .err { animation: none !important; } .gate *, .dd-btn .arr { transition: none !important; } }
+@media (prefers-reduced-motion: reduce) { .gate, .gate-in, .gate form, .gate .step2, .dd-list, .dd-btn img, .g-known img, .g-new, .gate .err { animation: none !important; } .gate *, .dd-btn .arr { transition: none !important; } }
 
 .me img[hidden] { display: none; }
 .me:not(:has(img:not([hidden]))) { padding-left: 16px; }
@@ -620,19 +632,29 @@ h2 { margin: 0 0 20px; font-size: clamp(1.75rem, 6vw, 3rem); line-height: 1.08; 
     <p class="lead" id="gate-lead">Sign in to add or change plans. Anyone can look around without signing in.</p>
     <form id="g1" novalidate>
       <label for="g-email">Email</label>
-      <input id="g-email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" required>
+      <input id="g-email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="you@example.com" required>
       <p class="err" id="g-err" role="alert"></p>
-      <button class="go" type="submit">Continue</button>
-    </form>
-    <div class="step2" id="g2" hidden>
-      <label id="g-lbl">Your name</label>
-      <div class="dd">
-        <button class="dd-btn" id="dd-btn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="g-lbl dd-btn"><span class="ph" id="dd-val">Choose your name</span><svg class="arr" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
-        <ul class="dd-list" id="dd-list" role="listbox" aria-labelledby="g-lbl" tabindex="-1" hidden></ul>
+      <div class="g-res" id="g-res" aria-live="polite">
+        <div class="g-known" id="g-known" hidden>
+          <img id="g-known-img" alt="">
+          <p class="g-welcome" id="g-welcome"></p>
+          <button class="go" id="g-enter" type="button" disabled>Enter</button>
+        </div>
+        <div class="g-new" id="g-new" hidden>
+          <p>We don&#8217;t recognize that email yet.</p>
+          <button class="go" id="g-signup" type="button">Sign up</button>
+        </div>
+        <div class="step2" id="g2" hidden>
+          <label id="g-lbl">Which family member are you?</label>
+          <div class="dd">
+            <button class="dd-btn" id="dd-btn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="g-lbl dd-btn"><span class="ph" id="dd-val">Choose your name</span><svg class="arr" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+            <ul class="dd-list" id="dd-list" role="listbox" aria-labelledby="g-lbl" tabindex="-1" hidden></ul>
+          </div>
+          <p class="g-note" id="g-none" hidden>Every name already has an email assigned.</p>
+          <button class="go" id="g-go" type="button" disabled>Sign up</button>
+        </div>
       </div>
-      <button class="go" id="g-go" type="button" disabled>Enter</button>
-      <button class="back" id="g-back" type="button">Use a different email</button>
-    </div>
+    </form>
     <button class="back" id="g-close" type="button">Not now</button>
   </div>
 </div>
@@ -727,39 +749,97 @@ h2 { margin: 0 0 20px; font-size: clamp(1.75rem, 6vw, 3rem); line-height: 1.08; 
   }
   function pick(n) {
     picked = n; ddVal.textContent = n; ddVal.className = ''; var old = ddBtn.querySelector('img'); if (old) old.remove();
-    ddBtn.insertBefore(avImg(n), ddVal); gGo.disabled = false; closeDD(); Array.prototype.forEach.call(ddList.children, function (li) { li.setAttribute('aria-selected', li.dataset.n === n); });
+    ddBtn.insertBefore(avImg(n), ddVal); refreshEnabled(); closeDD(); Array.prototype.forEach.call(ddList.children, function (li) { li.setAttribute('aria-selected', li.dataset.n === n); });
   }
-  function openDD() { ddList.hidden = false; ddBtn.setAttribute('aria-expanded', 'true'); actIdx = picked ? NAMES.indexOf(picked) : 0; markAct(); ddList.focus(); }
+  function openDD() { ddList.hidden = false; ddBtn.setAttribute('aria-expanded', 'true'); actIdx = picked ? AVAIL.indexOf(picked) : 0; markAct(); ddList.focus(); }
   function closeDD() { ddList.hidden = true; ddBtn.setAttribute('aria-expanded', 'false'); }
   function markAct() { Array.prototype.forEach.call(ddList.children, function (li, i) { li.classList.toggle('act', i === actIdx); if (i === actIdx) li.scrollIntoView({ block: 'nearest' }); }); }
-  NAMES.forEach(function (n) {
-    var li = el('li'); li.setAttribute('role', 'option'); li.dataset.n = n; li.setAttribute('aria-selected', 'false');
-    li.appendChild(avImg(n)); li.appendChild(document.createTextNode(n));
-    li.addEventListener('click', function () { pick(n); ddBtn.focus(); }); ddList.appendChild(li);
-  });
-  ddBtn.addEventListener('click', function () { ddList.hidden ? openDD() : closeDD(); });
-  ddList.addEventListener('keydown', function (e) {
-    if (e.key === 'ArrowDown') { e.preventDefault(); actIdx = Math.min(NAMES.length - 1, actIdx + 1); markAct(); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); actIdx = Math.max(0, actIdx - 1); markAct(); }
-    else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (actIdx >= 0) pick(NAMES[actIdx]); ddBtn.focus(); }
-    else if (e.key === 'Escape') { e.preventDefault(); closeDD(); ddBtn.focus(); }
-  });
-  document.addEventListener('click', function (e) { if (!ddList.hidden && !e.target.closest('.dd')) closeDD(); });
+  var AVAIL = [], members = [], lookupSeq = 0, lastLocal = null, match = null, mode = '';
+  var gKnown = document.getElementById('g-known'), gKnownImg = document.getElementById('g-known-img'), gWelcome = document.getElementById('g-welcome'),
+      gEnter = document.getElementById('g-enter'), gNew = document.getElementById('g-new'), gSignup = document.getElementById('g-signup'), gNone = document.getElementById('g-none');
+  function emailLocal(v) { var i = (v || '').indexOf('@'); return i > 0 ? v.slice(0, i).trim().toLowerCase() : ''; }
+  function validEmail() { return EMAIL_RE.test(gE.value.trim()); }
+  function setMode(m) { mode = m; gKnown.hidden = m !== 'known'; gNew.hidden = m !== 'new'; g2.hidden = m !== 'pick'; refreshEnabled(); }
+  function refreshEnabled() { var ok = validEmail(); gEnter.disabled = !ok; gGo.disabled = !(ok && picked); }
+  // Claimed names live in members/claim-<Name> as { name, email, ts }.
+  function fetchClaims() {
+    return claude.use('db').then(function (db) { return db.collection('members').get(); }).then(function (docs) {
+      return docs.map(function (d) { var x = d.data(); return { id: d.id, name: x.name, email: x.email }; })
+        .filter(function (m) { return m.email && AV[m.name] && /^claim-/.test(m.id); });
+    });
+  }
+  function buildList() {
+    var taken = {}; members.forEach(function (m) { taken[m.name] = true; });
+    AVAIL = NAMES.filter(function (n) { return !taken[n]; });
+    picked = null; actIdx = -1; closeDD();
+    ddVal.textContent = 'Choose your name'; ddVal.className = 'ph'; var old = ddBtn.querySelector('img'); if (old) old.remove();
+    ddList.textContent = '';
+    AVAIL.forEach(function (n) {
+      var li = el('li'); li.setAttribute('role', 'option'); li.dataset.n = n; li.setAttribute('aria-selected', 'false');
+      li.appendChild(avImg(n)); li.appendChild(document.createTextNode(n));
+      li.addEventListener('click', function () { pick(n); ddBtn.focus(); }); ddList.appendChild(li);
+    });
+    ddBtn.hidden = !AVAIL.length; gNone.hidden = !!AVAIL.length; refreshEnabled();
+  }
+  function onEmailInput() {
+    var local = emailLocal(gE.value.trim());
+    gErr.textContent = '';
+    if (!local) { lookupSeq++; lastLocal = null; match = null; setMode(''); return; }
+    if (local === lastLocal && mode) { refreshEnabled(); return; }
+    lastLocal = local; var seq = ++lookupSeq;
+    fetchClaims().then(function (docs) {
+      if (seq !== lookupSeq) return;
+      members = docs;
+      match = docs.filter(function (m) { return emailLocal(m.email) === local; })[0] || null;
+      if (match) {
+        gKnownImg.src = AV[match.name]; gWelcome.textContent = 'Welcome back, ' + match.name;
+        setMode('known');
+      } else setMode('new');
+    }, function () {
+      if (seq !== lookupSeq) return;
+      lastLocal = null; setMode(''); gErr.textContent = 'Couldn\u2019t reach the family list. Check your connection and try again.';
+    });
+  }
+  function finish(name) {
+    me = { name: name, email: gE.value.trim() };
+    try { localStorage.setItem('destin-who', JSON.stringify(me)); } catch (e) {}
+    closeGate(); paintMe(); saveMember();
+  }
+  gE.addEventListener('input', onEmailInput);
   g1.addEventListener('submit', function (e) {
-    e.preventDefault(); var v = gE.value.trim();
-    if (!EMAIL_RE.test(v)) { gErr.textContent = 'Enter a valid email address.'; gE.focus(); return; }
-    gErr.textContent = ''; g1.hidden = true; g2.hidden = false; document.getElementById('gate-lead').textContent = 'Now pick your name from the list.'; ddBtn.focus();
+    e.preventDefault();
+    if (!validEmail()) { gErr.textContent = 'Enter a valid email address.'; gE.focus(); return; }
+    if (mode === 'known') gEnter.click(); else if (mode === 'new') gSignup.click(); else if (mode === 'pick') gGo.click();
+  });
+  gEnter.addEventListener('click', function () { if (match && validEmail()) finish(match.name); });
+  gSignup.addEventListener('click', function () {
+    gSignup.disabled = true;
+    fetchClaims().then(function (docs) { members = docs; buildList(); setMode('pick'); if (AVAIL.length) ddBtn.focus(); },
+      function () { gErr.textContent = 'Couldn\u2019t reach the family list. Try again.'; })
+      .then(function () { gSignup.disabled = false; });
+  });
+  gGo.addEventListener('click', function () {
+    if (!picked || !validEmail()) return;
+    var name = picked, email = gE.value.trim(); gGo.disabled = true;
+    fetchClaims().then(function (docs) {
+      if (docs.some(function (m) { return m.name === name; })) {
+        members = docs; buildList(); gErr.textContent = name + ' was just claimed by someone else. Pick another name.'; return;
+      }
+      return claude.use('db').then(function (db) { return db.doc('members/claim-' + name).set({ name: name, email: email, ts: Date.now() }); }).then(function () { finish(name); });
+    }).catch(function () { gErr.textContent = 'Couldn\u2019t save that. Please try again.'; }).then(refreshEnabled);
   });
   document.getElementById('g-close').addEventListener('click', closeGate);
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !gate.hidden && ddList.hidden) closeGate(); });
-  document.getElementById('g-back').addEventListener('click', function () { g2.hidden = true; g1.hidden = false; document.getElementById('gate-lead').textContent = 'Sign in to add or change plans. Anyone can look around without signing in.'; gE.focus(); });
-  gGo.addEventListener('click', function () {
-    if (!picked) return; me = { name: picked, email: gE.value.trim() };
-    try { localStorage.setItem('destin-who', JSON.stringify(me)); } catch (e) {}
-    closeGate(); paintMe(); saveMember();
+  ddBtn.addEventListener('click', function () { ddList.hidden ? openDD() : closeDD(); });
+  ddList.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowDown') { e.preventDefault(); actIdx = Math.min(AVAIL.length - 1, actIdx + 1); markAct(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); actIdx = Math.max(0, actIdx - 1); markAct(); }
+    else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (actIdx >= 0) pick(AVAIL[actIdx]); ddBtn.focus(); }
+    else if (e.key === 'Escape') { e.preventDefault(); closeDD(); ddBtn.focus(); }
   });
+  document.addEventListener('click', function (e) { if (!ddList.hidden && !e.target.closest('.dd')) closeDD(); });
   function closeGate() { if (gate.hidden || gate.classList.contains('out')) return; gate.classList.add('out'); document.documentElement.style.overflow = ''; setTimeout(function () { gate.hidden = true; gate.classList.remove('out'); }, 260); }
-  function showGate() { gate.hidden = false; document.documentElement.style.overflow = 'hidden'; g2.hidden = true; g1.hidden = false; if (me) gE.value = me.email; gE.focus(); }
+  function showGate() { gate.hidden = false; document.documentElement.style.overflow = 'hidden'; gErr.textContent = ''; lastLocal = null; match = null; picked = null; setMode(''); if (me) gE.value = me.email; onEmailInput(); gE.focus(); }
   meBtn.addEventListener('click', showGate);
   paintMe();
 
