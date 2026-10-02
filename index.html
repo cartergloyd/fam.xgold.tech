@@ -285,10 +285,11 @@ h1 { margin: 0; font-size: clamp(2.75rem, 10.5vw, 7rem); line-height: 1.04; font
 .gl .del svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2.2; fill: none; stroke-linecap: round; }
 .ev .ic { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--c, #888) 22%, transparent); }
 .ev .ic svg { width: 17px; height: 17px; stroke: var(--c, #888); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.ev.morning { --c: #ffb347; } .ev.noon { --c: #ffd60a; } .ev.night { --c: #a78bfa; } .ev.plan { --c: #f26fae; }
+.ev.fly { --c: #36cbe0; } .ev.morning { --c: #ffb347; } .ev.noon { --c: #ffd60a; } .ev.night { --c: #a78bfa; } .ev.plan { --c: #f26fae; }
 .ev .rt { display: grid; justify-items: end; gap: 4px; }
 .ev .rt:empty { display: none; }
 .ev.plan .rt { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+@media (max-width: 480px) { .ev .rt { justify-items: start; } .ev.plan .rt { justify-content: flex-start; } .ev .rt .tm { grid-column: auto; margin-top: 0; } }
 .ev.open .et strong { color: var(--muted); }
 .ev button.mlink { all: unset; cursor: pointer; color: #2997ff; font-size: 13px; }
 .ev button.mlink:hover { text-decoration: underline; }
@@ -549,6 +550,7 @@ h1 { margin: 0; font-size: clamp(2.75rem, 10.5vw, 7rem); line-height: 1.04; font
 .claim-for[hidden] { display: none; }
 .fld2 span { font-size: 13px; color: var(--muted); }
 .fld2 select { font: inherit; font-size: 16px; color: var(--fg); background: #000; border: 1px solid var(--line); border-radius: 12px; padding: 0 12px; min-height: 44px; width: 100%; min-width: 0; }
+.fld2 input[type=time] { font: inherit; font-size: 16px; color: var(--fg); background: #000; border: 1px solid var(--line); border-radius: 12px; padding: 0 12px; min-height: 44px; width: 100%; min-width: 0; color-scheme: dark; }
 .fld2 select:focus-visible { outline: 2px solid #2997ff; outline-offset: 1px; }
 .fl-list .names { overflow-wrap: anywhere; }
 @media (max-width: 560px) { .fl-list li { grid-template-columns: 1fr auto; } .fl-list .fi { grid-column: 1; } .fl-form button#fl-btn { width: 100%; justify-self: stretch; } }
@@ -840,6 +842,7 @@ h2 { margin: 0 0 20px; font-size: clamp(1.75rem, 6vw, 3rem); line-height: 1.08; 
         <label class="fld2"><span>Arrives</span><select id="fl-arr"></select></label>
         <label class="fld2"><span>Leaves</span><select id="fl-dep"></select></label>
       </div>
+      <label class="fld2" id="fl-arrt-w" hidden><span>Landing time (optional, for Jaime&#8217;s pickup)</span><input id="fl-arrt" type="time"></label>
       <p class="fl-lbl" id="fl-who-l">Who else is flying with you?</p>
       <div class="chips" id="fl-chips" role="group" aria-labelledby="fl-who-l"></div>
       <input id="fl-guest" type="text" maxlength="80" placeholder="Someone not on the list? Add names, separated by commas" aria-label="Other travelers">
@@ -1135,11 +1138,13 @@ h2 { margin: 0 0 20px; font-size: clamp(1.75rem, 6vw, 3rem); line-height: 1.08; 
   function metaText(u) {
     u.meta.textContent = u.pn ? u.pn + (u.pn === 1 ? ' plan' : ' plans') : 'Add a plan';
   }
+  var DRIVER = 'Jaime';
   var MEALNAME = { morning: 'Breakfast', noon: 'Lunch', night: 'Dinner' }, MEALMIN = { morning: 480, noon: 720, night: 1080 };
   var ICONS = {
     morning: '<svg viewBox="0 0 24 24"><path d="M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V9zM16 10h1.5a2.5 2.5 0 0 1 0 5H16M7 3v2M11 3v2"/></svg>',
     noon: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.900 4.900l1.400 1.400M17.700 17.700l1.400 1.400M4.900 19.100l1.400-1.400M17.700 6.300l1.400-1.400"/></svg>',
     night: '<svg viewBox="0 0 24 24"><path d="M3 3v6a2 2 0 0 0 4 0V3M5 11v10M17 21V3c-2.500 1.500-4 4.500-4 8h4"/></svg>',
+    fly: '<svg viewBox="0 0 24 24"><path d="M2 14l9-3V5a1.500 1.500 0 0 1 3 0v6l8 3v2l-8-1.500V19l2 1.500V22l-3.500-1L10 22v-1.500l2-1.500v-4.500L2 16z"/></svg>',
     plan: '<svg viewBox="0 0 24 24"><path d="M12 3l2.200 5.300L20 9l-4.400 3.800L17 18l-5-3-5 3 1.400-5.200L4 9l5.800-.7z"/></svg>'
   };
   // Sort keys are minutes on a Central clock; game times are Eastern, so subtract an hour. TBA sorts last.
@@ -1196,9 +1201,28 @@ h2 { margin: 0 0 20px; font-size: clamp(1.75rem, 6vw, 3rem); line-height: 1.08; 
     del.addEventListener('click', function () { if (!me) { showGate(); return; } if (!canEdit(q.by, q.people)) { u.note.textContent = 'Only that person\u2019s group can remove this plan.'; return; } col.doc(it.id).delete().catch(function () { u.note.textContent = 'Couldn\u2019t remove that plan.'; }); });
     rt.appendChild(del); li.appendChild(ic); li.appendChild(tx); if (who.length) li.appendChild(memNode(who, 'Who\u2019s in')); li.appendChild(rt); return li;
   }
+  function flightCard(kind, q) {
+    var li = el('li', 'ev fly'), ic = el('span', 'ic'), tx = el('span', 'et'), rt = el('span', 'rt'), arr = kind === 'arr';
+    var ap = (arr ? q.arrAirport : (q.depAirport || q.arrAirport)) || 'VPS', t = arr ? q.arrTime : q.depTime;
+    ic.innerHTML = ICONS.fly; ic.setAttribute('aria-hidden', 'true');
+    tx.appendChild(el('strong', null, (arr ? q.arrFlight : q.depFlight) || q.info || 'Flight'));
+    tx.appendChild(el('small', null, (arr ? 'Lands at ' : 'Leaves from ') + ap + ' \u00b7 ' + (arr ? 'Pickup: ' : 'Drop-off: ') + DRIVER));
+    if (t) rt.appendChild(el('span', 'tm', fmt(t)));
+    li.appendChild(ic); li.appendChild(tx); if ((q.people || []).length) li.appendChild(memNode(q.people, 'Travelers')); li.appendChild(rt); return li;
+  }
+  function flightItems(k) {
+    var out = [];
+    (flightDocs || []).forEach(function (d) {
+      var q = d.data(); if (!q) return; var days = (q.days && q.days.length) ? span(q.days) : parseDays(q.info); if (!days.length) return;
+      if (days[0] === k) out.push({ min: planMin(q.arrTime), ts: q.ts || 0, li: flightCard('arr', q) });
+      if (days[days.length - 1] === k) out.push({ min: q.depTime ? planMin(q.depTime) - 90 : 1439, ts: q.ts || 0, li: flightCard('dep', q) });
+    });
+    return out;
+  }
   function paintDay(k) {
     var u = ui[k], items = u.games.slice();
     u.slots.forEach(function (sl) { items.push({ min: MEALMIN[sl], ts: 0, li: mealCard(k, sl) }); });
+    items = items.concat(flightItems(k));
     (planBy[k] || []).forEach(function (it) { items.push({ min: planMin(it.p.time), ts: it.p.ts || 0, li: planCard(k, it) }); });
     items.sort(function (a, b) { return a.min - b.min || a.ts - b.ts; });
     u.evs.textContent = ''; items.forEach(function (o) { u.evs.appendChild(o.li); });
@@ -1316,16 +1340,50 @@ h2 { margin: 0 0 20px; font-size: clamp(1.75rem, 6vw, 3rem); line-height: 1.08; 
     if (long) { re = /flight\s*(?:no\.?|number|#)?\s*:?\s*([A-Za-z0-9]{2})\s?(\d{1,4})\b/gi; while ((m = re.exec(s))) add(m[1], m[2]); }
     return out;
   }
+  // Legs: split the paste at each flight number, then read route, times and date for each leg.
+  var LOCAL_AP = { VPS: 1, ECP: 1, PNS: 1 };
+  function to24(t) { var m = /(\d{1,2}):(\d{2})\s*([ap])/i.exec(t || ''); if (!m) return ''; var h = +m[1] % 12 + (/p/i.test(m[3]) ? 12 : 0); return ('0' + h).slice(-2) + ':' + m[2]; }
+  function parseLegs(s) {
+    s = String(s || ''); var out = { arr: {}, dep: {} }, long = s.length > 60, marks = [], dates = [], m;
+    var re = /\b([A-Za-z][A-Za-z0-9]|[A-Za-z0-9][A-Za-z])\s?(\d{1,4})\b/g;
+    var codes = [];
+    while ((m = re.exec(s))) { var c = m[1].toUpperCase(); if (/[A-Z]/.test(c) && (!long || AIR[c])) { marks.push(m.index); codes.push((AIR[c] ? AIR[c] + ' ' : '') + c + ' ' + m[2]); } }
+    var dre = new RegExp('\\b' + MON_RE + '\\.?\\s*(\\d{1,2})\\b', 'gi');
+    while ((m = dre.exec(s))) { var dkk = key(new Date(y, /^mar/i.test(m[1]) ? 2 : 3, +m[2])); if (ui[dkk]) dates.push({ i: m.index, k: dkk }); }
+    var TIME = '(\\d{1,2}:\\d{2}\\s*[AaPp]\\.?[Mm]\\.?)';
+    marks.forEach(function (at, j) {
+      var end = j + 1 < marks.length ? marks[j + 1] : s.length, seg = s.slice(at, end), pre = s.slice(j ? marks[j - 1] : 0, at);
+      var r = /\b([A-Z]{3})\s*(?:to|\u2192|->|\u2013|\u2014|-)\s*([A-Z]{3})\b/.exec(seg) || /\(([A-Z]{3})\)[\s\S]{0,120}?\(([A-Z]{3})\)/.exec(seg) || /\b([A-Z]{3})\s*(?:to|\u2192|->|\u2013|\u2014|-)\s*([A-Z]{3})\b/.exec(pre);
+      var td = new RegExp('depart[a-z]*[^0-9]{0,24}' + TIME, 'i').exec(seg), ta = new RegExp('arriv[a-z]*[^0-9]{0,24}' + TIME, 'i').exec(seg), all = seg.match(new RegExp(TIME, 'g')) || [];
+      var dep = to24(td ? td[1] : all[0]), arr = to24(ta ? ta[1] : all[1]);
+      // Date: one on the flight's own line, else the latest date above it, else the first one after it.
+      var nl = s.indexOf('\n', at), lineEnd = nl < 0 || nl > end ? end : nl, day = null;
+      dates.forEach(function (d) { if (d.i >= at && d.i < lineEnd && !day) day = d; });
+      if (!day) dates.forEach(function (d) { if (d.i < at) day = d; });
+      if (!day) dates.forEach(function (d) { if (d.i >= at && d.i < end && !day) day = d; });
+      if (!r) return;
+      if (LOCAL_AP[r[2]] && !out.arr.airport) out.arr = { airport: r[2], time: arr, day: day && day.k, flight: codes[j] };
+      if (LOCAL_AP[r[1]]) out.dep = { airport: r[1], time: dep, day: day && day.k, flight: codes[j] };
+    });
+    return out;
+  }
   function flightText(list) { return list.map(function (f) { return (f.air ? f.air + ' ' : '') + f.code + ' ' + f.num; }).join(', '); }
   var selA = document.getElementById('fl-arr'), selD = document.getElementById('fl-dep'), tripKeys = Object.keys(ui).sort();
   tripKeys.forEach(function (k) { [selA, selD].forEach(function (s) { var o = document.createElement('option'); o.value = k; o.textContent = dayLabel(k); s.appendChild(o); }); });
   selA.value = tripKeys[0]; selD.value = tripKeys[tripKeys.length - 1];
   function chosenDays() { var a = selA.value, b = selD.value; if (a > b) { var x = a; a = b; b = x; } return tripKeys.filter(function (k) { return k >= a && k <= b; }); }
+  var legs = { arr: {}, dep: {} }, arrtW = document.getElementById('fl-arrt-w'), arrtIn = document.getElementById('fl-arrt');
+  function legText(l, verb) { return l.airport ? ' \u00b7 ' + verb + ' ' + l.airport + (l.day ? ' ' + dayLabel(l.day).split(',')[0] : '') + (l.time ? ' ' + fmt(l.time) : '') : ''; }
   function updHint(fromText) {
     var f = parseFlights(finfo.value);
-    if (fromText === true) { var pd = parseDays(finfo.value); if (pd.length) { selA.value = pd[0]; selD.value = pd[pd.length - 1]; } }
+    if (fromText === true) {
+      legs = parseLegs(finfo.value);
+      var pd = parseDays(finfo.value); if (pd.length) { selA.value = pd[0]; selD.value = pd[pd.length - 1]; }
+      if (legs.arr.day) selA.value = legs.arr.day; if (legs.dep.day) selD.value = legs.dep.day;
+    }
+    arrtW.hidden = !(f.length && !legs.arr.time);
     var d = chosenDays();
-    if (f.length) { hint.className = 'fl-hint ok'; hint.textContent = flightText(f) + ' \u00b7 shows ' + (d.length > 1 ? dayLabel(d[0]) + ' to ' + dayLabel(d[d.length - 1]) : dayLabel(d[0])) + ' in The week. Check the days below.'; }
+    if (f.length) { hint.className = 'fl-hint ok'; hint.textContent = flightText(f) + legText(legs.arr, 'Lands') + legText(legs.dep, 'Leaves') + ' \u00b7 shows ' + (d.length > 1 ? dayLabel(d[0]) + ' to ' + dayLabel(d[d.length - 1]) : dayLabel(d[0])) + ' in The week. Check the days below.'; }
     else { hint.className = 'fl-hint'; hint.textContent = finfo.value.trim() ? 'Couldn\u2019t find a flight number. Try the airline code and number, like DL 1234.' : ''; }
   }
   selA.addEventListener('change', function () { updHint(); }); selD.addEventListener('change', function () { updHint(); });
@@ -1378,7 +1436,7 @@ h2 { margin: 0 0 20px; font-size: clamp(1.75rem, 6vw, 3rem); line-height: 1.08; 
     });
   }
   function renderFlights(docs) {
-    flightDocs = docs; fl.textContent = ''; var arr = docs.map(function (s) { return { id: s.id, p: s.data() }; }).filter(function (o) { return o.p; });
+    flightDocs = docs; if (typeof paintAll === 'function') try { paintAll(); } catch (e) {} fl.textContent = ''; var arr = docs.map(function (s) { return { id: s.id, p: s.data() }; }).filter(function (o) { return o.p; });
     var fresh = {}, fl2 = [];
     arr.forEach(function (o) { if (seenF && !seenF[o.id]) fresh[o.id] = 1; var ppl = (o.p.people && o.p.people.length) ? o.p.people : [o.p.name || 'Someone']; fl2.push({ id: o.id, people: ppl, info: o.p.info || '', days: (o.p.days && o.p.days.length) ? span(o.p.days) : parseDays(o.p.info) }); });
     seenF = {}; arr.forEach(function (o) { seenF[o.id] = 1; });
@@ -1407,7 +1465,8 @@ h2 { margin: 0 0 20px; font-size: clamp(1.75rem, 6vw, 3rem); line-height: 1.08; 
         var fls = parseFlights(inf.value); if (!fls.length) { fmsg.textContent = 'Paste your confirmation or enter a flight number, like DL 1234.'; inf.focus(); return; }
     if (!fcol) { fmsg.textContent = 'Sign in to add your flight.'; return; }
     b.disabled = true; fmsg.textContent = '';
-    fcol.add({ people: people, info: flightText(fls), days: chosenDays(), by: me.name, ts: Date.now() }).then(function () { inf.value = ''; guest.value = ''; sel = {}; syncChips(); selA.value = tripKeys[0]; selD.value = tripKeys[tripKeys.length - 1]; updHint(); inf.focus(); })
+    var rec = { people: people, info: flightText(fls), days: chosenDays(), by: me.name, ts: Date.now(), arrTime: legs.arr.time || arrtIn.value || '', arrAirport: legs.arr.airport || '', arrFlight: legs.arr.flight || '', depTime: legs.dep.time || '', depAirport: legs.dep.airport || '', depFlight: legs.dep.flight || '' };
+    fcol.add(rec).then(function () { legs = { arr: {}, dep: {} }; arrtIn.value = ''; inf.value = ''; guest.value = ''; sel = {}; syncChips(); selA.value = tripKeys[0]; selD.value = tripKeys[tripKeys.length - 1]; updHint(); inf.focus(); })
       .catch(function () { fmsg.textContent = 'Couldn\u2019t save that flight. You may need edit access.'; })
       .then(function () { b.disabled = false; });
   });
