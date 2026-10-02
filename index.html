@@ -264,7 +264,12 @@ h1 { margin: 0; font-size: clamp(2.75rem, 10.5vw, 7rem); line-height: 1.04; font
 .ev .chef .ini { width: 22px; height: 22px; font-size: 11px; }
 .ev button.mbtn { font: inherit; font-size: 14px; font-weight: 600; min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: none; color: var(--fg); cursor: pointer; }
 .ev button.mbtn.solid { background: var(--fg); color: #000; border-color: var(--fg); }
-.gl { list-style: none; margin: 18px 0 0; padding: 0; }
+.gl { list-style: none; margin: 0; padding: 0; }
+.gl-h { margin: 22px 0 4px; font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+.glg { margin-top: 14px; }
+.glg h5 { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+.glg h5 img, .glg h5 .ini { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; font-size: 11px; }
+.glg h5 small { color: var(--muted); font-weight: 500; font-size: 13px; }
 .gl li { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
 .gl .gk { all: unset; cursor: pointer; width: 28px; height: 28px; border-radius: 50%; border: 2px solid #636366; display: grid; place-items: center; box-sizing: border-box; }
 .gl .gk[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); }
@@ -503,6 +508,7 @@ h1 { margin: 0; font-size: clamp(2.75rem, 10.5vw, 7rem); line-height: 1.04; font
 .fl-list .del:focus-visible { outline: 2px solid #2997ff; }
 .fl-list .del svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2.2; fill: none; stroke-linecap: round; }
 .fl-form { display: grid; gap: 12px; margin-top: 18px; }
+.fl-form[hidden] { display: none; }
 .fl-lbl { margin: 0; font-size: 13px; color: var(--muted); }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip2 { font: inherit; font-size: 15px; color: var(--fg); display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 4px 14px 4px 4px; border-radius: 999px; border: 1px solid var(--line); background: transparent; cursor: pointer; transition: background .2s, border-color .2s, color .2s, transform .15s; }
@@ -665,7 +671,7 @@ h2 { margin: 0 0 20px; font-size: clamp(1.75rem, 6vw, 3rem); line-height: 1.08; 
     <li class="hl-card" data-step="6" data-key="groceries">
       <button class="todo" type="button" aria-pressed="false" aria-label="Mark done"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.500 4.500L19 7.500"/></svg></button>
       <h3>Grocery requests.</h3>
-      <a id="gro-open" href="#groceries" role="button">Add to the list</a>
+      <a id="gro-open" href="#groceries" role="button">Request groceries</a>
       <div class="art"><svg class="ico" viewBox="0 0 160 160" aria-hidden="true"><defs><linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--sea)"/><stop offset=".5" stop-color="var(--mint)"/><stop offset="1" stop-color="var(--sun)"/></linearGradient></defs><g fill="none" stroke="url(#gg)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 30h22l16 70h66l12-52H46"/><circle cx="68" cy="128" r="9"/><circle cx="116" cy="128" r="9"/></g></svg></div>
     </li>
     <li class="hl-card has-map" data-step="4" data-key="amenities">
@@ -806,14 +812,16 @@ h2 { margin: 0 0 20px; font-size: clamp(1.75rem, 6vw, 3rem); line-height: 1.08; 
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="gsheet-t">
     <div class="sheet-top"><h3 id="gsheet-t">Grocery list</h3>
       <button class="xbtn" id="gsheet-x" type="button" aria-label="Close"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"/></svg></button></div>
-    <p class="sub2">Chefs add what they need for each meal. Add anything else you would like us to pick up.</p>
+    <p class="sub2">Your list is saved under your name. Chefs add what they need for each meal from their sign-up.</p>
     <form class="fl-form" id="gr-form" autocomplete="off">
-      <input id="gr-item" type="text" maxlength="80" placeholder="Something we should buy" aria-label="Grocery request">
-      <button type="submit" id="gr-btn">Add request</button>
+      <label class="fl-lbl" for="gr-items">Your requests, one item per line</label>
+      <textarea id="gr-items" rows="5" placeholder="Sunscreen&#10;Coffee creamer&#10;La Croix"></textarea>
+      <button type="submit" id="gr-btn">Save my list</button>
     </form>
-    <ul class="gl" id="gr-list"></ul>
-    <p class="empty" id="gr-empty">Nothing on the list yet.</p>
     <p class="msg" id="gr-msg" role="status"></p>
+    <h4 class="gl-h">Everyone&#8217;s list</h4>
+    <div id="gr-list"></div>
+    <p class="empty" id="gr-empty">Nothing on the list yet.</p>
   </div>
 </div>
 
@@ -1397,7 +1405,7 @@ h2 { margin: 0 0 20px; font-size: clamp(1.75rem, 6vw, 3rem); line-height: 1.08; 
   // Meals and groceries
   var msheet = document.getElementById('msheet'), mMenu = document.getElementById('m-menu'), mSpot = document.getElementById('m-spot'), mItems = document.getElementById('m-items'), mMsg = document.getElementById('m-msg'),
       mBtn = document.getElementById('m-btn'), mDel = document.getElementById('m-del'), mSub = document.getElementById('m-sub'), mcol = null, gcol = null, mCur = null;
-  var gsheet = document.getElementById('gsheet'), grList = document.getElementById('gr-list'), grEmpty = document.getElementById('gr-empty'), grMsg = document.getElementById('gr-msg'), grItem = document.getElementById('gr-item');
+  var gsheet = document.getElementById('gsheet'), grList = document.getElementById('gr-list'), grEmpty = document.getElementById('gr-empty'), grMsg = document.getElementById('gr-msg'), grItems = document.getElementById('gr-items');
   var DBMSG = 'Not available yet. The database needs a quick update.';
   function mHide() { msheet.hidden = true; document.documentElement.style.overflow = ''; }
   function gHide() { gsheet.hidden = true; document.documentElement.style.overflow = ''; }
@@ -1433,30 +1441,69 @@ h2 { margin: 0 0 20px; font-size: clamp(1.75rem, 6vw, 3rem); line-height: 1.08; 
   });
   document.getElementById('msheet-x').addEventListener('click', mHide);
   msheet.addEventListener('click', function (e) { if (e.target === msheet) mHide(); });
+  var SLOTORD = { morning: 0, noon: 1, night: 2 };
+  function myRequests() { return me ? grocAll.filter(function (g) { return !g.p.mealId && g.p.by === me.name; }) : []; }
+  function groceryRow(o) {
+    var li = el('li'), k = el('button', 'gk'); k.type = 'button'; k.setAttribute('aria-pressed', !!o.p.done); k.setAttribute('aria-label', (o.p.done ? 'Unmark ' : 'Mark got ') + o.p.text);
+    k.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.500 4.500L19 7.500"/></svg>';
+    k.addEventListener('click', function () { if (!me) { gHide(); showGate(); return; } var d = Object.assign({}, o.p, { done: !o.p.done }); gcol.doc(o.id).set(d).catch(function () { grMsg.textContent = 'Couldn\u2019t update that.'; }); });
+    var gt = el('span', 'gt'); gt.appendChild(el('b', null, o.p.text));
+    var del = el('button', 'del'); del.type = 'button'; del.setAttribute('aria-label', 'Remove ' + o.p.text); del.innerHTML = X; del.hidden = !canEdit(o.p.by);
+    del.addEventListener('click', function () { if (!canEdit(o.p.by)) return; gcol.doc(o.id).delete().catch(function () { grMsg.textContent = 'Couldn\u2019t remove that.'; }); });
+    li.className = o.p.done ? 'got' : ''; li.appendChild(k); li.appendChild(gt); li.appendChild(del); return li;
+  }
   function renderGroceries(docs) {
     grocDocs = docs; grocAll = docs.map(function (d) { return { id: d.id, p: d.data() || {} }; }).filter(function (o) { return o.p.text; })
       .sort(function (a, b) { return (a.p.done ? 1 : 0) - (b.p.done ? 1 : 0) || (a.p.ts || 0) - (b.p.ts || 0); });
     if (typeof updateTodo === 'function') try { updateTodo(); } catch (e) {}
-    grList.textContent = '';
+    // Group by meal (chef lists) and by person (requests)
+    var groups = {}, order = [];
     grocAll.forEach(function (o) {
-      var li = el('li'), k = el('button', 'gk'); k.type = 'button'; k.setAttribute('aria-pressed', !!o.p.done); k.setAttribute('aria-label', (o.p.done ? 'Unmark ' : 'Mark got ') + o.p.text);
-      k.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.500 4.500L19 7.500"/></svg>';
-      k.addEventListener('click', function () { if (!me) { gHide(); showGate(); return; } var d = Object.assign({}, o.p, { done: !o.p.done }); gcol.doc(o.id).set(d).catch(function () { grMsg.textContent = 'Couldn\u2019t update that.'; }); });
-      var gt = el('span', 'gt'); gt.appendChild(el('b', null, o.p.text)); gt.appendChild(el('span', null, o.p.mealId ? (o.p.label || 'For a meal') : 'Requested by ' + (o.p.by || 'someone')));
-      var del = el('button', 'del'); del.type = 'button'; del.setAttribute('aria-label', 'Remove ' + o.p.text); del.innerHTML = X; del.hidden = !canEdit(o.p.by);
-      del.addEventListener('click', function () { if (!canEdit(o.p.by)) return; gcol.doc(o.id).delete().catch(function () { grMsg.textContent = 'Couldn\u2019t remove that.'; }); });
-      li.className = o.p.done ? 'got' : ''; li.appendChild(k); li.appendChild(gt); li.appendChild(del); grList.appendChild(li);
+      var key = o.p.mealId ? 'm:' + o.p.mealId : 'p:' + (o.p.by || 'Someone');
+      if (!groups[key]) { groups[key] = []; order.push(key); } groups[key].push(o);
+    });
+    order.sort(function (a, b) {
+      var am = a.charAt(0) === 'm', bm = b.charAt(0) === 'm'; if (am !== bm) return am ? -1 : 1;
+      if (am) { var ad = a.slice(2, 12), bd = b.slice(2, 12); if (ad !== bd) return ad < bd ? -1 : 1; return (SLOTORD[a.slice(13)] || 0) - (SLOTORD[b.slice(13)] || 0); }
+      if (me && a === 'p:' + me.name) return -1; if (me && b === 'p:' + me.name) return 1; return a < b ? -1 : 1;
+    });
+    grList.textContent = '';
+    order.forEach(function (key) {
+      var items = groups[key], sec = el('section', 'glg'), h = el('h5'), first = items[0].p;
+      if (key.charAt(0) === 'm') {
+        var meal = mealsAll[first.mealId] || {}, chef = meal.chef || first.by;
+        if (chef) h.appendChild(avNode(chef));
+        h.appendChild(document.createTextNode(first.label || 'For a meal'));
+        if (chef) h.appendChild(el('small', null, 'Chef ' + chef));
+      } else {
+        h.appendChild(avNode(first.by)); h.appendChild(document.createTextNode(first.by || 'Someone'));
+        h.appendChild(el('small', null, me && first.by === me.name ? 'Your requests' : 'Requests'));
+      }
+      var ul = el('ul', 'gl'); items.forEach(function (o) { ul.appendChild(groceryRow(o)); });
+      sec.appendChild(h); sec.appendChild(ul); grList.appendChild(sec);
     });
     grEmpty.hidden = grocAll.length > 0;
   }
-  document.getElementById('gro-open').addEventListener('click', function (e) { e.preventDefault(); gsheet.hidden = false; document.documentElement.style.overflow = 'hidden'; grItem.focus(); });
+  function fillMyList() {
+    var f = document.getElementById('gr-form');
+    if (!me) { f.hidden = true; return; }
+    f.hidden = false; grItems.value = myRequests().map(function (g) { return g.p.text; }).join('\n');
+    document.getElementById('gr-btn').textContent = myRequests().length ? 'Save changes' : 'Save my list';
+  }
+  document.getElementById('gro-open').addEventListener('click', function (e) {
+    e.preventDefault(); if (!me) { showGate(); return; }
+    grMsg.textContent = ''; fillMyList(); gsheet.hidden = false; document.documentElement.style.overflow = 'hidden'; grItems.focus();
+  });
   document.getElementById('gsheet-x').addEventListener('click', gHide);
   gsheet.addEventListener('click', function (e) { if (e.target === gsheet) gHide(); });
   document.getElementById('gr-form').addEventListener('submit', function (e) {
     e.preventDefault(); if (!me) { gHide(); showGate(); return; } if (!gcol) { grMsg.textContent = DBMSG; return; }
-    var t = grItem.value.trim(); if (!t) { grItem.focus(); return; }
+    var mine = myRequests(), want = parseItems(grItems.value), wantL = want.map(function (t) { return t.toLowerCase(); }), haveL = mine.map(function (g) { return (g.p.text || '').toLowerCase(); });
+    var drop = mine.filter(function (g) { return wantL.indexOf((g.p.text || '').toLowerCase()) < 0; }), add = want.filter(function (t) { return haveL.indexOf(t.toLowerCase()) < 0; });
     var b = document.getElementById('gr-btn'); b.disabled = true; grMsg.textContent = '';
-    gcol.add({ text: t.slice(0, 80), by: me.name, done: false, ts: Date.now() }).then(function () { grItem.value = ''; grItem.focus(); })
+    Promise.all(drop.map(function (g) { return gcol.doc(g.id).delete(); }))
+      .then(function () { var t0 = Date.now(); return Promise.all(add.map(function (t, i) { return gcol.add({ text: t, by: me.name, done: false, ts: t0 + i }); })); })
+      .then(function () { grMsg.textContent = want.length ? 'Saved. Your list has ' + want.length + (want.length === 1 ? ' item.' : ' items.') : 'Your list is cleared.'; b.textContent = want.length ? 'Save changes' : 'Save my list'; })
       .catch(function () { grMsg.textContent = DBMSG; }).then(function () { b.disabled = false; });
   });
   document.addEventListener('keydown', function (e) { if (e.key !== 'Escape' || !gate.hidden) return; if (!msheet.hidden) mHide(); else if (!gsheet.hidden) gHide(); });
