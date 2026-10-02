@@ -1323,8 +1323,9 @@ h2 { margin: 0 0 20px; font-size: clamp(1.75rem, 6vw, 3rem); line-height: 1.08; 
   selA.addEventListener('change', function () { updHint(); }); selD.addEventListener('change', function () { updHint(); });
   finfo.addEventListener('input', function () { updHint(true); });
   var chipsEl = document.getElementById('fl-chips'), sel = {};
-  NAMES.forEach(function (n) {
-    var b = el('button', 'chip2'); b.type = 'button'; b.setAttribute('aria-pressed', 'false'); b.dataset.n = n; b.appendChild(avImg(n)); b.appendChild(document.createTextNode(n));
+  var EVERYONE = NAMES.concat(Object.keys(BASE).filter(function (n) { return NAMES.indexOf(n) < 0; })).sort();
+  EVERYONE.forEach(function (n) {
+    var b = el('button', 'chip2'); b.type = 'button'; b.setAttribute('aria-pressed', 'false'); b.dataset.n = n; b.appendChild(avNode(n)); b.appendChild(document.createTextNode(n));
     b.addEventListener('click', function () { sel[n] = !sel[n]; b.setAttribute('aria-pressed', !!sel[n]); }); chipsEl.appendChild(b);
   });
   function syncChips() { if (me) sel[me.name] = false; Array.prototype.forEach.call(chipsEl.children, function (b) { var mine = !!me && b.dataset.n === me.name; b.hidden = mine; b.setAttribute('aria-pressed', !!sel[b.dataset.n]); }); }
@@ -1393,7 +1394,7 @@ h2 { margin: 0 0 20px; font-size: clamp(1.75rem, 6vw, 3rem); line-height: 1.08; 
     e.preventDefault();
     var guest = document.getElementById('fl-guest'), inf = document.getElementById('fl-info'), b = document.getElementById('fl-btn');
     if (!me) { fHide(); showGate(); return; }
-    var people = [me.name].concat(NAMES.filter(function (n) { return sel[n] && n !== me.name; }));
+    var people = [me.name].concat(EVERYONE.filter(function (n) { return sel[n] && n !== me.name; }));
     guest.value.split(',').forEach(function (g) { g = g.trim(); if (g && people.indexOf(g) < 0) people.push(g); });
         var fls = parseFlights(inf.value); if (!fls.length) { fmsg.textContent = 'Paste your confirmation or enter a flight number, like DL 1234.'; inf.focus(); return; }
     if (!fcol) { fmsg.textContent = 'Sign in to add your flight.'; return; }
