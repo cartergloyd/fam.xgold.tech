@@ -98,10 +98,11 @@ section[id] { scroll-margin-top: 24px; }
 .ribbon { background: var(--bg); padding-block: 18px 14px; overflow-x: auto; scrollbar-width: none; }
 .ribbon::-webkit-scrollbar { display: none; }
 .ribbon ul { width: max-content; min-width: 100%; justify-content: center; gap: clamp(28px, 4vw, 56px); max-width: none; }
-.ribbon a { color: var(--muted); transition: color .2s; }
+.nav.ribbon a { color: var(--muted); transition: color .2s; }
 .ribbon a:hover, .ribbon a[aria-current="page"] { color: var(--fg); }
 .ribbon a:hover span { text-decoration: none; }
 .ribbon svg { width: 30px; height: 30px; stroke: currentColor; }
+@media (max-width: 480px) { .nav.ribbon ul { width: 100%; gap: 4px; padding-inline: 8px; justify-content: space-between; align-items: flex-start; } .nav.ribbon li { flex: 1 1 0; min-width: 0; display: flex; justify-content: center; } .nav.ribbon a { font-size: 11px; white-space: normal; text-align: center; } .nav.ribbon svg { width: 28px; height: 28px; } }
 .nav a { display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 12px; line-height: 1.2; letter-spacing: -0.01em; white-space: nowrap; min-height: 44px; }
 .nav svg { width: 36px; height: 36px; stroke: var(--fg); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .nav a:hover span { text-decoration: underline; }
@@ -635,6 +636,7 @@ h2 { margin: 0 0 20px; font-size: clamp(1.75rem, 6vw, 3rem); line-height: 1.08; 
     <li><a href="/mc"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.500l8.500 4.750v9.500L12 21.500l-8.500-4.750v-9.500zM3.500 7.250L12 12l8.500-4.750M12 12v9.500"/></svg><span>Minecraft</span></a></li>
     <li><a href="https://streaming.xgold.tech" data-streaming target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.500" y="4.500" width="19" height="13" rx="2.500"/><path d="M8 21h8M10.500 8.500v5l4.200-2.500z"/></svg><span>Streaming</span></a></li>
     <li><a href="https://sleeper.com" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.600 19.400c-.9-4.300.6-9.400 4.300-12.300 3.300-2.600 8.300-3.300 10.500-2.500.8 2.200.1 7.200-2.500 10.500-2.900 3.700-8 5.200-12.300 4.300zM8.500 15.500l7-7M10.200 11.800l2 2M12.200 9.800l2 2"/></svg><span>Fantasy Football</span></a></li>
+    <li><a href="/6108"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4.500A1.500 1.500 0 0 1 6.500 3h7A1.500 1.500 0 0 1 15 4.500V21M15 9h3.500A1.500 1.500 0 0 1 20 10.500V21M3 21h18M8.500 7h3M8.500 11h3M8.500 15h3"/></svg><span>Condos</span></a></li>
   </ul>
 </nav>
 <section class="vhero" aria-label="Spring Break 2027">
