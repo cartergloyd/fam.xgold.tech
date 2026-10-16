@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Fantasy Football</title>
+<meta name="description" content="Live scores, standings, power rankings and league moves from our Sleeper league.">
+<meta name="theme-color" content="#000000">
+<link rel="preconnect" href="https://api.sleeper.app">
+<link rel="preconnect" href="https://sleepercdn.com">
+<style>
+/* Layout: same dark stage and icon ribbon as the home page. Hero with the league name, then scoreboard cards,
+   standings table, power rankings with a score meter, recent moves and an injury watch. */
+:root {
+  --bg: #000000;
+  --card: #161617;
+  --card-2: #1d1d1f;
+  --fg: #f5f5f7;
+  --muted: #a1a1a6;
+  --faint: #6e6e73;
+  --line: #2c2c2e;
+  --accent: #1fe07a;
+  --accent-track: rgba(31, 224, 122, .16);
+  --accent-ink: #04210f;
+  --up: #30d158; --down: #ff453a;
+  --out: #ff453a; --doubt: #ff9f0a; --quest: #ffd60a;
+  --live: #ff375f;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --gutter: clamp(16px, 5vw, 48px);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font); -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid #2997ff; outline-offset: 4px; border-radius: 8px; }
+img { display: block; }
+[hidden] { display: none !important; }
+
+.nav { padding-block: 24px 0; }
+.nav ul { list-style: none; margin: 0 auto; padding: 0 var(--gutter); display: flex; justify-content: center; gap: clamp(20px, 3vw, 44px); max-width: 1100px; }
+.ribbon { background: var(--bg); padding-block: 18px 14px; overflow-x: auto; scrollbar-width: none; }
+.ribbon::-webkit-scrollbar { display: none; }
+.ribbon ul { width: max-content; min-width: 100%; justify-content: center; gap: clamp(28px, 4vw, 56px); max-width: none; }
+.nav.ribbon a { color: var(--muted); transition: color .2s; }
+.ribbon a:hover, .ribbon a[aria-current="page"] { color: var(--fg); }
+.ribbon a:hover span { text-decoration: none; }
+.ribbon svg { width: 30px; height: 30px; stroke: currentColor; }
+@media (max-width: 480px) { .nav.ribbon ul { width: 100%; gap: 4px; padding-inline: 8px; justify-content: space-between; align-items: flex-start; } .nav.ribbon li { flex: 1 1 0; min-width: 0; display: flex; justify-content: center; } .nav.ribbon a { font-size: 11px; white-space: normal; text-align: center; } .nav.ribbon svg { width: 28px; height: 28px; } }
+.nav a { display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 12px; line-height: 1.2; letter-spacing: -0.01em; white-space: nowrap; min-height: 44px; }
+.nav svg { width: 36px; height: 36px; stroke: var(--fg); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Hero */
+.hero { max-width: 900px; margin: 0 auto; padding: clamp(40px, 8vw, 96px) var(--gutter) clamp(32px, 6vw, 64px); text-align: center; }
+.hero .logo { width: 76px; height: 76px; border-radius: 20px; margin: 0 auto 22px; background: var(--card-2); object-fit: cover; }
+.eyebrow { margin: 0 0 10px; color: var(--muted); font-size: 15px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; }
+.hero h1 { margin: 0; font-size: clamp(2.5rem, 8vw, 4.75rem); line-height: 1.02; letter-spacing: -0.045em; text-wrap: balance; }
+.status { display: inline-flex; align-items: center; gap: 8px; margin: 20px 0 0; font-size: clamp(1.0625rem, 2.4vw, 1.3125rem); color: var(--muted); letter-spacing: -0.01em; }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--live); box-shadow: 0 0 0 0 rgba(255,55,95,.6); animation: pulse 1.8s infinite; }
+@keyframes pulse { 70% { box-shadow: 0 0 0 9px rgba(255,55,95,0); } 100% { box-shadow: 0 0 0 0 rgba(255,55,95,0); } }
+.actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 30px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 22px; border-radius: 999px; font-size: 17px; font-weight: 500; letter-spacing: -0.01em; background: var(--accent); color: var(--accent-ink); transition: filter .2s; }
+.btn:hover { filter: brightness(1.08); }
+.btn.ghost { background: transparent; color: var(--fg); box-shadow: inset 0 0 0 1px var(--line); }
+.btn.ghost:hover { box-shadow: inset 0 0 0 1px var(--muted); filter: none; }
+.btn svg { width: 18px; height: 18px; fill: currentColor; }
+
+/* Sections */
+main { max-width: 1100px; margin: 0 auto; padding: 0 var(--gutter) 80px; }
+section { padding-top: clamp(48px, 7vw, 80px); scroll-margin-top: 16px; }
+.sec-head { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 12px 20px; margin-bottom: 20px; }
+.sec-head h2 { margin: 0; font-size: clamp(1.75rem, 4vw, 2.5rem); letter-spacing: -0.03em; line-height: 1.1; }
+.sec-head p { margin: 6px 0 0; color: var(--muted); font-size: 15px; }
+.note { color: var(--faint); font-size: 13px; }
+.panel { background: var(--card); border-radius: 22px; padding: 6px clamp(14px, 2.5vw, 24px); }
+.empty { color: var(--muted); padding: 22px 4px; text-align: center; }
+
+/* Week picker */
+.weekpick { display: inline-flex; align-items: center; gap: 4px; background: var(--card); border-radius: 999px; padding: 4px; }
+.weekpick button { width: 36px; height: 36px; border: 0; border-radius: 50%; background: transparent; cursor: pointer; display: grid; place-items: center; }
+.weekpick button:hover:not(:disabled) { background: var(--card-2); }
+.weekpick button:disabled { opacity: .3; cursor: default; }
+.weekpick svg { width: 16px; height: 16px; stroke: var(--fg); fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.weekpick span { min-width: 86px; text-align: center; font-size: 15px; font-weight: 600; }
+
+/* Matchups */
+.matchups { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: 14px; }
+.mu { background: var(--card); border-radius: 22px; overflow: hidden; }
+.mu summary { list-style: none; cursor: pointer; padding: 16px 18px 12px; }
+.mu summary::-webkit-details-marker { display: none; }
+.side { display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 12px; padding: 6px 0; color: var(--muted); }
+.side.lead { color: var(--fg); }
+.ava { width: 40px; height: 40px; border-radius: 50%; background: var(--card-2); object-fit: cover; }
+.nm { min-width: 0; }
+.nm b { display: block; font-size: 17px; font-weight: 600; letter-spacing: -0.015em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nm small { display: block; margin-top: 2px; color: var(--faint); font-size: 13px; }
+.pts { font-size: 26px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.side:not(.lead) .pts { font-weight: 500; }
+.mu-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 8px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+.mu-foot .chev { display: inline-flex; align-items: center; gap: 4px; color: var(--fg); }
+.mu-foot .chev svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2.4; transition: transform .2s; }
+.mu[open] .mu-foot .chev svg { transform: rotate(180deg); }
+.lineup { padding: 4px 18px 16px; }
+.lu-row { display: grid; grid-template-columns: 1fr 44px 1fr; align-items: center; gap: 8px; padding: 7px 0; border-top: 1px solid var(--line); font-size: 13px; }
+.lu-row .slot { text-align: center; color: var(--faint); font-size: 11px; font-weight: 600; letter-spacing: .03em; }
+.lu-p { display: flex; justify-content: space-between; gap: 8px; min-width: 0; }
+.lu-p.r { flex-direction: row-reverse; text-align: right; }
+.lu-p .who { min-width: 0; }
+.lu-p .who > span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lu-p .who small { color: var(--faint); font-size: 11px; }
+.lu-p .v { font-variant-numeric: tabular-nums; font-weight: 600; }
+.lu-p .v.zero { color: var(--faint); font-weight: 400; }
+
+/* Status pills (always icon-free text labels, color is secondary) */
+.pill { display: inline-block; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: .01em; color: #000; vertical-align: 1px; }
+.pill.out { background: var(--out); color: #fff; }
+.pill.doubt { background: var(--doubt); }
+.pill.quest { background: var(--quest); }
+
+/* Standings */
+table { width: 100%; border-collapse: collapse; font-size: 15px; }
+th { text-align: left; color: var(--faint); font-weight: 600; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; padding: 14px 8px 10px; }
+td { padding: 10px 8px; border-top: 1px solid var(--line); }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+td.rk { width: 32px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.team { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.team .ava { width: 32px; height: 32px; flex: none; }
+.team div { min-width: 0; }
+td:has(> .team) { max-width: 0; width: 100%; }
+.team b { display: block; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.team small { display: block; color: var(--faint); font-size: 12px; margin-top: 1px; }
+tr.cut td { padding: 6px 8px; border-top: 1px solid var(--accent); color: var(--accent); font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+@media (max-width: 600px) { .hide-sm { display: none; } table { font-size: 14px; } td, th { padding-inline: 5px; } }
+
+/* Power rankings */
+.pr { list-style: none; margin: 0; padding: 0; }
+.pr li { display: grid; grid-template-columns: 30px 44px minmax(0, 1.2fr) minmax(90px, 1fr); align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+.pr li:first-child { border-top: 0; }
+.pr .rk { font-size: 20px; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+.mv { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--faint); }
+.mv.up { color: var(--up); } .mv.down { color: var(--down); }
+.meter { display: flex; align-items: center; gap: 10px; }
+.meter .track { flex: 1; height: 8px; border-radius: 4px; background: var(--accent-track); overflow: hidden; }
+.meter .fill { height: 100%; border-radius: 0 4px 4px 0; background: var(--accent); }
+.meter b { width: 34px; text-align: right; font-size: 14px; font-variant-numeric: tabular-nums; }
+@media (max-width: 600px) { .pr li { grid-template-columns: 24px 36px minmax(0, 1fr); } .pr .meter { grid-column: 3; } }
+
+/* Moves */
+.moves { list-style: none; margin: 0; padding: 0; }
+.moves li { display: grid; grid-template-columns: 36px 1fr auto; gap: 14px; padding: 14px 0; border-top: 1px solid var(--line); }
+.moves li:first-child { border-top: 0; }
+.ic { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--card-2); font-size: 16px; }
+.moves h3 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+.moves p { margin: 2px 0 0; font-size: 14px; color: var(--muted); }
+.moves .add { color: var(--fg); }
+.moves time { color: var(--faint); font-size: 13px; white-space: nowrap; }
+.trade-sides { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 4px 20px; margin-top: 4px; }
+.trade-sides div { font-size: 14px; color: var(--muted); }
+.trade-sides b { color: var(--fg); font-weight: 600; font-size: 13px; }
+
+/* Injuries */
+.inj { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 14px; }
+.inj .panel { padding: 16px 18px; }
+.inj h3 { margin: 0 0 8px; font-size: 15px; display: flex; align-items: center; gap: 10px; }
+.inj h3 .ava { width: 26px; height: 26px; }
+.inj ul { list-style: none; margin: 0; padding: 0; }
+.inj li { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.inj li small { color: var(--faint); }
+
+/* Loading */
+.sk { background: linear-gradient(90deg, var(--card) 0%, var(--card-2) 50%, var(--card) 100%); background-size: 200% 100%; animation: sk 1.4s infinite; border-radius: 22px; min-height: 150px; }
+@keyframes sk { to { background-position: -200% 0; } }
+
+footer { max-width: 1100px; margin: 0 auto; padding: 32px var(--gutter) 56px; border-top: 1px solid var(--line); color: var(--faint); font-size: 13px; line-height: 1.5; }
+footer a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+.err { max-width: 520px; margin: 0 auto; text-align: center; color: var(--muted); }
+.err .btn { margin-top: 18px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .dot, .sk { animation: none; } }
+</style></head><body>
+
+<nav class="nav ribbon" aria-label="Family sites">
+  <ul>
+    <li><a href="/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7M5 10v10h5v-6h4v6h5V10"/></svg><span>Home</span></a></li>
+    <li><a href="/mc"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.500l8.500 4.750v9.500L12 21.500l-8.500-4.750v-9.500zM3.500 7.250L12 12l8.500-4.750M12 12v9.500"/></svg><span>Minecraft</span></a></li>
+    <li><a href="https://streaming.xgold.tech" data-streaming target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.500" y="4.500" width="19" height="13" rx="2.500"/><path d="M8 21h8M10.500 8.500v5l4.200-2.500z"/></svg><span>Streaming</span></a></li>
+    <li><a href="/ff/" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.600 19.400c-.9-4.300.6-9.400 4.300-12.300 3.300-2.600 8.300-3.300 10.500-2.500.8 2.200.1 7.200-2.500 10.500-2.900 3.700-8 5.200-12.300 4.300zM8.500 15.500l7-7M10.200 11.800l2 2M12.200 9.800l2 2"/></svg><span>Fantasy Football</span></a></li>
+    <li><a href="/6108"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4.500A1.500 1.500 0 0 1 6.500 3h7A1.500 1.500 0 0 1 15 4.500V21M15 9h3.500A1.500 1.500 0 0 1 20 10.500V21M3 21h18M8.500 7h3M8.500 11h3M8.500 15h3"/></svg><span>Condos</span></a></li>
+  </ul>
+</nav>
+
+<header class="hero">
+  <img class="logo" id="logo" alt="" hidden>
+  <p class="eyebrow" id="eyebrow">Fantasy Football</p>
+  <h1 id="title">Loading the league…</h1>
+  <p class="status" id="status" aria-live="polite"></p>
+  <div class="actions">
+    <a class="btn" id="sleeper-link" href="https://sleeper.com" target="_blank" rel="noopener">Open in Sleeper</a>
+    <a class="btn ghost" id="discord-link" target="_blank" rel="noopener" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.300 5.300A16.600 16.600 0 0 0 15.200 4l-.5 1a15.300 15.300 0 0 0-5.400 0l-.5-1a16.600 16.600 0 0 0-4.100 1.300C2.100 9.200 1.400 13 1.700 16.700A16.700 16.700 0 0 0 6.800 19.300l1.100-1.800a10.800 10.800 0 0 1-1.700-.8l.4-.3a11.900 11.900 0 0 0 10.800 0l.4.3a10.800 10.800 0 0 1-1.700.8l1.100 1.800a16.700 16.700 0 0 0 5.100-2.600c.4-4.300-.7-8.100-3-11.400zM8.500 14.500c-1 0-1.800-.9-1.800-2s.8-2 1.800-2 1.800.9 1.800 2-.8 2-1.800 2zm7 0c-1 0-1.800-.9-1.800-2s.8-2 1.800-2 1.800.9 1.800 2-.8 2-1.800 2z"/></svg>Join the Discord</a>
+  </div>
+</header>
+
+<main id="main">
+  <section id="scores" aria-labelledby="scores-h">
+    <div class="sec-head">
+      <div><h2 id="scores-h">Scoreboard</h2><p id="scores-sub">Tap a matchup to see both lineups.</p></div>
+      <div class="weekpick" role="group" aria-label="Choose week">
+        <button type="button" id="wk-prev" aria-label="Previous week"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <span id="wk-label">Week</span>
+        <button type="button" id="wk-next" aria-label="Next week"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+      </div>
+    </div>
+    <div class="matchups" id="matchups"><div class="sk"></div><div class="sk"></div><div class="sk"></div></div>
+  </section>
+
+  <section id="standings" aria-labelledby="standings-h">
+    <div class="sec-head"><div><h2 id="standings-h">Standings</h2><p id="standings-sub"></p></div></div>
+    <div class="panel" id="standings-body"><div class="sk" style="min-height:300px;margin:6px -12px"></div></div>
+  </section>
+
+  <section id="power" aria-labelledby="power-h">
+    <div class="sec-head"><div><h2 id="power-h">Power rankings</h2><p>Who's actually good: 50% all-play record, 30% last three weeks of scoring, 20% real record.</p></div></div>
+    <div class="panel" id="power-body"><div class="sk" style="min-height:300px;margin:6px -12px"></div></div>
+  </section>
+
+  <section id="moves" aria-labelledby="moves-h">
+    <div class="sec-head"><div><h2 id="moves-h">Recent moves</h2><p>Trades, waiver claims and free-agent pickups from the last few weeks.</p></div></div>
+    <div class="panel" id="moves-body"><div class="sk" style="min-height:200px;margin:6px -12px"></div></div>
+  </section>
+
+  <section id="injuries" aria-labelledby="injuries-h">
+    <div class="sec-head"><div><h2 id="injuries-h">Injury watch</h2><p>Starters in this week's lineups with an injury designation.</p></div></div>
+    <div id="injuries-body"><div class="sk"></div></div>
+  </section>
+</main>
+
+<footer>
+  <p>Scores, rosters and moves come straight from <a href="https://sleeper.com" target="_blank" rel="noopener">Sleeper</a> and refresh every minute while games are on. Player injury designations update daily. League news also posts to our Discord.</p>
+</footer>
+
+<script>
+(function () {
+  // Settings. leagueId pins a league; otherwise it's looked up from the Sleeper username each season.
+  var CFG = {
+    username: 'cartgold',
+    leagueNameHint: "Marilyn's Fantasy Football",
+    leagueId: '',
+    discordInvite: '',
+    playersUrl: 'https://raw.githubusercontent.com/cartergloyd/fam.xgold.tech/ff-data/players.json'
+  };
+  var API = 'https://api.sleeper.app/v1';
+  var $ = function (id) { return document.getElementById(id); };
+  var params = new URLSearchParams(location.search);
+
+  var S = { nfl: null, league: null, teams: new Map(), players: {}, playersReady: false, week: 0, current: 0, first: 1, last: 17, weeks: {}, timer: null, lastPoints: null, changedAt: 0, updatedAt: 0 };
+
+  function get(path) {
+    return fetch(API + path).then(function (r) {
+      if (!r.ok) throw new Error('Sleeper ' + r.status);
+      return r.json();
+    });
+  }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
+  }
+  function fmt(n) { return (Math.round((Number(n) || 0) * 100) / 100).toFixed(2); }
+  function pts(m) { return Math.round((Number(m.custom_points != null ? m.custom_points : m.points) || 0) * 100) / 100; }
+  function rec(t) { return t.wins + '-' + t.losses + (t.ties ? '-' + t.ties : ''); }
+  function winPct(t) { var g = t.wins + t.losses + t.ties; return g ? (t.wins + t.ties / 2) / g : 0; }
+  function ago(ms) {
+    var s = Math.round((Date.now() - ms) / 1000);
+    if (s < 45) return 'just now';
+    if (s < 3600) return Math.round(s / 60) + 'm ago';
+    if (s < 86400) return Math.round(s / 3600) + 'h ago';
+    var d = Math.round(s / 86400);
+    return d === 1 ? 'yesterday' : d + ' days ago';
+  }
+  function avatar(src, cls) {
+    return src ? '<img class="' + (cls || 'ava') + '" src="' + esc(src) + '" alt="" loading="lazy">' : '<span class="' + (cls || 'ava') + '"></span>';
+  }
+
+  // ---------- Players ----------
+  function player(pid) {
+    var p = S.players[pid];
+    if (p) return { name: p[0], pos: p[1], team: p[2], inj: p[3], part: p[4] };
+    if (/^[A-Z]{2,3}$/.test(pid)) return { name: pid + ' D/ST', pos: 'DEF', team: pid };
+    return { name: 'Player ' + pid, pos: '', team: '' };
+  }
+  function where(p) { return p.pos === 'DEF' ? 'DEF' : [p.pos, p.team || 'FA'].filter(Boolean).join(' · '); }
+  function pill(status) {
+    if (!status) return '';
+    var cls = /^(Out|IR|Sus|PUP|COV|NA|DNR)$/.test(status) ? 'out' : status === 'Doubtful' ? 'doubt' : 'quest';
+    var label = status === 'Questionable' ? 'Q' : status === 'Doubtful' ? 'D' : status;
+    return ' <span class="pill ' + cls + '" title="' + esc(status) + '">' + esc(label) + '</span>';
+  }
+
+  // ---------- League lookup ----------
+  function resolveLeague(nfl) {
+    var pinned = params.get('league') || CFG.leagueId;
+    if (pinned) return get('/league/' + encodeURIComponent(pinned));
+    return get('/user/' + encodeURIComponent(CFG.username)).then(function (user) {
+      if (!user || !user.user_id) throw new Error('Sleeper user not found');
+      var seasons = [nfl.league_season, nfl.season, nfl.previous_season].filter(function (s, i, a) { return s && a.indexOf(s) === i; });
+      var hint = CFG.leagueNameHint.toLowerCase();
+      return seasons.reduce(function (p, season) {
+        return p.then(function (found) {
+          if (found) return found;
+          return get('/user/' + user.user_id + '/leagues/nfl/' + season).then(function (ls) {
+            ls = ls || [];
+            return ls.filter(function (l) { return (l.name || '').toLowerCase() === hint; })[0] ||
+              ls.filter(function (l) { return (l.name || '').toLowerCase().indexOf(hint) >= 0; })[0] || ls[0] || null;
+          });
+        });
+      }, Promise.resolve(null)).then(function (l) {
+        if (!l) throw new Error('No league found');
+        return l;
+      });
+    });
+  }
+
+  function lastWeek(league) {
+    var s = league.settings || {};
+    if (!s.playoff_week_start) return 17;
+    var rounds = Math.max(1, Math.ceil(Math.log2(Math.max(2, s.playoff_teams || 2))));
+    var n = s.playoff_round_type === 2 ? rounds * 2 : s.playoff_round_type === 1 ? rounds + 1 : rounds;
+    return s.playoff_week_start + n - 1;
+  }
+
+  function buildTeams(users, rosters) {
+    var byId = {};
+    users.forEach(function (u) { byId[u.user_id] = u; });
+    var teams = new Map();
+    rosters.forEach(function (r) {
+      var u = byId[r.owner_id] || {}, s = r.settings || {}, md = u.metadata || {};
+      teams.set(r.roster_id, {
+        id: r.roster_id,
+        name: md.team_name || u.display_name || 'Team ' + r.roster_id,
+        owner: u.display_name || '',
+        avatar: /^https:\/\//.test(md.avatar || '') ? md.avatar : u.avatar ? 'https://sleepercdn.com/avatars/thumbs/' + u.avatar : '',
+        wins: s.wins || 0, losses: s.losses || 0, ties: s.ties || 0,
+        pf: (s.fpts || 0) + (s.fpts_decimal || 0) / 100,
+        pa: (s.fpts_against || 0) + (s.fpts_against_decimal || 0) / 100,
+        streak: (r.metadata && r.metadata.streak) || '',
+        starters: r.starters || []
+      });
+    });
+    return teams;
+  }
+
+  function matchups(week, fresh) {
+    if (!fresh && S.weeks[week]) return Promise.resolve(S.weeks[week]);
+    return get('/league/' + S.league.league_id + '/matchups/' + week).then(function (rows) {
+      S.weeks[week] = rows || [];
+      return S.weeks[week];
+    });
+  }
+  function pairs(rows) {
+    var g = {};
+    rows.forEach(function (m) { if (m.matchup_id != null) (g[m.matchup_id] = g[m.matchup_id] || []).push(m); });
+    return Object.keys(g).sort(function (a, b) { return a - b; }).map(function (k) { return g[k]; }).filter(function (p) { return p.length === 2; });
+  }
+  function total(rows) { return rows.reduce(function (s, m) { return s + pts(m); }, 0); }
+
+  // ---------- Hero ----------
+  function renderHero() {
+    var l = S.league;
+    document.title = l.name + ' · Fantasy Football';
+    $('title').textContent = l.name;
+    $('eyebrow').textContent = l.season + ' season' + (S.current ? ' · Week ' + S.current : '');
+    if (l.avatar) { $('logo').src = 'https://sleepercdn.com/avatars/thumbs/' + l.avatar; $('logo').hidden = false; }
+    $('sleeper-link').href = 'https://sleeper.com/leagues/' + l.league_id;
+    if (CFG.discordInvite) { $('discord-link').href = CFG.discordInvite; $('discord-link').hidden = false; }
+  }
+  function renderStatus() {
+    var el = $('status'), rows = S.weeks[S.current];
+    if (!S.current) {
+      el.textContent = S.league.status === 'complete' ? 'Season complete. See you next year.' : S.league.status === 'pre_draft' || S.league.status === 'drafting' ? 'Draft day is coming.' : 'Between seasons.';
+      return;
+    }
+    if (!rows || total(rows) <= 0) { el.textContent = 'Week ' + S.current + ' kicks off soon.'; return; }
+    var live = Date.now() - S.changedAt < 20 * 60 * 1000;
+    el.innerHTML = (live ? '<span class="dot" aria-hidden="true"></span>Live: ' : '') + 'Week ' + S.current + ' in progress';
+  }
+
+  // ---------- Scoreboard ----------
+  function renderScores() {
+    var week = S.week, rows = S.weeks[week] || [];
+    $('wk-label').textContent = 'Week ' + week;
+    $('wk-prev').disabled = week <= S.first;
+    $('wk-next').disabled = week >= (S.current || S.last);
+    var ps = pairs(rows);
+    var start = (S.league.settings || {}).playoff_week_start;
+    var final = week < S.current || !S.current;
+    var sub = start && week >= start ? (week === S.last ? 'Championship week. ' : 'Playoffs. ') : '';
+    sub += total(rows) > 0 ? (final ? 'Final scores.' : 'Scores update every minute during games.') : 'Kickoff hasn’t happened yet.';
+    $('scores-sub').textContent = sub + ' Tap a matchup to see both lineups.';
+    if (!ps.length) { $('matchups').innerHTML = '<p class="empty">No matchups this week.</p>'; return; }
+    var slots = (S.league.roster_positions || []).filter(function (p) { return p !== 'BN'; });
+    var open = {};
+    Array.prototype.forEach.call(document.querySelectorAll('.mu[open]'), function (d) { open[d.dataset.id] = 1; });
+    $('matchups').innerHTML = ps.map(function (pair) {
+      var a = pair[0], b = pair[1];
+      var ta = S.teams.get(a.roster_id) || {}, tb = S.teams.get(b.roster_id) || {};
+      var pa = pts(a), pb = pts(b), started = pa + pb > 0;
+      var side = function (m, t, lead) {
+        return '<div class="side' + (lead ? ' lead' : '') + '">' + avatar(t.avatar) +
+          '<div class="nm"><b>' + esc(t.name) + '</b><small>' + rec(t) + (t.owner ? ' · ' + esc(t.owner) : '') + '</small></div>' +
+          '<div class="pts">' + fmt(pts(m)) + '</div></div>';
+      };
+      var diff = Math.abs(pa - pb), leader = pa >= pb ? ta : tb;
+      var foot = !started ? 'Not started' : diff < 0.005 ? 'All square' : esc(leader.name) + (final ? ' won by ' : ' leads by ') + fmt(diff);
+      var rowsHtml = slots.map(function (slot, i) {
+        return '<div class="lu-row">' + lu(a, i, false) + '<span class="slot">' + esc(slot.replace('SUPER_FLEX', 'SF').replace('REC_FLEX', 'WR/TE')) + '</span>' + lu(b, i, true) + '</div>';
+      }).join('');
+      return '<details class="mu" data-id="' + a.matchup_id + '"' + (open[a.matchup_id] ? ' open' : '') + '><summary>' +
+        side(a, ta, started && pa > pb) + side(b, tb, started && pb > pa) +
+        '<div class="mu-foot"><span>' + foot + '</span><span class="chev">Lineups <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9l7 7 7-7"/></svg></span></div>' +
+        '</summary><div class="lineup">' + rowsHtml + '</div></details>';
+    }).join('');
+  }
+  function lu(m, i, right) {
+    var pid = (m.starters || [])[i];
+    if (!pid || pid === '0') return '<div class="lu-p' + (right ? ' r' : '') + '"><div class="who"><span style="color:var(--out)">Empty</span></div><span class="v zero">0.00</span></div>';
+    var p = player(pid), v = (m.players_points || {})[pid] || 0;
+    return '<div class="lu-p' + (right ? ' r' : '') + '"><div class="who"><span>' + esc(p.name) + '</span><small>' + esc(where(p)) + pill(p.inj) + '</small></div>' +
+      '<span class="v' + (v ? '' : ' zero') + '">' + fmt(v) + '</span></div>';
+  }
+
+  function showWeek(week) {
+    S.week = week;
+    $('matchups').innerHTML = '<div class="sk"></div><div class="sk"></div>';
+    matchups(week).then(renderScores).catch(function () { $('matchups').innerHTML = '<p class="empty">Couldn’t load week ' + week + '.</p>'; });
+  }
+  $('wk-prev').addEventListener('click', function () { if (S.week > S.first) showWeek(S.week - 1); });
+  $('wk-next').addEventListener('click', function () { if (S.week < (S.current || S.last)) showWeek(S.week + 1); });
+
+  // Poll the current week while the tab is visible.
+  function poll() {
+    clearTimeout(S.timer);
+    if (!S.current) return;
+    S.timer = setTimeout(function () {
+      if (document.hidden) return poll();
+      matchups(S.current, true).then(function (rows) {
+        var key = rows.map(pts).join(',');
+        if (S.lastPoints !== null && key !== S.lastPoints) S.changedAt = Date.now();
+        S.lastPoints = key;
+        if (S.week === S.current) renderScores();
+        renderStatus();
+      }).catch(function () {}).then(poll);
+    }, 60 * 1000);
+  }
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) poll(); });
+
+  // ---------- Standings ----------
+  function renderStandings() {
+    var list = Array.from(S.teams.values()).sort(function (x, y) { return winPct(y) - winPct(x) || y.pf - x.pf; });
+    var cut = (S.league.settings || {}).playoff_teams || 0;
+    $('standings-sub').textContent = cut ? 'Top ' + cut + ' make the playoffs' + ((S.league.settings || {}).playoff_week_start ? ', starting week ' + S.league.settings.playoff_week_start : '') + '.' : '';
+    $('standings-body').innerHTML = '<table><thead><tr><th class="n">#</th><th>Team</th><th class="n">W-L</th><th class="n">PF</th><th class="n hide-sm">PA</th><th class="n hide-sm">Streak</th></tr></thead><tbody>' +
+      list.map(function (t, i) {
+        var row = '<tr><td class="rk n">' + (i + 1) + '</td><td><div class="team">' + avatar(t.avatar) + '<div><b>' + esc(t.name) + '</b><small>' + esc(t.owner) + '</small></div></div></td>' +
+          '<td class="n">' + rec(t) + '</td><td class="n">' + t.pf.toFixed(1) + '</td><td class="n hide-sm">' + t.pa.toFixed(1) + '</td><td class="n hide-sm">' + esc(t.streak) + '</td></tr>';
+        return row + (i + 1 === cut && i + 1 < list.length ? '<tr class="cut"><td colspan="6">Playoff line</td></tr>' : '');
+      }).join('') + '</tbody></table>';
+  }
+
+  // ---------- Power rankings ----------
+  // Same formula as the Discord bot: 50% all-play win rate, 30% last-3-week average vs. the best, 20% record.
+  function power(weeksRows) {
+    var played = weeksRows.filter(function (rows) { return total(rows) > 0; });
+    var ap = {}, recs = {}, recent = {};
+    S.teams.forEach(function (t) { ap[t.id] = { w: 0, l: 0, t: 0 }; recs[t.id] = { wins: 0, losses: 0, ties: 0 }; recent[t.id] = []; });
+    played.forEach(function (rows, wi) {
+      var scored = rows.filter(function (m) { return m.matchup_id != null && ap[m.roster_id]; });
+      scored.forEach(function (m) {
+        scored.forEach(function (o) {
+          if (o === m) return;
+          var d = pts(m) - pts(o);
+          if (d > 0) ap[m.roster_id].w++; else if (d < 0) ap[m.roster_id].l++; else ap[m.roster_id].t++;
+        });
+        if (wi >= played.length - 3) recent[m.roster_id].push(pts(m));
+      });
+      pairs(scored).forEach(function (p) {
+        var d = pts(p[0]) - pts(p[1]);
+        if (d === 0) { recs[p[0].roster_id].ties++; recs[p[1].roster_id].ties++; }
+        else { recs[(d > 0 ? p[0] : p[1]).roster_id].wins++; recs[(d > 0 ? p[1] : p[0]).roster_id].losses++; }
+      });
+    });
+    var avg = function (id) { var r = recent[id]; return r.length ? r.reduce(function (a, b) { return a + b; }, 0) / r.length : 0; };
+    var best = Math.max.apply(null, [1].concat(Array.from(S.teams.keys()).map(avg)));
+    var out = Array.from(S.teams.values()).map(function (t) {
+      var a = ap[t.id], g = a.w + a.l + a.t;
+      var score = 100 * (0.5 * (g ? (a.w + a.t / 2) / g : 0) + 0.3 * (avg(t.id) / best) + 0.2 * winPct(recs[t.id]));
+      return { team: t, score: score, ap: a, avg: avg(t.id) };
+    });
+    out.sort(function (x, y) { return y.score - x.score || y.team.pf - x.team.pf; });
+    out.forEach(function (r, i) { r.rank = i + 1; });
+    return out;
+  }
+  function renderPower(weeksRows) {
+    var played = weeksRows.filter(function (rows) { return total(rows) > 0; });
+    if (!played.length) { $('power-body').innerHTML = '<p class="empty">Rankings start after week ' + S.first + '.</p>'; return; }
+    var now = power(played), before = played.length > 1 ? power(played.slice(0, -1)) : null;
+    var prev = {};
+    if (before) before.forEach(function (r) { prev[r.team.id] = r.rank; });
+    $('power-body').innerHTML = '<ol class="pr">' + now.map(function (r) {
+      var p = prev[r.team.id], mv = '';
+      if (p && p !== r.rank) mv = p > r.rank ? '<span class="mv up" title="Up ' + (p - r.rank) + '">▲' + (p - r.rank) + '</span>' : '<span class="mv down" title="Down ' + (r.rank - p) + '">▼' + (r.rank - p) + '</span>';
+      else if (p) mv = '<span class="mv" title="No change">–</span>';
+      var apText = r.ap.w + '-' + r.ap.l + (r.ap.t ? '-' + r.ap.t : '');
+      var tip = 'All-play ' + apText + ' · last 3 avg ' + r.avg.toFixed(1) + ' · power score ' + r.score.toFixed(1);
+      return '<li><span class="rk">' + r.rank + '</span><span>' + avatar(r.team.avatar) + '</span>' +
+        '<div class="team"><div><b>' + esc(r.team.name) + ' ' + mv + '</b><small>' + rec(r.team) + ' · all-play ' + apText + ' · last 3 avg ' + r.avg.toFixed(1) + '</small></div></div>' +
+        '<div class="meter" title="' + esc(tip) + '"><div class="track" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + r.score.toFixed(0) + '" aria-label="Power score"><div class="fill" style="width:' + Math.max(2, r.score).toFixed(1) + '%"></div></div><b>' + r.score.toFixed(0) + '</b></div></li>';
+    }).join('') + '</ol>';
+  }
+
+  // ---------- Moves ----------
+  function renderMoves(txs) {
+    var name = function (rid) { var t = S.teams.get(rid); return esc(t ? t.name : 'Team ' + rid); };
+    var plabel = function (pid) { var p = player(pid); return '<span class="add">' + esc(p.name) + '</span> <small>' + esc(where(p)) + '</small>'; };
+    txs = txs.filter(function (t) { return t && t.status === 'complete'; })
+      .sort(function (a, b) { return (b.status_updated || 0) - (a.status_updated || 0); }).slice(0, 15);
+    if (!txs.length) { $('moves-body').innerHTML = '<p class="empty">No moves in the last few weeks.</p>'; return; }
+    $('moves-body').innerHTML = '<ul class="moves">' + txs.map(function (t) {
+      var adds = Object.keys(t.adds || {}), drops = Object.keys(t.drops || {});
+      var icon, head, body = '';
+      if (t.type === 'trade') {
+        icon = '⇄';
+        head = 'Trade: ' + (t.roster_ids || []).map(name).join(' and ');
+        body = '<div class="trade-sides">' + (t.roster_ids || []).map(function (rid) {
+          var got = adds.filter(function (pid) { return t.adds[pid] === rid; }).map(plabel)
+            .concat((t.draft_picks || []).filter(function (pk) { return pk.owner_id === rid; }).map(function (pk) { return pk.season + ' round ' + pk.round + ' pick'; }))
+            .concat((t.waiver_budget || []).filter(function (b) { return b.receiver === rid; }).map(function (b) { return '$' + b.amount + ' FAAB'; }));
+          return '<div><b>' + name(rid) + ' gets</b><br>' + (got.join('<br>') || 'Nothing') + '</div>';
+        }).join('') + '</div>';
+      } else {
+        var rid = (t.roster_ids || [])[0];
+        var bid = t.type === 'waiver' && t.settings && t.settings.waiver_bid != null ? ' ($' + t.settings.waiver_bid + ')' : '';
+        icon = t.type === 'waiver' ? '📋' : t.type === 'commissioner' ? '🛠️' : adds.length ? '+' : '−';
+        head = name(rid) + (t.type === 'waiver' ? ' won a waiver claim' + bid : t.type === 'commissioner' ? ': commissioner move' : adds.length ? ' picked up a free agent' : ' released a player');
+        body = adds.map(function (pid) { return '<p>+ ' + plabel(pid) + '</p>'; }).join('') + drops.map(function (pid) { return '<p>− ' + plabel(pid) + '</p>'; }).join('');
+      }
+      var when = t.status_updated || t.created;
+      return '<li><span class="ic" aria-hidden="true">' + icon + '</span><div><h3>' + head + '</h3>' + body + '</div><time datetime="' + new Date(when).toISOString() + '" title="' + new Date(when).toLocaleString() + '">' + ago(when) + '</time></li>';
+    }).join('') + '</ul>';
+  }
+
+  // ---------- Injuries ----------
+  function renderInjuries() {
+    if (!S.playersReady) { $('injuries-body').innerHTML = '<p class="empty">Injury designations are unavailable right now.</p>'; return; }
+    var cards = Array.from(S.teams.values()).map(function (t) {
+      var hurt = t.starters.filter(function (pid) { return pid && pid !== '0' && player(pid).inj; });
+      if (!hurt.length) return '';
+      return '<div class="panel"><h3>' + avatar(t.avatar) + esc(t.name) + '</h3><ul>' + hurt.map(function (pid) {
+        var p = player(pid);
+        return '<li><span>' + esc(p.name) + ' <small>' + esc(where(p)) + '</small></span><span>' + (p.part ? '<small>' + esc(p.part) + '</small> ' : '') + pill(p.inj) + '</span></li>';
+      }).join('') + '</ul></div>';
+    }).filter(Boolean);
+    $('injuries-body').innerHTML = cards.length ? '<div class="inj">' + cards.join('') + '</div>' : '<p class="empty panel">Every starting lineup is healthy. For now.</p>';
+  }
+
+  // ---------- Boot ----------
+  function fail(e) {
+    console.error(e);
+    $('title').textContent = 'Couldn’t reach Sleeper';
+    $('status').textContent = '';
+    $('main').innerHTML = '<div class="err"><p>Sleeper didn’t answer. It may be down for a minute.</p><button class="btn" type="button" onclick="location.reload()">Try again</button></div>';
+  }
+
+  var playersLoad = fetch(CFG.playersUrl).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(function (d) { S.players = d.players || {}; S.playersReady = true; }).catch(function () {});
+
+  get('/state/nfl').then(function (nfl) {
+    S.nfl = nfl;
+    return resolveLeague(nfl);
+  }).then(function (league) {
+    S.league = league;
+    S.first = (league.settings && league.settings.start_week) || 1;
+    S.last = lastWeek(league);
+    var w = Number(S.nfl.week) || 0, active = /^(in_season|post_season|complete)$/.test(league.status);
+    S.current = active && S.nfl.season_type === 'regular' && w >= S.first && w <= S.last ? w : 0;
+    var completed = !active ? 0 : S.nfl.season_type === 'regular' ? Math.min(w - 1, S.last) : S.nfl.season_type === 'post' ? S.last : 0;
+    S.week = S.current || (completed >= S.first ? completed : S.first);
+    renderHero();
+    return Promise.all([get('/league/' + league.league_id + '/users'), get('/league/' + league.league_id + '/rosters')]).then(function (r) {
+      S.teams = buildTeams(r[0] || [], r[1] || []);
+      renderStandings();
+      var weeks = [];
+      for (var i = S.first; i <= Math.max(completed, S.current || 0) && i <= S.last; i++) weeks.push(i);
+      var legs = [S.week, S.week - 1, S.week - 2].filter(function (x) { return x >= 1; });
+      return Promise.all([
+        Promise.all(weeks.map(function (i) { return matchups(i).catch(function () { return (S.weeks[i] = []); }); })),
+        Promise.all(legs.map(function (l) { return get('/league/' + league.league_id + '/transactions/' + l).catch(function () { return []; }); })),
+        playersLoad
+      ]).then(function (res) {
+        if (!S.weeks[S.week]) S.weeks[S.week] = [];
+        var done = weeks.filter(function (i) { return i <= completed; }).map(function (i) { return S.weeks[i]; });
+        S.lastPoints = S.current ? (S.weeks[S.current] || []).map(pts).join(',') : null;
+        renderScores();
+        renderStatus();
+        renderPower(done);
+        renderMoves([].concat.apply([], res[1]));
+        renderInjuries();
+        poll();
+      });
+    });
+  }).catch(fail);
+
+  Array.prototype.forEach.call(document.querySelectorAll('a[data-streaming]'), function (a) {
+    a.addEventListener('click', function (e) {
+      var ua = navigator.userAgent, ios = /iPhone|iPad|iPod/i.test(ua), android = /Android/i.test(ua);
+      if (!ios && !android) return;
+      e.preventDefault();
+      var store = ios ? 'https://apps.apple.com/app/swiftfin/id1604098728' : 'https://play.google.com/store/apps/details?id=org.jellyfin.mobile';
+      var t = setTimeout(function () { window.location.href = store; }, 1500);
+      document.addEventListener('visibilitychange', function h() { if (document.hidden) { clearTimeout(t); document.removeEventListener('visibilitychange', h); } });
+      window.location.href = ios ? 'swiftfin://' : 'jellyfin://';
+    });
+  });
+})();
+</script>
+</body></html>

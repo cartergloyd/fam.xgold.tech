@@ -1,0 +1,50 @@
+name: Fantasy players list
+
+# Publishes ff-data/players.json (names, positions, injury designations) for the
+# /ff/ page. It lives on its own single-commit branch so main's history and the
+# Pages build are untouched; the page reads it from raw.githubusercontent.com.
+
+on:
+  schedule:
+    - cron: "17 13 * * *"     # daily, ~9 am ET
+    - cron: "40 15,16 * * 0"  # Sunday before 1 pm kickoffs, after inactives (EDT and EST)
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/ff-players.yml
+      - .github/scripts/ff-players.mjs
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ff-players
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build players.json from Sleeper
+        run: |
+          mkdir -p "$RUNNER_TEMP/ff-data"
+          node .github/scripts/ff-players.mjs "$RUNNER_TEMP/ff-data/players.json"
+
+      - name: Publish to the ff-data branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd "$RUNNER_TEMP/ff-data"
+          git init -q -b ff-data
+          git add players.json
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "Players list $(date -u +%F)"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ff-data
