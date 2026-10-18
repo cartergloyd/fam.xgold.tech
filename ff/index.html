@@ -96,7 +96,7 @@ section { padding-top: clamp(48px, 7vw, 80px); scroll-margin-top: 16px; }
 .matchups { display: block; }
 .mu { background: transparent; border-radius: 0; border-bottom: 1px solid #29292c; }
 .mu:last-child { border-bottom: 0; }
-.mu-link { display: block; padding: 21px 4px 22px; transition: background .2s; }
+.mu-link { display: block; padding: 10px 4px 0; transition: background .2s; }
 .mu-link:hover { background: rgba(255,255,255,.035); }
 .mu-score { display: grid; grid-template-columns: minmax(0,1fr) minmax(100px,1.3fr) minmax(0,1fr); align-items: center; gap: 8px; }
 .mu-team { min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
@@ -106,7 +106,7 @@ section { padding-top: clamp(48px, 7vw, 80px); scroll-margin-top: 16px; }
 .mu-numbers { display: flex; justify-content: space-between; align-items: center; gap: 6px; font-size: clamp(21px,5vw,40px); font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.04em; }
 .mu-numbers .behind { color: #77777c; }
 .mu-numbers .versus { color: var(--muted); font-size: 12px; font-weight: 500; letter-spacing: 0; }
-.mu-projections { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; margin: 9px 0 11px; font-variant-numeric: tabular-nums; }
+.mu-projections { display: none; }
 .mu-odds { height: 5px; display: flex; gap: 3px; overflow: hidden; border-radius: 99px; background: #444449; }
 .mu-odds span:first-child { background: #f5f5f7; }
 .mu-odds span:last-child { flex: 1; background: #5b5b62; }
@@ -167,8 +167,8 @@ section { padding-top: clamp(48px, 7vw, 80px); scroll-margin-top: 16px; }
 }
 
 /* Matchups */
-.matchups { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: 14px; }
-.mu { background: var(--card); border-radius: 22px; overflow: hidden; }
+.matchups { display: block; }
+.mu { background: transparent; border-radius: 0; overflow: visible; }
 .mu summary { list-style: none; cursor: pointer; padding: 16px 18px 12px; }
 .mu summary::-webkit-details-marker { display: none; }
 .side { display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 12px; padding: 6px 0; color: var(--muted); }
