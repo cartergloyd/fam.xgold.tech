@@ -16,9 +16,9 @@
   --muted: #a1a1a6;
   --faint: #6e6e73;
   --line: #2c2c2e;
-  --accent: #1fe07a;
-  --accent-track: rgba(31, 224, 122, .16);
-  --accent-ink: #04210f;
+  --accent: #2997ff;
+  --accent-track: rgba(41, 151, 255, .18);
+  --accent-ink: #ffffff;
   --up: #30d158; --down: #ff453a;
   --out: #ff453a; --doubt: #ff9f0a; --quest: #ffd60a;
   --live: #ff375f;
@@ -80,6 +80,44 @@ section { padding-top: clamp(48px, 7vw, 80px); scroll-margin-top: 16px; }
 .weekpick button:disabled { opacity: .3; cursor: default; }
 .weekpick svg { width: 16px; height: 16px; stroke: var(--fg); fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 .weekpick span { min-width: 86px; text-align: center; font-size: 15px; font-weight: 600; }
+
+
+/* Apple Sports-inspired scoreboard */
+#scores { padding-top: 22px; }
+#scores .sec-head { display: block; margin-bottom: 14px; }
+#scores .sec-head h2 { font-size: clamp(23px,4vw,32px); }
+#scores .sec-head p { margin-top: 6px; font-size: 13px; }
+.sports-shell { background: #0d0d0f; border: 1px solid #29292c; border-radius: 28px; overflow: hidden; padding: 0 clamp(12px,3vw,26px) 8px; }
+.week-tabs { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); border-bottom: 1px solid #29292c; }
+.week-tab { min-height: 60px; padding: 12px 4px; border: 0; border-bottom: 3px solid transparent; background: transparent; color: var(--muted); font-size: clamp(13px,2.6vw,17px); font-weight: 600; cursor: pointer; }
+.week-tab[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--fg); }
+.week-tab:disabled { opacity: .3; cursor: not-allowed; }
+.week-detail { padding: 14px 4px 3px; color: var(--muted); font-size: 12px; }
+.matchups { display: block; }
+.mu { background: transparent; border-radius: 0; border-bottom: 1px solid #29292c; }
+.mu:last-child { border-bottom: 0; }
+.mu-link { display: block; padding: 21px 4px 22px; transition: background .2s; }
+.mu-link:hover { background: rgba(255,255,255,.035); }
+.mu-score { display: grid; grid-template-columns: minmax(0,1fr) minmax(100px,1.3fr) minmax(0,1fr); align-items: center; gap: 8px; }
+.mu-team { min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+.mu-team .ava { width: 46px; height: 46px; }
+.mu-team strong { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 600; }
+.mu-team small { font-size: 12px; color: var(--muted); }
+.mu-numbers { display: flex; justify-content: space-between; align-items: center; gap: 6px; font-size: clamp(21px,5vw,40px); font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.04em; }
+.mu-numbers .behind { color: #77777c; }
+.mu-numbers .versus { color: var(--muted); font-size: 12px; font-weight: 500; letter-spacing: 0; }
+.mu-projections { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; margin: 9px 0 11px; font-variant-numeric: tabular-nums; }
+.mu-odds { height: 5px; display: flex; gap: 3px; overflow: hidden; border-radius: 99px; background: #444449; }
+.mu-odds span:first-child { background: #f5f5f7; }
+.mu-odds span:last-child { flex: 1; background: #5b5b62; }
+.mu-caption { display: flex; justify-content: space-between; gap: 12px; margin-top: 9px; color: var(--muted); font-size: 12px; }
+.mu-caption .arrow { font-size: 18px; line-height: 12px; color: var(--fg); }
+.matchup-view { min-height: 250px; }
+.matchup-back { display: inline-flex; align-items: center; min-height: 44px; padding: 0 4px; color: #2997ff; background: none; border: 0; cursor: pointer; font-size: 16px; }
+.matchup-view h3 { margin: 14px 4px; font-size: 24px; }
+.matchup-view .lineup { padding: 10px 4px 28px; }
+.matchup-view .lu-row { grid-template-columns: minmax(0,1fr) 45px minmax(0,1fr); }
+@media(max-width:420px) { .mu-score { grid-template-columns: minmax(0,1fr) minmax(105px,1.3fr) minmax(0,1fr); } .mu-team .ava { width: 40px; height: 40px; } .mu-team strong { font-size: 11px; } .mu-numbers { font-size: 24px; } }
 
 /* Matchups */
 .matchups { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: 14px; }
@@ -201,13 +239,13 @@ footer a { color: var(--muted); text-decoration: underline; text-underline-offse
   <section id="scores" aria-labelledby="scores-h">
     <div class="sec-head">
       <div><h2 id="scores-h">Scoreboard</h2><p id="scores-sub">Tap a matchup to see both lineups.</p></div>
-      <div class="weekpick" role="group" aria-label="Choose week">
+      <div class="weekpick" role="group" aria-label="Choose week" hidden>
         <button type="button" id="wk-prev" aria-label="Previous week"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
         <span id="wk-label">Week</span>
         <button type="button" id="wk-next" aria-label="Next week"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
       </div>
     </div>
-    <div class="matchups" id="matchups"><div class="sk"></div><div class="sk"></div><div class="sk"></div></div>
+    <div class="sports-shell"><div class="week-tabs" role="tablist" aria-label="Fantasy week"><button class="week-tab" data-offset="-1" role="tab" aria-selected="false">Last Week</button><button class="week-tab" data-offset="0" role="tab" aria-selected="true">This Week</button><button class="week-tab" data-offset="1" role="tab" aria-selected="false">Next Week</button></div><div class="week-detail" id="week-detail" aria-live="polite"></div><div class="matchups" id="matchups"><div class="sk"></div><div class="sk"></div></div><div class="matchup-view" id="matchup-view" hidden></div></div>
   </section>
 
   <section id="standings" aria-labelledby="standings-h">
@@ -380,56 +418,117 @@ footer a { color: var(--muted); text-decoration: underline; text-underline-offse
   }
 
   // ---------- Scoreboard ----------
+
+  // Projection estimate: historical team scoring average (prior completed weeks only).
+  // Sleeper's matchup endpoint does not expose official projected totals or win odds.
+  function historicalAverage(rosterId, beforeWeek) {
+    var values = [];
+    for (var w = S.first; w < beforeWeek; w++) {
+      var row = (S.weeks[w] || []).filter(function(m){ return m.roster_id === rosterId; })[0];
+      if (row && total(S.weeks[w]) > 0) values.push(pts(row));
+    }
+    return values.length ? values.slice(-5).reduce(function(x,y){ return x+y; },0)/Math.min(5,values.length) : null;
+  }
+  function forecast(m, week, final) {
+    var actual = pts(m), avg = historicalAverage(m.roster_id, week);
+    if (final) return actual;
+    if (avg == null) return null;
+    return Math.max(actual, avg);
+  }
+  function probability(a,b,pa,pb,final) {
+    if (final && pa !== pb) return pa > pb ? 1 : 0;
+    var fa = forecast(a,S.week,final), fb = forecast(b,S.week,final);
+    if (fa == null || fb == null) return null;
+    if (final) return .5;
+    // Simple normal-approximation heuristic using historical variation; not official Sleeper odds.
+    var delta = fa-fb, spread = Math.max(18, (fa+fb)*.17);
+    return Math.max(.02,Math.min(.98, 1/(1+Math.exp(-1.7*delta/spread))));
+  }
+  function scoreTile(pair, week, final, detail) {
+    var a=pair[0], b=pair[1], ta=S.teams.get(a.roster_id)||{}, tb=S.teams.get(b.roster_id)||{};
+    var pa=pts(a), pb=pts(b), fa=forecast(a,week,final), fb=forecast(b,week,final), win=probability(a,b,pa,pb,final);
+    var started=pa+pb>0, mutedA=started&&pa<pb, mutedB=started&&pb<pa;
+    var team=function(t){return '<div class="mu-team">'+avatar(t.avatar)+'<strong>'+esc(t.name||'Team')+'</strong><small>'+esc(rec(t))+'</small></div>';};
+    var pct=win==null?50:Math.round(win*100);
+    var label=win==null?'Win estimate unavailable without prior scoring history':final?'Final result':'Estimated win likelihood from recent scoring; not official odds';
+    var sub=final?'Final':started?'Live scores':'Upcoming matchup';
+    return '<div class="mu-score">'+team(ta)+'<div class="mu-numbers"><span class="'+(mutedA?'behind':'')+'">'+fmt(pa)+'</span><span class="versus">–</span><span class="'+(mutedB?'behind':'')+'">'+fmt(pb)+'</span></div>'+team(tb)+'</div>'+
+      '<div class="mu-projections"><span>'+(fa==null?'Projection unavailable':'Est. proj. '+fmt(fa))+'</span><span>'+(fb==null?'Projection unavailable':'Est. proj. '+fmt(fb))+'</span></div>'+
+      '<div class="mu-odds" role="img" aria-label="'+esc(label)+'"><span style="width:'+pct+'%"></span><span></span></div>'+
+      '<div class="mu-caption"><span>'+sub+'</span><span class="arrow" aria-hidden="true">›</span></div>';
+  }
+  function renderTabs() {
+    var base=S.current||S.week;
+    Array.prototype.forEach.call(document.querySelectorAll('.week-tab'),function(btn){
+      var w=base+Number(btn.dataset.offset);
+      btn.disabled=w<S.first||w>S.last;
+      btn.setAttribute('aria-selected',String(w===S.week));
+      btn.tabIndex=w===S.week?0:-1;
+    });
+    $('week-detail').textContent='Week '+S.week+' · '+S.league.season+' season';
+  }
   function renderScores() {
-    var week = S.week, rows = S.weeks[week] || [];
-    $('wk-label').textContent = 'Week ' + week;
-    $('wk-prev').disabled = week <= S.first;
-    $('wk-next').disabled = week >= (S.current || S.last);
-    var ps = pairs(rows);
-    var start = (S.league.settings || {}).playoff_week_start;
-    var final = week < S.current || !S.current;
-    var sub = start && week >= start ? (week === S.last ? 'Championship week. ' : 'Playoffs. ') : '';
-    sub += total(rows) > 0 ? (final ? 'Final scores.' : 'Scores update every minute during games.') : 'Kickoff hasn’t happened yet.';
-    $('scores-sub').textContent = sub + ' Tap a matchup to see both lineups.';
-    if (!ps.length) { $('matchups').innerHTML = '<p class="empty">No matchups this week.</p>'; return; }
-    var slots = (S.league.roster_positions || []).filter(function (p) { return p !== 'BN'; });
-    var open = {};
-    Array.prototype.forEach.call(document.querySelectorAll('.mu[open]'), function (d) { open[d.dataset.id] = 1; });
-    $('matchups').innerHTML = ps.map(function (pair) {
-      var a = pair[0], b = pair[1];
-      var ta = S.teams.get(a.roster_id) || {}, tb = S.teams.get(b.roster_id) || {};
-      var pa = pts(a), pb = pts(b), started = pa + pb > 0;
-      var side = function (m, t, lead) {
-        return '<div class="side' + (lead ? ' lead' : '') + '">' + avatar(t.avatar) +
-          '<div class="nm"><b>' + esc(t.name) + '</b><small>' + rec(t) + (t.owner ? ' · ' + esc(t.owner) : '') + '</small></div>' +
-          '<div class="pts">' + fmt(pts(m)) + '</div></div>';
-      };
-      var diff = Math.abs(pa - pb), leader = pa >= pb ? ta : tb;
-      var foot = !started ? 'Not started' : diff < 0.005 ? 'All square' : esc(leader.name) + (final ? ' won by ' : ' leads by ') + fmt(diff);
-      var rowsHtml = slots.map(function (slot, i) {
-        return '<div class="lu-row">' + lu(a, i, false) + '<span class="slot">' + esc(slot.replace('SUPER_FLEX', 'SF').replace('REC_FLEX', 'WR/TE')) + '</span>' + lu(b, i, true) + '</div>';
-      }).join('');
-      return '<details class="mu" data-id="' + a.matchup_id + '"' + (open[a.matchup_id] ? ' open' : '') + '><summary>' +
-        side(a, ta, started && pa > pb) + side(b, tb, started && pb > pa) +
-        '<div class="mu-foot"><span>' + foot + '</span><span class="chev">Lineups <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9l7 7 7-7"/></svg></span></div>' +
-        '</summary><div class="lineup">' + rowsHtml + '</div></details>';
+    var week=S.week, rows=S.weeks[week]||[], ps=pairs(rows);
+    $('wk-label').textContent='Week '+week;
+    $('wk-prev').disabled=week<=S.first;
+    $('wk-next').disabled=week>=S.last;
+    renderTabs();
+    var final=week<S.current||(!S.current && S.league.status==='complete');
+    $('scores-sub').textContent='Live scores and estimated projections · Select a matchup for lineups.';
+    $('matchup-view').hidden=true;
+    $('matchups').hidden=false;
+    if(!ps.length){$('matchups').innerHTML='<p class="empty">No matchups scheduled for this week.</p>';return;}
+    $('matchups').innerHTML=ps.map(function(pair){
+      return '<article class="mu"><a class="mu-link" href="#matchup-'+week+'-'+pair[0].matchup_id+'" data-matchup="'+pair[0].matchup_id+'" aria-label="View matchup and starting lineups">'+scoreTile(pair,week,final,false)+'</a></article>';
     }).join('');
   }
-  function lu(m, i, right) {
-    var pid = (m.starters || [])[i];
-    if (!pid || pid === '0') return '<div class="lu-p' + (right ? ' r' : '') + '"><div class="who"><span style="color:var(--out)">Empty</span></div><span class="v zero">0.00</span></div>';
-    var p = player(pid), v = (m.players_points || {})[pid] || 0;
-    return '<div class="lu-p' + (right ? ' r' : '') + '"><div class="who"><span>' + esc(p.name) + '</span><small>' + esc(where(p)) + pill(p.inj) + '</small></div>' +
-      '<span class="v' + (v ? '' : ' zero') + '">' + fmt(v) + '</span></div>';
+  function openMatchup(id) {
+    var pair=pairs(S.weeks[S.week]||[]).filter(function(p){return String(p[0].matchup_id)===String(id);})[0];
+    if(!pair)return;
+    var week=S.week, slots=(S.league.roster_positions||[]).filter(function(p){return p!=='BN';});
+    var rows=slots.map(function(slot,i){
+      return '<div class="lu-row">'+lu(pair[0],i,false)+'<span class="slot">'+esc(slot.replace('SUPER_FLEX','SF').replace('REC_FLEX','WR/TE'))+'</span>'+lu(pair[1],i,true)+'</div>';
+    }).join('');
+    $('matchups').hidden=true;
+    $('matchup-view').hidden=false;
+    $('matchup-view').innerHTML='<button type="button" class="matchup-back" id="matchup-back">‹ All matchups</button><h3>Week '+week+' matchup</h3>'+scoreTile(pair,week,week<S.current,false)+'<div class="lineup">'+rows+'</div>';
+    $('matchup-back').addEventListener('click',function(){history.pushState(null,'',location.pathname+location.search);renderScores();});
+    $('scores').scrollIntoView({block:'start',behavior:'auto'});
   }
-
+  function routeMatchup() {
+    var m=location.hash.match(/^#matchup-(\d+)-(\d+)$/);
+    if(!m){if(S.league)renderScores();return;}
+    var week=Number(m[1]);
+    if(week<S.first||week>S.last)return;
+    if(week!==S.week){showWeek(week).then(function(){openMatchup(m[2]);});return;}
+    openMatchup(m[2]);
+  }
   function showWeek(week) {
-    S.week = week;
-    $('matchups').innerHTML = '<div class="sk"></div><div class="sk"></div>';
-    matchups(week).then(renderScores).catch(function () { $('matchups').innerHTML = '<p class="empty">Couldn’t load week ' + week + '.</p>'; });
+    if(week<S.first||week>S.last)return Promise.resolve();
+    S.week=week;
+    $('matchups').hidden=false;$('matchup-view').hidden=true;
+    $('matchups').innerHTML='<div class="sk"></div><div class="sk"></div>';
+    renderTabs();
+    return matchups(week).then(function(){renderScores();}).catch(function(){$('matchups').innerHTML='<p class="empty">Couldn’t load week '+week+'.</p>';});
   }
-  $('wk-prev').addEventListener('click', function () { if (S.week > S.first) showWeek(S.week - 1); });
-  $('wk-next').addEventListener('click', function () { if (S.week < (S.current || S.last)) showWeek(S.week + 1); });
+  $('wk-prev').addEventListener('click',function(){showWeek(S.week-1);});
+  $('wk-next').addEventListener('click',function(){showWeek(S.week+1);});
+  Array.prototype.forEach.call(document.querySelectorAll('.week-tab'),function(btn){
+    btn.addEventListener('click',function(){
+      var target=(S.current||S.week)+Number(btn.dataset.offset);
+      history.replaceState(null,'',location.pathname+location.search);
+      showWeek(target);
+    });
+  });
+  $('matchups').addEventListener('click',function(e){
+    var link=e.target.closest('a[data-matchup]');
+    if(!link)return;
+    e.preventDefault();
+    history.pushState(null,'',link.getAttribute('href'));
+    openMatchup(link.dataset.matchup);
+  });
+  window.addEventListener('popstate',routeMatchup);
+  window.addEventListener('hashchange',routeMatchup);
 
   // Poll the current week while the tab is visible.
   function poll() {
@@ -595,6 +694,7 @@ footer a { color: var(--muted); text-decoration: underline; text-underline-offse
         var done = weeks.filter(function (i) { return i <= completed; }).map(function (i) { return S.weeks[i]; });
         S.lastPoints = S.current ? (S.weeks[S.current] || []).map(pts).join(',') : null;
         renderScores();
+        if (location.hash.indexOf('#matchup-')===0) routeMatchup();
         renderStatus();
         renderPower(done);
         renderMoves([].concat.apply([], res[1]));
