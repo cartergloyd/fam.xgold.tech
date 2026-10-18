@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Streaming · Gold Family</title>
+  <meta name="description" content="Connect to the family Jellyfin server from a browser, phone, or TV, including when you are away from home.">
+  <style>
+    :root { color-scheme: dark; --bg:#000; --card:#101018; --fg:#f5f5f7; --muted:#a1a1a6; --line:#30303b; --accent:#1fe07a; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
+    * { box-sizing:border-box; }
+    [hidden] { display:none !important; }
+    body { margin:0; background:var(--bg); color:var(--fg); line-height:1.6; -webkit-font-smoothing:antialiased; }
+    a { color:inherit; }
+    :focus-visible { outline:2px solid var(--accent); outline-offset:5px; }
+    .nav { padding:20px 16px; }
+    .nav ul { display:flex; justify-content:center; gap:clamp(14px,4vw,48px); padding:0; margin:0; list-style:none; }
+    .nav a { display:flex; flex-direction:column; align-items:center; gap:8px; color:var(--muted); font-size:12px; text-decoration:none; min-height:44px; }
+    .nav a:hover,.nav a[aria-current] { color:var(--fg); }
+    .nav svg { width:30px; height:30px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+    main { max-width:900px; margin:auto; padding:40px 20px 80px; }
+    header { text-align:center; margin:10px auto 42px; max-width:640px; }
+    .eyebrow { color:var(--accent); text-transform:uppercase; letter-spacing:.16em; font-size:12px; font-weight:700; }
+    h1 { font-size:clamp(38px,7vw,64px); line-height:1.08; letter-spacing:-.05em; margin:16px 0; }
+    header p { color:var(--muted); font-size:18px; }
+    h2 { font-size:23px; line-height:1.25; letter-spacing:-.025em; margin:0 0 16px; }
+    h3 { font-size:17px; margin:22px 0 8px; }
+    p { margin:0 0 14px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:22px; padding:clamp(20px,4vw,32px); margin:18px 0; }
+    .address { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+    .address a { font-size:clamp(16px,3.6vw,23px); font-weight:600; overflow-wrap:anywhere; }
+    .actions { display:flex; gap:12px; flex-wrap:wrap; margin-top:20px; }
+    .button { display:inline-flex; justify-content:center; align-items:center; min-height:44px; border:1px solid var(--line); border-radius:12px; padding:10px 18px; background:transparent; color:var(--fg); font:inherit; font-size:15px; font-weight:600; text-decoration:none; cursor:pointer; }
+    .button.primary { background:var(--accent); color:#04210f; border-color:var(--accent); }
+    .muted { color:var(--muted); font-size:14px; }
+    ol { padding-left:22px; margin-bottom:0; }
+    li { margin:10px 0; }
+    li:last-child { margin-bottom:0; }
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+    .grid .card { margin:0; }
+    details { border-top:1px solid var(--line); padding:16px 0; }
+    details:last-child { padding-bottom:0; }
+    summary { font-weight:600; cursor:pointer; min-height:30px; }
+    details p { color:var(--muted); margin:10px 0 0; }
+    code { color:var(--fg); font-size:.95em; }
+    #copy-status { min-height:24px; margin:8px 0 0; }
+    footer { text-align:center; color:var(--muted); margin-top:36px; font-size:14px; }
+    @media (max-width:640px) { .grid { grid-template-columns:1fr; } main { padding-top:24px; } .nav ul { gap:16px; } .nav a { font-size:11px; } .actions .button { flex:1; } }
+  </style>
+</head>
+<body>
+  <nav class="nav" aria-label="Family sites"><ul>
+    <li><a href="/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7M5 10v10h5v-6h4v6h5V10"/></svg>Home</a></li>
+    <li><a href="/mc"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l8.5 4.75v9.5L12 21.5l-8.5-4.75v-9.5zM3.5 7.25L12 12l8.5-4.75M12 12v9.5"/></svg>Minecraft</a></li>
+    <li><a href="/streaming/" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="4.5" width="19" height="13" rx="2.5"/><path d="M8 21h8M10.5 8.5v5l4.2-2.5z"/></svg>Streaming</a></li>
+    <li><a href="/ff/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19C3 10 10 2 19 5c3 9-5 17-14 14zM8 16l8-8M10 12l2 2M12 10l2 2"/></svg>Fantasy Football</a></li>
+    <li><a href="/6108"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V3h10v18M15 9h5v12M3 21h18M8 7h3M8 11h3M8 15h3"/></svg>Condos</a></li>
+  </ul></nav>
+  <main>
+    <header><span class="eyebrow">Gold family streaming</span><h1>Watch from anywhere.</h1><p>Connect to our Jellyfin server on your phone, computer, or TV—even when you’re away from the home Wi-Fi.</p></header>
+    <section class="card" aria-labelledby="address-title">
+      <h2 id="address-title">Your server address</h2>
+      <div class="address"><a href="https://streaming.xgold.tech" target="_blank" rel="noopener">https://streaming.xgold.tech</a></div>
+      <p class="muted">Enter this full address when an app asks you to add a server. Keep <strong>https://</strong>; there’s no port number to add.</p>
+      <div class="actions"><a class="button primary" href="https://streaming.xgold.tech/web/" target="_blank" rel="noopener">Open Jellyfin in browser</a><button class="button" id="copy-address" type="button" hidden>Copy server address</button></div>
+      <p class="muted" id="copy-status" role="status" aria-live="polite"></p>
+    </section>
+    <div class="grid">
+      <section class="card" aria-labelledby="browser-title"><h2 id="browser-title">On a computer or browser</h2><ol>
+        <li>Open <a href="https://streaming.xgold.tech/web/" target="_blank" rel="noopener">Jellyfin</a>.</li>
+        <li>Sign in with the <strong>Jellyfin username and password Carter gives you</strong>.</li>
+        <li>Choose a library, or open <strong>Live TV</strong> to watch the shared stream.</li>
+      </ol></section>
+      <section class="card" aria-labelledby="app-title"><h2 id="app-title">On a phone, tablet, or TV</h2><ol>
+        <li>Install a compatible app from the <a href="https://jellyfin.org/downloads/clients/" target="_blank" rel="noopener">Jellyfin apps list</a>.</li>
+        <li>Choose <strong>Add Server</strong> or <strong>Connect to Server</strong> and enter <strong>https://streaming.xgold.tech</strong>.</li>
+        <li>Sign in with your Jellyfin username and password.</li>
+      </ol></section>
+    </div>
+    <section class="card" aria-labelledby="party-title"><h2 id="party-title">Join the watch party</h2><p>In Jellyfin, open <strong>Live TV → On Now</strong> or <strong>Channels</strong>, then select <strong>Discord Watch Party</strong> (channel <strong>900</strong>).</p><p class="muted">Someone needs to start the source in Discord first. If the source changes, stop and reopen the Jellyfin channel. Jellyfin and Discord can have different playback delays.</p></section>
+    <section class="card" aria-labelledby="help-title"><h2 id="help-title">Need a hand?</h2>
+      <details><summary>I don’t have a login.</summary><p>Ask Carter to create a Jellyfin account or reset your password. Use the credentials supplied for Jellyfin.</p></details>
+      <details><summary>The app can’t find the server.</summary><p>Automatic discovery works only on the home network. Away from home, choose Add Server and enter <strong>https://streaming.xgold.tech</strong> manually. A home address beginning with <code>192.168.</code> won’t work from outside.</p></details>
+      <details><summary>The website won’t open.</summary><p>Check the server address, then try opening it in your browser. On a phone, try cellular data with Wi-Fi off. If it still won’t load, let Carter know so he can check the server and remote connection.</p></details>
+      <details><summary>The watch-party card is there, but it won’t play.</summary><p>The card is a channel listing and can appear while no stream is running. Ask the host to start playback in Discord, then reopen the channel.</p></details>
+      <details><summary>Playback buffers.</summary><p>Try a stronger Wi-Fi connection or a lower playback quality in the app. If the problem persists, tell Carter which device and app you’re using.</p></details>
+    </section>
+    <footer><a href="/">Back to the family site</a></footer>
+  </main>
+  <script>
+    (function () {
+      var button = document.getElementById('copy-address');
+      if (!navigator.clipboard || !window.isSecureContext) return;
+      button.hidden = false;
+      button.addEventListener('click', function () {
+        navigator.clipboard.writeText('https://streaming.xgold.tech').then(function () {
+          document.getElementById('copy-status').textContent = 'Server address copied.';
+        }, function () {
+          document.getElementById('copy-status').textContent = 'Select and copy the server address above.';
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
