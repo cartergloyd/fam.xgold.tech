@@ -119,6 +119,33 @@ section { padding-top: clamp(48px, 7vw, 80px); scroll-margin-top: 16px; }
 .matchup-view .lu-row { grid-template-columns: minmax(0,1fr) 45px minmax(0,1fr); }
 @media(max-width:420px) { .mu-score { grid-template-columns: minmax(0,1fr) minmax(105px,1.3fr) minmax(0,1fr); } .mu-team .ava { width: 40px; height: 40px; } .mu-team strong { font-size: 11px; } .mu-numbers { font-size: 24px; } }
 
+
+/* Compact, edge-to-edge scoreboard revision */
+#scores { margin-inline: calc(-1 * var(--gutter)); }
+#scores > .sec-head { padding-inline: var(--gutter); }
+.sports-shell { border-left: 0; border-right: 0; border-radius: 24px; padding-inline: clamp(12px,2.4vw,24px); }
+.week-detail { padding-block: 11px 0; }
+.mu { border-bottom: 0; }
+.mu-link { padding: 14px 2px 0; }
+.mu-score { grid-template-columns: minmax(0,1fr) minmax(150px,1.55fr) minmax(0,1fr); gap: 5px; }
+.mu-numbers { justify-content: center; gap: clamp(5px,1.4vw,13px); font-size: clamp(24px,5.7vw,43px); white-space: nowrap; }
+.mu-numbers > span:not(.versus) { flex: 1; text-align: center; }
+.mu-numbers .versus { flex: none; }
+.mu-team { gap: 3px; }
+.mu-team strong { width: 100%; font-size: 12px; }
+.mu-team .ava { width: 40px; height: 40px; }
+.mu-projections { margin: 5px 0 10px; font-size: 11px; }
+.mu-odds { height: 4px; margin-top: 4px; border-radius: 0; }
+.mu-caption { display: none; }
+.mu:last-child .mu-odds { margin-bottom: 8px; }
+@media(max-width:420px) {
+  .sports-shell { padding-inline: 12px; }
+  .mu-score { grid-template-columns: minmax(0,1fr) minmax(138px,1.6fr) minmax(0,1fr); gap: 3px; }
+  .mu-numbers { font-size: clamp(23px,6vw,29px); gap: 4px; }
+  .mu-team strong { font-size: 11px; }
+  .mu-team .ava { width: 38px; height: 38px; }
+}
+
 /* Matchups */
 .matchups { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: 14px; }
 .mu { background: var(--card); border-radius: 22px; overflow: hidden; }
@@ -451,11 +478,11 @@ footer a { color: var(--muted); text-decoration: underline; text-underline-offse
     var team=function(t){return '<div class="mu-team">'+avatar(t.avatar)+'<strong>'+esc(t.name||'Team')+'</strong><small>'+esc(rec(t))+'</small></div>';};
     var pct=win==null?50:Math.round(win*100);
     var label=win==null?'Win estimate unavailable without prior scoring history':final?'Final result':'Estimated win likelihood from recent scoring; not official odds';
-    var sub=final?'Final':started?'Live scores':'Upcoming matchup';
+    
     return '<div class="mu-score">'+team(ta)+'<div class="mu-numbers"><span class="'+(mutedA?'behind':'')+'">'+fmt(pa)+'</span><span class="versus">–</span><span class="'+(mutedB?'behind':'')+'">'+fmt(pb)+'</span></div>'+team(tb)+'</div>'+
       '<div class="mu-projections"><span>'+(fa==null?'Projection unavailable':'Est. proj. '+fmt(fa))+'</span><span>'+(fb==null?'Projection unavailable':'Est. proj. '+fmt(fb))+'</span></div>'+
       '<div class="mu-odds" role="img" aria-label="'+esc(label)+'"><span style="width:'+pct+'%"></span><span></span></div>'+
-      '<div class="mu-caption"><span>'+sub+'</span><span class="arrow" aria-hidden="true">›</span></div>';
+      '';
   }
   function renderTabs() {
     var base=S.anchor||S.current||S.week;
@@ -474,7 +501,7 @@ footer a { color: var(--muted); text-decoration: underline; text-underline-offse
     $('wk-next').disabled=week>=S.last;
     renderTabs();
     var final=week<S.current||(!S.current && S.league.status==='complete');
-    $('scores-sub').textContent='Live scores and estimated projections · Select a matchup for lineups.';
+    $('scores-sub').textContent='Select a matchup to view lineups. Bars show estimated win likelihood.';
     $('matchup-view').hidden=true;
     $('matchups').hidden=false;
     if(!ps.length){$('matchups').innerHTML='<p class="empty">No matchups scheduled for this week.</p>';return;}
