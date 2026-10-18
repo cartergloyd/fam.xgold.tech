@@ -146,6 +146,26 @@ section { padding-top: clamp(48px, 7vw, 80px); scroll-margin-top: 16px; }
   .mu-team .ava { width: 38px; height: 38px; }
 }
 
+
+/* Unified Apple Sports-style matchup list */
+#scores .sports-shell { background: #0d0d0f; }
+#scores .matchups { background: transparent; }
+#scores .mu, #scores .mu-link { background: transparent !important; border: 0; border-radius: 0; box-shadow: none; }
+#scores .mu-link { padding: 11px 2px 0; }
+#scores .mu-link:hover { background: rgba(255,255,255,.025) !important; }
+#scores .mu-team { gap: 2px; }
+#scores .mu-team .ava { width: 37px; height: 37px; }
+#scores .mu-projections { display: none; }
+#scores .mu-odds { margin-top: 12px; height: 3px; }
+#scores .mu:last-child .mu-odds { margin-bottom: 0; }
+#scores .mu-score { min-height: 93px; }
+#scores .week-detail { padding-bottom: 4px; }
+@media (max-width: 420px) {
+  #scores .mu-link { padding-top: 9px; }
+  #scores .mu-score { min-height: 89px; }
+  #scores .mu-team .ava { width: 35px; height: 35px; }
+}
+
 /* Matchups */
 .matchups { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: 14px; }
 .mu { background: var(--card); border-radius: 22px; overflow: hidden; }
@@ -480,7 +500,7 @@ footer a { color: var(--muted); text-decoration: underline; text-underline-offse
     var label=win==null?'Win estimate unavailable without prior scoring history':final?'Final result':'Estimated win likelihood from recent scoring; not official odds';
     
     return '<div class="mu-score">'+team(ta)+'<div class="mu-numbers"><span class="'+(mutedA?'behind':'')+'">'+fmt(pa)+'</span><span class="versus">–</span><span class="'+(mutedB?'behind':'')+'">'+fmt(pb)+'</span></div>'+team(tb)+'</div>'+
-      '<div class="mu-projections"><span>'+(fa==null?'Projection unavailable':'Est. proj. '+fmt(fa))+'</span><span>'+(fb==null?'Projection unavailable':'Est. proj. '+fmt(fb))+'</span></div>'+
+      
       '<div class="mu-odds" role="img" aria-label="'+esc(label)+'"><span style="width:'+pct+'%"></span><span></span></div>'+
       '';
   }
