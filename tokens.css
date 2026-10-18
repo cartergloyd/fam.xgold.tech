@@ -1,0 +1,175 @@
+/* ==========================================================================
+   tokens.css — Apple-style design tokens
+   Single source of truth. Components reference these; never hard-code values.
+   Values are close approximations of apple.com, not an official spec.
+   ========================================================================== */
+
+:root {
+  color-scheme: light dark;
+
+  /* ---- Color ---------------------------------------------------------- */
+  --bg: #ffffff;
+  --bg-alt: #f5f5f7;
+  --bg-dark: #000000;
+  --bg-elevated: #ffffff;
+
+  --text: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-on-dark: #f5f5f7;
+  --text-on-dark-secondary: #a1a1a6;
+
+  --accent: #0066cc;
+  --accent-hover: #0077ed;
+  --accent-on-dark: #2997ff;
+  --label-accent: #bf4800; /* eyebrow labels only: NEW, PRE-ORDER */
+
+  /* Promo banners only: single gradient headline line + illustration */
+  --gradient-promo: linear-gradient(90deg, #d9472b 0%, #e8743b 60%, #f08a3c 100%);
+  --promo-halo: #a9cdf5;
+  --promo-badge-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  --promo-badge-rim: 3px solid #ffffff;
+
+  --hairline: rgba(0, 0, 0, 0.12);
+  --nav-bg: rgba(255, 255, 255, 0.8);
+  --focus-ring: var(--accent);
+
+  /* ---- Typography ----------------------------------------------------- */
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+    "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+  --weight-regular: 400;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* Fluid type scale (mobile → desktop) */
+  --fs-page-title: clamp(2.5rem, 1.5rem + 4.5vw, 6rem);   /* ~40 → 96px */
+  --fs-section: clamp(2rem, 1.4rem + 2.4vw, 3.5rem);      /* ~32 → 56px */
+  --fs-card: clamp(1.5rem, 1.2rem + 1.2vw, 2.5rem);       /* ~24 → 40px */
+  --fs-body: 1.0625rem;                                    /* 17px */
+  --fs-small: 0.875rem;                                    /* 14px */
+  --fs-fine: 0.75rem;                                      /* 12px */
+
+  --lh-tight: 1.05;
+  --lh-snug: 1.15;
+  --lh-body: 1.4;
+
+  --ls-tight: -0.02em;
+  --ls-normal: -0.01em;
+
+  /* ---- Radii ---------------------------------------------------------- */
+  --radius-card: 24px;
+  --radius-card-sm: 18px;
+  --radius-promo: 28px;
+  --radius-pill: 980px;
+
+  /* ---- Layout --------------------------------------------------------- */
+  --container-max: 1024px;
+  --container-wide: 1440px;
+  --gutter: 22px;
+  --nav-height: 48px;
+
+  /* ---- Spacing -------------------------------------------------------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+  --section-pad-y: clamp(64px, 10vw, 120px);
+  --title-gap: clamp(40px, 6vw, 80px);
+
+  /* ---- Buttons -------------------------------------------------------- */
+  --btn-pad-y: 8px;
+  --btn-pad-x: 18px;
+  --btn-font-size: var(--fs-body);
+  --tap-target: 44px;
+
+  /* ---- Motion --------------------------------------------------------- */
+  --ease: cubic-bezier(0.28, 0.11, 0.32, 1);
+  --duration-fast: 0.2s;
+  --duration: 0.5s;
+  --duration-slow: 0.8s;
+}
+
+@media (min-width: 834px) {
+  :root {
+    --gutter: 40px;
+  }
+}
+
+/* ---- Dark mode ---------------------------------------------------------- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000000;
+    --bg-alt: #1d1d1f;
+    --bg-elevated: #1d1d1f;
+
+    --text: #f5f5f7;
+    --text-secondary: #a1a1a6;
+
+    --accent: #2997ff;
+    --accent-hover: #4aa8ff;
+    --label-accent: #ff9f0a;
+
+    --hairline: rgba(255, 255, 255, 0.16);
+    --nav-bg: rgba(0, 0, 0, 0.72);
+  }
+}
+
+/* ---- Reduced motion ----------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0s;
+    --duration: 0s;
+    --duration-slow: 0s;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---- Minimal base (uses tokens only) ------------------------------------ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-padding-top: calc(var(--nav-height) + env(safe-area-inset-top, 0px));
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  letter-spacing: var(--ls-normal);
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
