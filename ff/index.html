@@ -458,7 +458,7 @@ footer a { color: var(--muted); text-decoration: underline; text-underline-offse
       '<div class="mu-caption"><span>'+sub+'</span><span class="arrow" aria-hidden="true">›</span></div>';
   }
   function renderTabs() {
-    var base=S.current||S.week;
+    var base=S.anchor||S.current||S.week;
     Array.prototype.forEach.call(document.querySelectorAll('.week-tab'),function(btn){
       var w=base+Number(btn.dataset.offset);
       btn.disabled=w<S.first||w>S.last;
@@ -515,7 +515,7 @@ footer a { color: var(--muted); text-decoration: underline; text-underline-offse
   $('wk-next').addEventListener('click',function(){showWeek(S.week+1);});
   Array.prototype.forEach.call(document.querySelectorAll('.week-tab'),function(btn){
     btn.addEventListener('click',function(){
-      var target=(S.current||S.week)+Number(btn.dataset.offset);
+      var target=(S.anchor||S.current||S.week)+Number(btn.dataset.offset);
       history.replaceState(null,'',location.pathname+location.search);
       showWeek(target);
     });
@@ -678,6 +678,7 @@ footer a { color: var(--muted); text-decoration: underline; text-underline-offse
     S.current = active && S.nfl.season_type === 'regular' && w >= S.first && w <= S.last ? w : 0;
     var completed = !active ? 0 : S.nfl.season_type === 'regular' ? Math.min(w - 1, S.last) : S.nfl.season_type === 'post' ? S.last : 0;
     S.week = S.current || (completed >= S.first ? completed : S.first);
+    S.anchor = S.week;
     renderHero();
     return Promise.all([get('/league/' + league.league_id + '/users'), get('/league/' + league.league_id + '/rosters')]).then(function (r) {
       S.teams = buildTeams(r[0] || [], r[1] || []);
