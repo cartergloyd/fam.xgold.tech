@@ -87,7 +87,7 @@ section { padding-top: clamp(48px, 7vw, 80px); scroll-margin-top: 16px; }
 #scores { padding-top: 22px; }
 #scores .sec-head { display: block; margin-bottom: 16px; }
 #scores .sec-head p:empty { display: none; }
-.sports-shell { --num: "HelveticaNeue-CondensedBold", "Helvetica Neue Condensed", "Avenir Next Condensed", "Roboto Condensed", "Arial Narrow", sans-serif; background: #111113; border-radius: 32px; overflow: hidden; padding: 0 clamp(14px, 3vw, 28px) 4px; }
+.sports-shell { --num: system-ui, -apple-system, "SF Pro Display", "Roboto Condensed", sans-serif; background: #111113; border-radius: 32px; overflow: hidden; padding: 0 clamp(14px, 3vw, 28px) 4px; }
 .week-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-bottom: 1px solid #2a2a2d; }
 .week-tab { min-height: 64px; padding: 12px 4px; border: 0; background: none; color: #8e8e93; font-size: clamp(17px, 2.6vw, 21px); font-weight: 600; letter-spacing: -0.01em; cursor: pointer; transition: color .2s; }
 .week-tab:hover:not(:disabled) { color: #c7c7cc; }
@@ -107,14 +107,16 @@ section { padding-top: clamp(48px, 7vw, 80px); scroll-margin-top: 16px; }
 .sb-l { position: relative; display: block; }
 .sb-star { position: absolute; top: 50%; transform: translateY(-50%); color: #fff; font-size: 13px; line-height: 1; }
 .sb-t.a .sb-star { right: calc(100% + 6px); } .sb-t.b .sb-star { left: calc(100% + 6px); }
-.sb-s { text-align: center; color: #fff; font-family: var(--num); font-stretch: condensed; font-weight: 700; font-size: clamp(34px, 8vw, 68px); line-height: 1; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* SF Pro is variable: wdth 50 is its compressed cut, the one Apple Sports uses for scores. */
+.sb-s { text-align: center; color: #fff; font-family: var(--num); font-variation-settings: "wdth" 50; font-weight: 760; font-size: clamp(36px, 8.4vw, 72px); line-height: 1; letter-spacing: 0; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .sb-s small { font-size: .55em; letter-spacing: 0; }
 .sb-s.dim { color: #5c5c61; }
-.sb-s.rec { font-family: inherit; font-stretch: normal; color: #8e8e93; font-size: clamp(15px, 2.3vw, 19px); font-weight: 500; letter-spacing: 0; }
+.sb-s.rec { font-family: inherit; font-variation-settings: normal; color: #8e8e93; font-size: clamp(15px, 2.3vw, 19px); font-weight: 500; letter-spacing: 0; }
 .sb-c { display: grid; justify-items: center; gap: 3px; text-align: center; }
 .sb-c small { color: #6e6e73; font-size: 13px; font-weight: 600; }
 .sb:not(.big) .sb-c small { display: none; }
-.sb-c b { color: #fff; font-size: clamp(15px, 2.3vw, 19px); font-weight: 600; letter-spacing: -0.01em; }
+.sb-c b { color: #fff; font-size: clamp(15px, 2.3vw, 19px); font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; }
+.sb-c .sb-sub { color: #8e8e93; font-size: 13px; font-weight: 500; white-space: nowrap; }
 /* Matchup detail: the same row, much bigger, with records under the names */
 .sb.big { padding: 18px 0 8px; grid-template-columns: minmax(0, 1fr) minmax(64px, auto) minmax(0, 1fr); grid-template-areas: "sa c sb" "ta c tb"; row-gap: 16px; }
 .sb.big > :nth-child(1) { grid-area: ta; } .sb.big > :nth-child(2) { grid-area: sa; } .sb.big > :nth-child(3) { grid-area: c; } .sb.big > :nth-child(4) { grid-area: sb; } .sb.big > :nth-child(5) { grid-area: tb; }
@@ -127,11 +129,13 @@ section { padding-top: clamp(48px, 7vw, 80px); scroll-margin-top: 16px; }
 .matchup-view .lu-row { grid-template-columns: minmax(0, 1fr) 45px minmax(0, 1fr); }
 @media (max-width: 480px) {
   .sports-shell { padding-inline: 12px; border-radius: 26px; }
-  .sb { grid-template-columns: minmax(0, 1fr) auto 46px auto minmax(0, 1fr); column-gap: 4px; }
+  .sb { grid-template-columns: minmax(0, 1fr) auto 62px auto minmax(0, 1fr); column-gap: 4px; }
   .sb-t .ava { width: 42px; height: 42px; }
   .sb-n { font-size: 12px; white-space: normal; line-height: 1.15; text-align: center; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
   .sb-s { font-size: clamp(28px, 8.6vw, 38px); }
-  .sb-c b { font-size: 14px; }
+  .sb-c b { font-size: 13px; }
+  .sb-c .sb-sub { font-size: 11px; }
+  .sb-s { font-size: clamp(28px, 8.2vw, 36px); }
   .sb.big .sb-t .ava { width: 60px; height: 60px; }
 }
 
@@ -449,6 +453,35 @@ footer a { color: var(--muted); text-decoration: underline; text-underline-offse
     });
     return out || n;
   }
+  // NFL game status per team for a week, from ESPN's public scoreboard: { KC: 'pre' | 'in' | 'post' }.
+  var ESPN_TEAM = { WSH: 'WAS' };
+  S.games = {};
+  function loadGames(week, fresh) {
+    if (!fresh && S.games[week]) return Promise.resolve(S.games[week]);
+    return fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?seasontype=2&week=' + week + '&dates=' + S.league.season)
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (j) {
+        var g = {};
+        (j.events || []).forEach(function (e) {
+          var c = (e.competitions || [])[0] || {}, st = ((c.status || {}).type || {}).state || 'pre';
+          (c.competitors || []).forEach(function (x) { var t = (x.team || {}).abbreviation; if (t) g[ESPN_TEAM[t] || t] = st; });
+        });
+        return (S.games[week] = g);
+      });
+  }
+  // Starters whose NFL game is on now, and starters whose game hasn't started (byes and empty slots count as done).
+  function playCounts(pair, week) {
+    var g = S.games[week]; if (!g || !S.playersReady) return null;
+    var c = { playing: 0, left: 0 };
+    pair.forEach(function (m) {
+      (m.starters || []).forEach(function (pid) {
+        if (!pid || pid === '0') return;
+        var st = g[player(pid).team];
+        if (st === 'in') c.playing++; else if (st === 'pre') c.left++;
+      });
+    });
+    return c;
+  }
   function weekState(week) {
     if (week < S.current || (!S.current && S.league.status === 'complete')) return 'final';
     if (week > S.current) return 'pre';
@@ -466,9 +499,15 @@ footer a { color: var(--muted); text-decoration: underline; text-underline-offse
       if (pre) return '<span class="sb-s rec">' + esc(rec(t)) + '</span>';
       return '<span class="sb-s' + (state === 'final' && p < other ? ' dim' : state === 'live' && p < other ? ' dim' : '') + '">' + scoreNum(p) + '</span>';
     }
-    var status = state === 'final' ? 'Final' : state === 'live' ? 'Live' : 'Week ' + week;
+    var status = state === 'final' ? 'Final' : state === 'live' ? 'Live' : 'Week ' + week, sub = '';
+    if (state === 'live') {
+      var c = playCounts(pair, week);
+      if (c && !c.playing && !c.left) status = 'Final';
+      else if (c && c.playing) { status = c.playing + ' playing'; if (c.left) sub = c.left + ' to play'; }
+      else if (c) status = c.left + ' to play';
+    }
     return '<div class="sb' + (big ? ' big' : '') + '">' + team(ta, 'a') + score(pa, pb, ta) +
-      '<div class="sb-c"><small>WEEK ' + week + '</small><b>' + status + '</b></div>' + score(pb, pa, tb) + team(tb, 'b') + '</div>';
+      '<div class="sb-c"><small>WEEK ' + week + '</small><b>' + status + '</b>' + (sub ? '<span class="sb-sub">' + sub + '</span>' : '') + '</div>' + score(pb, pa, tb) + team(tb, 'b') + '</div>';
   }
   function renderTabs() {
     var base=S.anchor||S.current||S.week;
@@ -487,6 +526,7 @@ footer a { color: var(--muted); text-decoration: underline; text-underline-offse
     $('wk-next').disabled=week>=S.last;
     renderTabs();
     var state=weekState(week);
+    if(state==='live'&&S.games[week]===undefined){S.games[week]=null;loadGames(week).then(function(){if(S.week===week)renderScores();},function(){});}
     $('scores-sub').textContent='';
     $('matchup-view').hidden=true;
     $('matchups').hidden=false;
@@ -556,8 +596,8 @@ footer a { color: var(--muted); text-decoration: underline; text-underline-offse
     if (!S.current) return;
     S.timer = setTimeout(function () {
       if (document.hidden) return poll();
-      matchups(S.current, true).then(function (rows) {
-        var key = rows.map(pts).join(',');
+      Promise.all([matchups(S.current, true), loadGames(S.current, true).catch(function () {})]).then(function (res) {
+        var rows = res[0], key = rows.map(pts).join(',');
         if (S.lastPoints !== null && key !== S.lastPoints) S.changedAt = Date.now();
         S.lastPoints = key;
         if (S.week === S.current) renderScores();
