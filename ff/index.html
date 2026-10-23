@@ -393,7 +393,25 @@ footer a { color: var(--muted); text-decoration: underline; text-underline-offse
   }
 
   var familyTeams = {};
-  function teamKey(name) { return String(name || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+  function teamKey(name) { return String(name || '').normalize('NFKD').toLowerCase().trim().replace(/^the\s*/, '').replace(/[^a-z0-9]/g, ''); }
+  function oneEdit(a, b) {
+    if (a.length < 8 || b.length < 8 || Math.abs(a.length - b.length) > 1) return false;
+    var i = 0, j = 0, edits = 0;
+    while (i < a.length && j < b.length) {
+      if (a[i] === b[j]) { i++; j++; continue; }
+      if (++edits > 1) return false;
+      if (a.length >= b.length) i++;
+      if (b.length >= a.length) j++;
+    }
+    return edits + (i < a.length || j < b.length ? 1 : 0) <= 1;
+  }
+  function familyTeam(name) {
+    var key = teamKey(name);
+    if (familyTeams[key]) return familyTeams[key];
+    // CSV/team display spellings can differ by one letter. Use only a unique match.
+    var matches = Object.keys(familyTeams).filter(function (k) { return oneEdit(k, key); });
+    return matches.length === 1 ? familyTeams[matches[0]] : {};
+  }
   var familyReady = window.familyDirectory.ready.then(function (users) {
     users.forEach(function (u) { if (u.fantasy_team) familyTeams[teamKey(u.fantasy_team)] = u; });
   }).catch(function () {});
@@ -403,7 +421,7 @@ footer a { color: var(--muted); text-decoration: underline; text-underline-offse
     var teams = new Map();
     rosters.forEach(function (r) {
       var u = byId[r.owner_id] || {}, s = r.settings || {}, md = u.metadata || {};
-      var family = familyTeams[teamKey(md.team_name || u.display_name)] || {};
+      var family = familyTeam(md.team_name || u.display_name);
       teams.set(r.roster_id, {
         id: r.roster_id,
         name: md.team_name || u.display_name || 'Team ' + r.roster_id,
