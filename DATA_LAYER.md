@@ -1,39 +1,67 @@
-# Family site data
+# Family website data
 
-The page uses `directus-db.js` to keep the existing `window.claude.use('db'|'user')`
-API. REST requests and a public WebSocket subscription connect to
-`https://fam-api.xgold.tech`. A 15-second poll remains active if realtime is
-unavailable. Existing `destin-uid` browser identities are retained.
+The family `fam` PostgreSQL database and its Directus API at
+https://fam-api.xgold.tech hold shared trip data and the family user directory.
+The main page and fantasy football page read public profiles from
+`family-directory.js`. Names, profile photos, family editing groups and fantasy
+team associations come from `family_users`, rather than a roster embedded in
+HTML. People without a photo get an initial avatar.
 
-The home `fam` PostgreSQL database contains `kv(key,coll,id,data)`. `key` is the
-single primary key `coll + '/' + id`; `(coll,id)` remains unique. Only `plans`,
-`bedrooms`, `flights`, `members`, `progress`, `meals` and `groceries` are allowed.
-PostgreSQL enforces this allowlist and prevents changing an existing document's
-path. Each document's JSON `data` remains editable.
+## Shared user directory
 
-Access preserves the former Supabase anonymous policy: anyone who can reach
-the family API can read and modify these shared documents. The page's member/PIN
-interface is unchanged and is not server authentication. No administrator token
-is embedded in the site. Other Directus collections and administrator APIs
-remain private.
+The CSV was imported once into `family_users`: 22 people, 17 photos, four existing
+email/PIN registrations. Database edits are now authoritative; the source CSV is
+private operational input, not a file served by this website. Original photo
+uploads remain in Personal; the family database has its own copies.
 
-The installed Directus build supports collection-wide public permissions but
-does not support the custom filtered permissions proposed in issue #5. The
-server therefore grants public CRUD only on `kv`, with the seven-coll restriction
-enforced in PostgreSQL. Public WebSocket mode is enabled only on fam's REST
-WebSocket endpoint. CORS permits this site and the Directus admin origin.
+Manage people in fam's Directus admin → family_users. Set name, email, status,
+photo, fantasy_team and group_id. Enter four digits in `pin` to set/change a PIN;
+the database hashes it and clears that input. Leaving it blank keeps the existing
+PIN. A saved PIN cannot be read back through Directus. `invited` means not yet
+registered; `ready` enables sign-in/Jellyfin; `disabled` blocks sign-in and disables
+the linked Jellyfin account. Users with the same group_id can edit each other's
+trip entries; a blank group means that person edits their own entries.
 
-Migration runs entirely on the Linux server using the homelab-dashboard tools:
-`scripts/migrate-supabase-kv.sh --skip-directus` exports and imports the source,
-and `deploy/fam-kv-directus.sql` registers metadata and installs database rules.
-Private exports and rollback configuration are stored outside this repository.
-Never commit an export: member documents contain personal information.
+The public API exposes id, name, photo_url, group_id, fantasy_team and registered
+only. It never publishes email lists, PINs, PIN hashes or Jellyfin account IDs.
+The collection itself has no anonymous Directus permissions. The server extension
+`directus-extension-family-directory` provides:
 
-Keep the Supabase project during the observation period. To roll back the site,
-restore its previous HTML/shim; if people have edited data on Directus since
-cutover, reconcile those edits before switching back. Do not delete Supabase as
-part of this change.
+- GET /family/users: public profiles.
+- GET /family/photos/:id: only the assigned raster photo for an active user.
+- POST /family/lookup: checks an exact email and returns id/name only.
+- POST /family/login: checks email/PIN on the server.
+- POST /family/register: atomically claims an invited row using email/PIN.
 
-Run `node test-directus-db.mjs` for offline shim checks. Server verification must
-also check full source/destination content equality, all seven collections,
-public CRUD, denied unknown colls/admin APIs, browser CORS and realtime updates.
+The existing site keeps a browser identity and local signed-in display. Trip
+collections retain the previous shared/public editing model; directory sign-in
+does not introduce server authorization for those existing trip documents.
+Sign-in attempts are rate limited, and credentials stay in the private table.
+
+## Jellyfin
+
+`fam-jellyfin-sync.timer` reads this same table every minute. Rows with an email,
+PIN and ready status receive an account; invited rows wait until registration.
+The email is the Jellyfin username and the family PIN is the password. Profile
+photos also synchronize. Linked Jellyfin IDs are retained so an email change
+renames the existing account and preserves its watch history. Disabled rows
+disable their linked account; no account is deleted automatically. The separate
+cartgold administrator is outside this directory.
+
+## Trip data
+
+`directus-db.js` preserves the `window.claude.use('db'|'user')` document API for
+`kv(key,coll,id,data)`. Allowed collections remain plans, bedrooms, flights,
+members, progress, meals and groceries. PostgreSQL enforces the allowlist and
+immutable paths. Public WebSocket subscriptions fall back to 15-second polling.
+No administrator token is embedded in the site. Legacy member claim credentials
+are retired; registration writes the directory instead.
+
+Server migration, extension code and tests are in the homelab dashboard's
+`deploy/family-directory/`; private import/state/rollback files stay outside both
+repositories. Never commit users.csv, exports, PINs or operational credentials.
+
+Run `node test-directus-db.mjs` and `node test-family-directory.mjs` for offline
+client checks. Server verification covers profiles/privacy, all assigned photos,
+CORS, sign-in, duplicate registrations and concurrent claims, PIN handling,
+disabled users, Jellyfin links/photos and unchanged shared trip collections.

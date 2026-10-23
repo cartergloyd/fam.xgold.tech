@@ -299,6 +299,7 @@ footer a { color: var(--muted); text-decoration: underline; text-underline-offse
   <p>Scores, rosters and moves come straight from <a href="https://sleeper.com" target="_blank" rel="noopener">Sleeper</a> and refresh every minute while games are on. Player injury designations update daily. League news also posts to our Discord.</p>
 </footer>
 
+<script src="/family-directory.js"></script>
 <script>
 (function () {
   // Settings. leagueId pins a league; otherwise it's looked up from the Sleeper username each season.
@@ -391,18 +392,24 @@ footer a { color: var(--muted); text-decoration: underline; text-underline-offse
     return s.playoff_week_start + n - 1;
   }
 
+  var familyTeams = {};
+  function teamKey(name) { return String(name || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+  var familyReady = window.familyDirectory.ready.then(function (users) {
+    users.forEach(function (u) { if (u.fantasy_team) familyTeams[teamKey(u.fantasy_team)] = u; });
+  }).catch(function () {});
   function buildTeams(users, rosters) {
     var byId = {};
     users.forEach(function (u) { byId[u.user_id] = u; });
     var teams = new Map();
     rosters.forEach(function (r) {
       var u = byId[r.owner_id] || {}, s = r.settings || {}, md = u.metadata || {};
+      var family = familyTeams[teamKey(md.team_name || u.display_name)] || {};
       teams.set(r.roster_id, {
         id: r.roster_id,
         name: md.team_name || u.display_name || 'Team ' + r.roster_id,
-        owner: u.display_name || '',
+        owner: family.name || u.display_name || '',
         ownerId: r.owner_id,
-        avatar: /^https:\/\//.test(md.avatar || '') ? md.avatar : u.avatar ? 'https://sleepercdn.com/avatars/thumbs/' + u.avatar : '',
+        avatar: family.photo_url || (/^https:\/\//.test(md.avatar || '') ? md.avatar : u.avatar ? 'https://sleepercdn.com/avatars/thumbs/' + u.avatar : ''),
         wins: s.wins || 0, losses: s.losses || 0, ties: s.ties || 0,
         pf: (s.fpts || 0) + (s.fpts_decimal || 0) / 100,
         pa: (s.fpts_against || 0) + (s.fpts_against_decimal || 0) / 100,
@@ -761,7 +768,7 @@ footer a { color: var(--muted); text-decoration: underline; text-underline-offse
     S.week = S.current || (completed >= S.first ? completed : S.first);
     S.anchor = S.week;
     renderHero();
-    return Promise.all([get('/league/' + league.league_id + '/users'), get('/league/' + league.league_id + '/rosters')]).then(function (r) {
+    return Promise.all([get('/league/' + league.league_id + '/users'), get('/league/' + league.league_id + '/rosters'), familyReady]).then(function (r) {
       S.teams = buildTeams(r[0] || [], r[1] || []);
       renderStandings();
       var weeks = [];
