@@ -8,9 +8,13 @@ family-ribbon {
   pointer-events: none;
 }
 .family-ribbon {
+  position: relative;
   box-sizing: border-box;
   padding: 18px 16px 14px;
-  background: #000;
+  background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.025)), rgba(0,0,0,.35);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
+  box-shadow: inset 0 -1px 0 rgba(255,255,255,.16);
   color: #a1a1a6;
   font: 400 16px/normal -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -69,17 +73,85 @@ family-ribbon {
   transition: max-height .2s ease, opacity .15s ease;
 }
 family-ribbon[compact] .family-ribbon { padding-block: 0; }
-family-ribbon[compact] ul { max-width: 360px; }
+family-ribbon[compact] ul { max-width: min(360px, calc(100% - 80px)); }
 family-ribbon[compact] a { gap: 0; }
 family-ribbon[compact] .family-ribbon-icon { width: 28px; height: 28px; }
 family-ribbon[compact] .family-ribbon-label { max-height: 0; opacity: 0; }
+.family-ribbon-account {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 44px;
+  min-height: 44px;
+  max-width: 220px;
+  margin: 0;
+  padding: 5px 5px 5px 14px;
+  border: 1px solid rgba(255,255,255,.35);
+  border-radius: 999px;
+  background: rgba(0,0,0,.35);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  color: #f5f5f7;
+  font: 500 15px/1.2 -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  cursor: pointer;
+  transition: top .2s, padding .2s, gap .2s, background .2s;
+}
+.family-ribbon-account:hover { background: rgba(255,255,255,.12); }
+.family-ribbon-account:focus-visible { outline: 2px solid #2997ff; outline-offset: -2px; }
+.family-ribbon-account:not([data-member]) { padding-right: 14px; }
+.family-ribbon-account-name {
+  display: block;
+  min-width: 0;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+  transition: max-width .2s, opacity .15s;
+}
+.family-ribbon-account-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #2c2c2e;
+}
+.family-ribbon-account:not([data-member]) .family-ribbon-account-avatar { display: none; }
+.family-ribbon-account-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.family-ribbon-account-avatar svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.5; }
+family-ribbon[compact] .family-ribbon-account {
+  top: 0;
+  gap: 0;
+  padding: 7px;
+  border-color: transparent;
+  background: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+family-ribbon[compact] .family-ribbon-account-name { max-width: 0; opacity: 0; }
+family-ribbon[compact] .family-ribbon-account .family-ribbon-account-avatar { display: flex; width: 28px; height: 28px; }
+/* Give the account its own upper row on narrow screens, preserving icon centering. */
+@media (max-width: 1000px) {
+  family-ribbon { height: 145px; }
+  .family-ribbon { padding-top: 68px; }
+  .family-ribbon-account { top: 10px; }
+}
 @media (max-width: 480px) {
-  family-ribbon { height: 90px; }
-  .family-ribbon { padding-inline: 8px; }
+  family-ribbon { height: 136px; }
+  .family-ribbon { padding-top: 64px; padding-inline: 8px; }
+  .family-ribbon-account { right: 8px; top: 8px; }
   .family-ribbon a { font-size: 11px; }
   .family-ribbon-icon { width: 36px; height: 36px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .family-ribbon, .family-ribbon ul, .family-ribbon a,
-  .family-ribbon-icon, .family-ribbon-label { transition: none; }
+  .family-ribbon-icon, .family-ribbon-label, .family-ribbon-account, .family-ribbon-account-name { transition: none; }
 }

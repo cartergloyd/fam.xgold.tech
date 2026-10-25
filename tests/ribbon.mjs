@@ -10,16 +10,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const paths = ['/', '/ff/', '/streaming/'];
 const links = ['/', '/mc', '/streaming/', '/ff/', '/6108'];
 
-test('every page uses the shared component without old streaming handlers', async () => {
-  for (const path of paths) {
-    const html = await readFile(resolve(root, `.${path}index.html`), 'utf8');
-    assert.equal((html.match(/<family-ribbon>/g) || []).length, 1, path);
-    assert.match(html, /src="\/ribbon\.js\?v=3" defer/);
-    assert.doesNotMatch(html, /data-streaming|swiftfin:\/\/|jellyfin:\/\//);
-  }
-});
-
-test('ribbon appearance and actual Streaming clicks agree on every page', async () => {
+async function startSite() {
   const server = createServer(async (req, res) => {
     try {
       const url = new URL(req.url, 'http://localhost');
@@ -33,6 +24,20 @@ test('ribbon appearance and actual Streaming clicks agree on every page', async 
     } catch { res.writeHead(404); res.end(); }
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  return server;
+}
+
+test('every page uses the shared component without old streaming handlers', async () => {
+  for (const path of paths) {
+    const html = await readFile(resolve(root, `.${path}index.html`), 'utf8');
+    assert.equal((html.match(/<family-ribbon>/g) || []).length, 1, path);
+    assert.match(html, /src="\/ribbon\.js\?v=4" defer/);
+    assert.doesNotMatch(html, /data-streaming|swiftfin:\/\/|jellyfin:\/\//);
+  }
+});
+
+test('ribbon appearance and actual Streaming clicks agree on every page', async () => {
+  const server = await startSite();
   const origin = process.env.FAM_TEST_URL || `http://127.0.0.1:${server.address().port}`;
   const browser = await chromium.launch({ headless: true, args: ['--no-sandbox'] });
   try {
@@ -102,6 +107,7 @@ test('ribbon appearance and actual Streaming clicks agree on every page', async 
         assert(compact.height < expanded.height);
         assert(compact.icons.every((icon, i) => icon.width < expanded.icons[i].width && icon.top < expanded.icons[i].top));
         assert(compact.labels.every(label => label.height === 0 && label.opacity === '0'));
+        assert(await page.locator('.family-ribbon-account-avatar').isVisible(), 'Guests retain a visible sign-in icon in compact mode');
         assert(await nav.locator('a').evaluateAll(as => as.every(a => a.getBoundingClientRect().height >= 44 && a.getAttribute('aria-label'))), 'Compact links retain touch targets and accessible names');
         if (compactBaseline) assert.deepEqual(compact, compactBaseline, `Compact ${path} differs at ${width}px`);
         else compactBaseline = compact;
@@ -129,6 +135,132 @@ test('ribbon appearance and actual Streaming clicks agree on every page', async 
       }
       await context.close();
     }
+  } finally {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  }
+});
+
+test('shared account control signs in, switches people and collapses without moving the middle icon', async () => {
+  const server = await startSite();
+  const origin = process.env.FAM_TEST_URL || `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true, args: ['--no-sandbox'] });
+  try {
+    for (const width of [320, 390, 1440]) {
+      for (const path of paths) {
+        const context = await browser.newContext({ viewport: { width, height: 900 }, reducedMotion: 'reduce' });
+        const users = [
+          { id: 'test-carter', name: 'Carter', registered: true, group_id: 'test-family', photo_url: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="#765c40"/><text x="32" y="44" font-size="36" text-anchor="middle">C</text></svg>') },
+          { id: 'test-alex', name: 'Alexandria Montgomery', registered: false, group_id: 'test-family', photo_url: '' },
+        ];
+        const requests = [];
+        await context.route('**/*', async route => {
+          const request = route.request(), url = new URL(request.url());
+          if (url.hostname === 'fam-api.xgold.tech' && url.pathname.startsWith('/family/')) {
+            const endpoint = url.pathname.slice('/family/'.length), body = request.postDataJSON();
+            requests.push({ endpoint, body });
+            let response;
+            if (endpoint === 'users') response = { users };
+            else if (endpoint === 'lookup') response = { user: body.email === 'carter@example.test' ? users[0] : users[1].registered ? users[1] : null };
+            else if (endpoint === 'login') {
+              if (body.pin === '0000') { await route.fulfill({ status: 401, json: { error: 'Incorrect PIN.' } }); return; }
+              assert.equal(body.pin, '1234');
+              response = { user: users[0] };
+            } else if (endpoint === 'register') {
+              assert.equal(body.pin, '5678'); assert.equal(body.id, users[1].id);
+              users[1].registered = true; response = { user: users[1] };
+            } else throw new Error('Unexpected account endpoint');
+            await route.fulfill({ json: response });
+          } else if (url.origin === origin) await route.continue();
+          else await route.abort();
+        });
+        const page = await context.newPage(), errors = [];
+        page.on('pageerror', error => errors.push(error.message));
+        await page.goto(origin + path, { waitUntil: 'domcontentloaded' });
+        await page.evaluate(() => window.familyAccount.ready);
+        if (path === '/') await page.waitForFunction(() => document.querySelectorAll('#days > li').length === 8);
+        const account = page.locator('.family-ribbon-account');
+        assert.equal(await page.locator('#me').count(), 0, 'Old hero control must be removed');
+        assert.equal(await account.getAttribute('aria-label'), 'Sign in');
+        assert.equal(await account.locator('.family-ribbon-account-avatar').isVisible(), false);
+        await account.click();
+        await page.getByRole('dialog', { name: 'Sign in to the family.' }).waitFor();
+        assert.equal(page.url(), origin + path, 'Account opens on the current page');
+        await page.locator('#g-email').fill('carter@example.test');
+        await page.locator('#g-known').waitFor();
+        await page.locator('#g-pin').fill('0000');
+        await page.locator('#g-enter').click();
+        await page.getByText('Incorrect PIN.', { exact: true }).waitFor();
+        assert.equal(await page.evaluate(() => localStorage.getItem('destin-who')), null);
+        assert.equal(await page.locator('#g-pin').inputValue(), '');
+        await page.locator('#g-pin').fill('1234');
+        await page.locator('#g-enter').click();
+        await page.locator('#gate').waitFor({ state: 'hidden' });
+        assert.match(await account.getAttribute('aria-label'), /Signed in as Carter/);
+        const state = await account.evaluate(button => {
+          const name = button.querySelector('.family-ribbon-account-name'), avatar = button.querySelector('.family-ribbon-account-avatar');
+          const n = name.getBoundingClientRect(), a = avatar.getBoundingClientRect(), b = button.getBoundingClientRect();
+          return { nameRight: n.right, avatarLeft: a.left, buttonRight: b.right, textAlign: getComputedStyle(name).textAlign, viewport: innerWidth };
+        });
+        assert.equal(state.textAlign, 'right');
+        assert(state.avatarLeft - state.nameRight >= 0 && state.avatarLeft - state.nameRight <= 9, 'Name hugs the avatar on its left');
+        assert(state.viewport - state.buttonRight <= 16, 'Account is anchored to the right');
+        const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('destin-who')));
+        assert.deepEqual(stored, { name: 'Carter', email: 'carter@example.test' }, 'PIN must not be stored');
+        await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; } body { min-height: 2200px; }' });
+        if (path === '/' && [390, 1440].includes(width)) await page.locator('family-ribbon').screenshot({ path: `/tmp/fam-account-expanded-${width}.png` });
+        await page.evaluate(() => scrollTo(0, 200));
+        await page.waitForFunction(() => document.querySelector('family-ribbon').hasAttribute('compact'));
+        const compact = await page.locator('.family-ribbon').evaluate(nav => {
+          const name = nav.querySelector('.family-ribbon-account-name'), avatar = nav.querySelector('.family-ribbon-account-avatar').getBoundingClientRect();
+          const icons = [...nav.querySelectorAll('.family-ribbon-icon')].map(el => el.getBoundingClientRect());
+          return { nameWidth: name.getBoundingClientRect().width, nameOpacity: getComputedStyle(name).opacity, avatarWidth: avatar.width, avatarLeft: avatar.left, lastIconRight: icons[4].right, middle: icons[2].x + icons[2].width / 2, viewport: innerWidth, backdrop: getComputedStyle(nav).backdropFilter, background: getComputedStyle(nav).backgroundColor };
+        });
+        assert.equal(compact.nameWidth, 0); assert.equal(compact.nameOpacity, '0'); assert.equal(compact.avatarWidth, 28);
+        assert(compact.lastIconRight < compact.avatarLeft, 'Account must not overlap the navigation icons');
+        assert(Math.abs(compact.middle - compact.viewport / 2) < 1, 'Streaming remains centered');
+        assert.match(compact.backdrop, /blur/); assert.match(compact.background, /rgba/);
+        if (path === '/' && [390, 1440].includes(width)) await page.locator('.family-ribbon').screenshot({ path: `/tmp/fam-account-compact-${width}.png` });
+        await account.click();
+        await page.locator('#g-email').waitFor({ state: 'visible' });
+        await page.locator('#g-email').fill('alex@example.test');
+        await page.locator('#g-new').waitFor();
+        await page.locator('#g-signup').click();
+        await page.locator('#dd-btn').click();
+        await page.getByRole('option', { name: 'Alexandria Montgomery' }).click();
+        await page.locator('#g-pin').fill('5678');
+        await page.locator('#g-go').click();
+        await page.locator('#gate').waitFor({ state: 'hidden' });
+        assert.match(await account.getAttribute('aria-label'), /Signed in as Alexandria Montgomery/);
+        assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('destin-who')).name), 'Alexandria Montgomery');
+        await account.click();
+        await page.locator('#g-email').waitFor({ state: 'visible' });
+        await page.keyboard.press('Escape');
+        await page.locator('#gate').waitFor({ state: 'hidden' });
+        assert(await account.evaluate(button => button === document.activeElement), 'Closing sign-in restores focus to the account');
+        assert.equal(requests.filter(r => r.endpoint === 'login').length, 2);
+        assert.equal(requests.filter(r => r.endpoint === 'register').length, 1);
+        assert.deepEqual(errors, [], `No page errors on ${path}`);
+        await context.close();
+      }
+    }
+    // A saved session on any page should restore the same avatar and name.
+    const context = await browser.newContext({ viewport: { width: 390, height: 900 } });
+    await context.addInitScript(() => localStorage.setItem('destin-who', JSON.stringify({ name: 'Carter', email: 'carter@example.test' })));
+    await context.route('**/*', route => {
+      const url = new URL(route.request().url());
+      if (url.hostname === 'fam-api.xgold.tech' && url.pathname === '/family/users') return route.fulfill({ json: { users: [{ name: 'Carter', photo_url: '', registered: true }] } });
+      return url.origin === origin ? route.continue() : route.abort();
+    });
+    for (const path of paths) {
+      const page = await context.newPage();
+      await page.goto(origin + path, { waitUntil: 'domcontentloaded' });
+      await page.evaluate(() => window.familyAccount.ready);
+      assert.match(await page.locator('.family-ribbon-account').getAttribute('aria-label'), /Signed in as Carter/);
+      await page.locator('.family-ribbon-account img').evaluate(image => image.decode());
+      await page.close();
+    }
+    await context.close();
   } finally {
     await browser.close();
     await new Promise(resolve => server.close(resolve));

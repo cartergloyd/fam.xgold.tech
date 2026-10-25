@@ -1,0 +1,67 @@
+/* Identity */
+/* Sign-in (light, Apple style) */
+.gate { --g-ink: #1d1d1f; --g-mut: #6e6e73; --g-line: #d2d2d7; --g-blue: #0071e3; position: fixed; inset: 0; z-index: 100; background: #fff; color: var(--g-ink); display: grid; place-items: center; padding: 24px clamp(16px, 5vw, 48px); overflow-y: auto; font: 400 17px/1.4 -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color-scheme: light; }
+.gate[hidden] { display: none; }
+.gate:not([hidden]) { animation: gfade .35s ease both; }
+.gate.out { animation: gout .26s ease both; pointer-events: none; }
+.gate-in { width: 100%; max-width: 520px; text-align: center; animation: gup .6s cubic-bezier(.2,.8,.2,1) both; }
+.gate.out .gate-in { animation: gdown .26s ease both; }
+.gate h2 { margin: 0 0 12px; font-size: clamp(2.25rem, 9vw, 3.75rem); line-height: 1.04; letter-spacing: -0.04em; color: var(--g-ink); text-wrap: balance; }
+.gate p.lead { margin: 0 auto 32px; max-width: 26em; color: var(--g-mut); font-size: 1.1875rem; line-height: 1.35; letter-spacing: -0.01em; }
+.gate form, .gate .step2 { display: grid; gap: 12px; text-align: left; }
+.gate form:not([hidden]), .gate .step2:not([hidden]) { animation: gstep .45s cubic-bezier(.2,.8,.2,1) both; }
+.gate label { font-size: 13px; color: var(--g-mut); padding-left: 4px; }
+.gate input[type=email], .gate input[type=password] { font: inherit; font-size: 17px; color: var(--g-ink); background: #fff; border: 1px solid var(--g-line); border-radius: 14px; padding: 0 16px; min-height: 56px; width: 100%; transition: border-color .2s, box-shadow .2s; -webkit-appearance: none; appearance: none; }
+.gate input[type=email]::placeholder, .gate input[type=password]::placeholder { color: #a1a1a6; }
+.gate input[type=email]:focus, .gate input[type=password]:focus { outline: none; border-color: var(--g-blue); box-shadow: 0 0 0 4px rgba(0,113,227,.2); }
+.gate .go { font: inherit; font-size: 1.0625rem; font-weight: 500; min-height: 52px; border-radius: 999px; border: 0; background: var(--g-blue); color: #fff; cursor: pointer; margin-top: 4px; transition: background .2s, transform .15s, opacity .2s; }
+.gate .go:hover:not(:disabled) { background: #0077ed; }
+.gate .go:active:not(:disabled) { transform: scale(.98); }
+.gate .go:disabled { opacity: .35; cursor: default; }
+.gate .go:focus-visible { outline: 3px solid rgba(0,113,227,.45); outline-offset: 3px; }
+.gate .back { all: unset; cursor: pointer; justify-self: center; color: var(--g-blue); font-size: 1rem; padding: 10px 14px; border-radius: 10px; transition: opacity .2s; }
+.gate .back:hover { text-decoration: underline; }
+.gate .back:focus-visible { outline: 3px solid rgba(0,113,227,.45); }
+.gate .err { margin: 0; min-height: 1.3em; font-size: 14px; color: #e30000; text-align: center; }
+.gate .err { text-align: center; }
+.gate .err:not(:empty) { animation: gshake .4s ease; }
+.gate #g-close { margin-top: 12px; color: var(--g-mut); }
+.gate .g-pin { display: grid; gap: 6px; }
+.gate input[type=password] { letter-spacing: .5em; text-align: center; }
+.gate [hidden] { display: none !important; }
+.g-res { display: grid; gap: 12px; }
+.g-res:empty { display: none; }
+.g-known { display: grid; justify-items: center; gap: 14px; padding: 8px 0 0; text-align: center; }
+.g-known img { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; box-shadow: 0 8px 28px rgba(0,0,0,.18); animation: gpop .45s cubic-bezier(.2,1.4,.4,1) both; }
+.g-welcome { margin: 0; font-size: 1.5rem; font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; }
+.g-known .go, .g-new .go, .step2 .go { width: 100%; }
+.g-new { display: grid; gap: 12px; text-align: center; animation: gstep .35s cubic-bezier(.2,.8,.2,1) both; }
+.g-new p { margin: 0; color: var(--g-mut); font-size: 1.0625rem; }
+.g-note { margin: 0; color: var(--g-mut); font-size: 14px; text-align: center; }
+.dd { position: relative; }
+.dd-btn { font: inherit; font-size: 17px; width: 100%; min-height: 60px; display: flex; align-items: center; gap: 12px; padding: 0 16px 0 10px; color: var(--g-ink); background: #fff; border: 1px solid var(--g-line); border-radius: 14px; cursor: pointer; text-align: left; transition: border-color .2s, box-shadow .2s; }
+.dd-btn:hover { border-color: #a1a1a6; }
+.dd-btn:focus-visible, .dd-btn[aria-expanded="true"] { outline: none; border-color: var(--g-blue); box-shadow: 0 0 0 4px rgba(0,113,227,.2); }
+.dd-btn .ph { color: #a1a1a6; padding-left: 6px; }
+.dd-btn img { animation: gpop .4s cubic-bezier(.2,1.4,.4,1) both; }
+.dd-btn img, .dd-list img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex: none; }
+.dd-btn .arr { margin-left: auto; width: 18px; height: 18px; stroke: var(--g-mut); fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; transition: transform .25s; }
+.dd-btn[aria-expanded="true"] .arr { transform: rotate(180deg); }
+.dd-list { list-style: none; margin: 8px 0 0; padding: 6px; background: #fff; border: 1px solid var(--g-line); border-radius: 18px; box-shadow: 0 16px 48px rgba(0,0,0,.16); max-height: min(320px, 46vh); overflow-y: auto; outline: none; transform-origin: top center; }
+.dd-list[hidden] { display: none; }
+.dd-list:not([hidden]) { animation: gdrop .24s cubic-bezier(.2,.8,.2,1) both; }
+.dd-list li { display: flex; align-items: center; gap: 12px; padding: 6px 12px 6px 6px; border-radius: 12px; cursor: pointer; font-size: 17px; min-height: 52px; transition: background .12s; }
+.dd-list li:hover, .dd-list li.act { background: #f5f5f7; }
+.dd-list li[aria-selected="true"] { font-weight: 600; }
+@keyframes gfade { from { opacity: 0 } to { opacity: 1 } }
+@keyframes gout { from { opacity: 1 } to { opacity: 0 } }
+@keyframes gup { from { opacity: 0; transform: translateY(24px) scale(.98) } to { opacity: 1; transform: none } }
+@keyframes gdown { from { opacity: 1; transform: none } to { opacity: 0; transform: translateY(16px) scale(.98) } }
+@keyframes gstep { from { opacity: 0; transform: translateX(28px) } to { opacity: 1; transform: none } }
+@keyframes gdrop { from { opacity: 0; transform: translateY(-8px) scale(.98) } to { opacity: 1; transform: none } }
+@keyframes gpop { from { opacity: 0; transform: scale(.5) } to { opacity: 1; transform: none } }
+@keyframes gshake { 20% { transform: translateX(-6px) } 40% { transform: translateX(6px) } 60% { transform: translateX(-3px) } 80% { transform: translateX(3px) } }
+@media (prefers-reduced-motion: reduce) { .gate, .gate-in, .gate form, .gate .step2, .dd-list, .dd-btn img, .g-known img, .g-new, .gate .err { animation: none !important; } .gate *, .dd-btn .arr { transition: none !important; } }
+
+.gate *, .gate *::before, .gate *::after { box-sizing: border-box; }
+.gate .dd-list li { margin: 0; }
