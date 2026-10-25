@@ -564,16 +564,17 @@ h2 { margin: 0 0 20px; font-size: clamp(1.75rem, 6vw, 3rem); line-height: 1.08; 
 }
 @media (max-width: 380px) { .dates { grid-template-columns: 1fr 1fr; } .dates svg { display: none; } }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .btn { transition: none; } }
-</style></head><body>
+</style><link rel="stylesheet" href="/ribbon.css">
+</head><body>
 
 
 <nav class="nav ribbon" aria-label="Family sites">
   <ul>
-    <li><a href="https://fam.xgold.tech/" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7M5 10v10h5v-6h4v6h5V10"/></svg><span>Home</span></a></li>
-    <li><a href="/mc"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.500l8.500 4.750v9.500L12 21.500l-8.500-4.750v-9.500zM3.500 7.250L12 12l8.500-4.750M12 12v9.500"/></svg><span>Minecraft</span></a></li>
-    <li><a href="/streaming/"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.500" y="4.500" width="19" height="13" rx="2.500"/><path d="M8 21h8M10.500 8.500v5l4.200-2.500z"/></svg><span>Streaming</span></a></li>
-    <li><a href="/ff/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.600 19.400c-.9-4.300.6-9.400 4.300-12.300 3.300-2.600 8.300-3.300 10.500-2.500.8 2.200.1 7.200-2.500 10.500-2.900 3.700-8 5.200-12.300 4.300zM8.500 15.500l7-7M10.200 11.800l2 2M12.200 9.800l2 2"/></svg><span>Fantasy Football</span></a></li>
-    <li><a href="/6108"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4.500A1.500 1.500 0 0 1 6.500 3h7A1.500 1.500 0 0 1 15 4.500V21M15 9h3.500A1.500 1.500 0 0 1 20 10.500V21M3 21h18M8.500 7h3M8.500 11h3M8.500 15h3"/></svg><span>Condos</span></a></li>
+    <li><a href="https://fam.xgold.tech/" aria-current="page"><span class="ribbon-icon" aria-hidden="true"><img src="/assets/app-icons/home.png" width="40" height="40" alt=""></span><span>Home</span></a></li>
+    <li><a href="/mc"><span class="ribbon-icon" aria-hidden="true"><img src="/assets/app-icons/minecraft.png" width="40" height="40" alt=""></span><span>Minecraft</span></a></li>
+    <li><a href="/streaming/"><span class="ribbon-icon" aria-hidden="true"><img src="/assets/app-icons/jellyfin.png" width="40" height="40" alt=""></span><span>Streaming</span></a></li>
+    <li><a href="/ff/"><span class="ribbon-icon" aria-hidden="true"><img src="/assets/app-icons/sleeper.png" width="40" height="40" alt=""></span><span>Fantasy</span></a></li>
+    <li><a href="/6108"><span class="ribbon-icon" aria-hidden="true"><img src="/assets/app-icons/calendar.png" width="40" height="40" alt=""></span><span>Condos</span></a></li>
   </ul>
 </nav>
 <section class="vhero" aria-label="Spring Break 2027">
