@@ -528,7 +528,7 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
         name: md.team_name || u.display_name || 'Team ' + r.roster_id,
         owner: family.name || u.display_name || '',
         ownerId: r.owner_id,
-        avatar: family.photo_url || (/^https:\/\//.test(md.avatar || '') ? md.avatar : u.avatar ? 'https://sleepercdn.com/avatars/thumbs/' + u.avatar : ''),
+        avatar: (function () { var id = (r.metadata || {}).avatar || md.avatar || u.avatar; return id ? (/^https:\/\//.test(id) ? id : 'https://sleepercdn.com/avatars/thumbs/' + encodeURIComponent(id)) : ''; })(),
         wins: s.wins || 0, losses: s.losses || 0, ties: s.ties || 0,
         pf: (s.fpts || 0) + (s.fpts_decimal || 0) / 100,
         pa: (s.fpts_against || 0) + (s.fpts_against_decimal || 0) / 100,
