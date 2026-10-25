@@ -792,17 +792,7 @@ footer a { color: var(--muted); text-decoration: underline; text-underline-offse
     });
   }).catch(fail);
 
-  Array.prototype.forEach.call(document.querySelectorAll('a[data-streaming]'), function (a) {
-    a.addEventListener('click', function (e) {
-      var ua = navigator.userAgent, ios = /iPhone|iPad|iPod/i.test(ua), android = /Android/i.test(ua);
-      if (!ios && !android) return;
-      e.preventDefault();
-      var store = ios ? 'https://apps.apple.com/app/swiftfin/id1604098728' : 'https://play.google.com/store/apps/details?id=org.jellyfin.mobile';
-      var t = setTimeout(function () { window.location.href = store; }, 1500);
-      document.addEventListener('visibilitychange', function h() { if (document.hidden) { clearTimeout(t); document.removeEventListener('visibilitychange', h); } });
-      window.location.href = ios ? 'swiftfin://' : 'jellyfin://';
-    });
-  });
+
 })();
 </script>
 </body></html>
