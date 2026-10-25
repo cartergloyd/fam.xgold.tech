@@ -12,11 +12,6 @@
     body { margin:0; background:var(--bg); color:var(--fg); line-height:1.6; -webkit-font-smoothing:antialiased; }
     a { color:inherit; }
     :focus-visible { outline:2px solid var(--accent); outline-offset:5px; }
-    .nav { padding:20px 16px; }
-    .nav ul { display:flex; justify-content:center; gap:clamp(14px,4vw,48px); padding:0; margin:0; list-style:none; }
-    .nav a { display:flex; flex-direction:column; align-items:center; gap:8px; color:var(--muted); font-size:12px; text-decoration:none; min-height:44px; }
-    .nav a:hover,.nav a[aria-current] { color:var(--fg); }
-    .nav svg { width:30px; height:30px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
     main { max-width:900px; margin:auto; padding:40px 20px 80px; }
     header { text-align:center; margin:10px auto 42px; max-width:640px; }
     .eyebrow { color:var(--accent); text-transform:uppercase; letter-spacing:.16em; font-size:12px; font-weight:700; }
@@ -44,18 +39,13 @@
     code { color:var(--fg); font-size:.95em; }
     #copy-status { min-height:24px; margin:8px 0 0; }
     footer { text-align:center; color:var(--muted); margin-top:36px; font-size:14px; }
-    @media (max-width:640px) { .grid { grid-template-columns:1fr; } main { padding-top:24px; } .nav ul { gap:16px; } .nav a { font-size:11px; } .actions .button { flex:1; } }
+    @media (max-width:640px) { .grid { grid-template-columns:1fr; } main { padding-top:24px; } .actions .button { flex:1; } }
   </style>
-<link rel="stylesheet" href="/ribbon.css">
+<link rel="stylesheet" href="/ribbon.css?v=2">
+<script src="/ribbon.js?v=2" defer></script>
 </head>
 <body>
-  <nav class="nav ribbon" aria-label="Family sites"><ul>
-    <li><a href="/"><span class="ribbon-icon" aria-hidden="true"><img src="/assets/app-icons/home.png" width="40" height="40" alt=""></span>Home</a></li>
-    <li><a href="/mc"><span class="ribbon-icon" aria-hidden="true"><img src="/assets/app-icons/minecraft.png" width="40" height="40" alt=""></span>Minecraft</a></li>
-    <li><a href="/streaming/" aria-current="page"><span class="ribbon-icon" aria-hidden="true"><img src="/assets/app-icons/jellyfin.png" width="40" height="40" alt=""></span>Streaming</a></li>
-    <li><a href="/ff/"><span class="ribbon-icon" aria-hidden="true"><img src="/assets/app-icons/sleeper.png" width="40" height="40" alt=""></span>Fantasy</a></li>
-    <li><a href="/6108"><span class="ribbon-icon" aria-hidden="true"><img src="/assets/app-icons/calendar.png" width="40" height="40" alt=""></span>Condos</a></li>
-  </ul></nav>
+  <family-ribbon></family-ribbon>
   <main>
     <header><span class="eyebrow">Gold family streaming</span><h1>Watch from anywhere.</h1><p>Connect to our Jellyfin server on your phone, computer, or TV—even when you’re away from the home Wi-Fi.</p></header>
     <aside class="card" aria-label="Connection status"><strong>Away-from-home access is currently unavailable.</strong><p class="muted">Carter is checking the remote connection. The setup details below are ready to use once access is restored.</p></aside>

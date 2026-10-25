@@ -30,20 +30,6 @@ a { color: inherit; text-decoration: none; }
 :focus-visible { outline: 2px solid #2997ff; outline-offset: 4px; border-radius: 8px; }
 section[id] { scroll-margin-top: 24px; }
 
-.nav { padding-block: 24px 0; }
-.nav ul { list-style: none; margin: 0 auto; padding: 0 var(--gutter); display: flex; justify-content: center; gap: clamp(20px, 3vw, 44px); max-width: 1100px; }
-.ribbon { background: var(--bg); padding-block: 18px 14px; overflow-x: auto; scrollbar-width: none; }
-.ribbon::-webkit-scrollbar { display: none; }
-.ribbon ul { width: max-content; min-width: 100%; justify-content: center; gap: clamp(28px, 4vw, 56px); max-width: none; }
-.nav.ribbon a { color: var(--muted); transition: color .2s; }
-.ribbon a:hover, .ribbon a[aria-current="page"] { color: var(--fg); }
-.ribbon a:hover span { text-decoration: none; }
-.ribbon svg { width: 30px; height: 30px; stroke: currentColor; }
-@media (max-width: 480px) { .nav.ribbon ul { width: 100%; gap: 4px; padding-inline: 8px; justify-content: space-between; align-items: flex-start; } .nav.ribbon li { flex: 1 1 0; min-width: 0; display: flex; justify-content: center; } .nav.ribbon a { font-size: 11px; white-space: normal; text-align: center; } .nav.ribbon svg { width: 28px; height: 28px; } }
-.nav a { display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 12px; line-height: 1.2; letter-spacing: -0.01em; white-space: nowrap; min-height: 44px; }
-.nav svg { width: 36px; height: 36px; stroke: var(--fg); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-.nav a:hover span { text-decoration: underline; }
-
 .hero { max-width: 1000px; margin: 0 auto; padding: clamp(64px, 11vw, 130px) var(--gutter) clamp(56px, 8vw, 100px); text-align: center; }
 h1 { margin: 0; font-size: clamp(2.75rem, 10.5vw, 7rem); line-height: 1.04; font-weight: 700; letter-spacing: -0.035em; text-wrap: balance; }
 .lede { margin: clamp(24px, 4vw, 44px) auto 0; max-width: 34em; font-size: clamp(1.0625rem, 4.4vw, 1.5rem); line-height: 1.33; font-weight: 500; letter-spacing: -0.012em; text-wrap: balance; }
@@ -550,10 +536,6 @@ h2 { margin: 0 0 20px; font-size: clamp(1.75rem, 6vw, 3rem); line-height: 1.08; 
 .btn:hover { background: var(--fg); color: #000; }
 
 @media (max-width: 760px) {
-  .nav { padding-top: 20px; }
-  .nav ul { justify-content: flex-start; overflow-x: auto; scroll-snap-type: x proximity; gap: 24px; scrollbar-width: none; }
-  .nav ul::-webkit-scrollbar { display: none; }
-  .nav li { scroll-snap-align: start; flex: none; }
   .photos { grid-template-columns: 1fr; }
   .facts { gap: 8px; }
   .fact { padding: 16px 14px; border-radius: 16px; }
@@ -564,19 +546,12 @@ h2 { margin: 0 0 20px; font-size: clamp(1.75rem, 6vw, 3rem); line-height: 1.08; 
 }
 @media (max-width: 380px) { .dates { grid-template-columns: 1fr 1fr; } .dates svg { display: none; } }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .btn { transition: none; } }
-</style><link rel="stylesheet" href="/ribbon.css">
+</style><link rel="stylesheet" href="/ribbon.css?v=2">
+<script src="/ribbon.js?v=2" defer></script>
 </head><body>
 
 
-<nav class="nav ribbon" aria-label="Family sites">
-  <ul>
-    <li><a href="https://fam.xgold.tech/" aria-current="page"><span class="ribbon-icon" aria-hidden="true"><img src="/assets/app-icons/home.png" width="40" height="40" alt=""></span><span>Home</span></a></li>
-    <li><a href="/mc"><span class="ribbon-icon" aria-hidden="true"><img src="/assets/app-icons/minecraft.png" width="40" height="40" alt=""></span><span>Minecraft</span></a></li>
-    <li><a href="/streaming/"><span class="ribbon-icon" aria-hidden="true"><img src="/assets/app-icons/jellyfin.png" width="40" height="40" alt=""></span><span>Streaming</span></a></li>
-    <li><a href="/ff/"><span class="ribbon-icon" aria-hidden="true"><img src="/assets/app-icons/sleeper.png" width="40" height="40" alt=""></span><span>Fantasy</span></a></li>
-    <li><a href="/6108"><span class="ribbon-icon" aria-hidden="true"><img src="/assets/app-icons/calendar.png" width="40" height="40" alt=""></span><span>Condos</span></a></li>
-  </ul>
-</nav>
+<family-ribbon></family-ribbon>
 <section class="vhero" aria-label="Spring Break 2027">
   <button class="me" id="me" type="button" hidden aria-label="Switch person"><img id="me-img" alt=""><span id="me-name"></span></button>
   <div class="reel" id="reel">

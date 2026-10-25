@@ -1,5 +1,42 @@
-/* Shared app artwork and sizing for every family navigation ribbon. */
-.nav.ribbon .ribbon-icon {
+/* Complete shared ribbon styling; independent of each page's design tokens. */
+family-ribbon { display: block; min-height: 95px; }
+.family-ribbon {
+  box-sizing: border-box;
+  padding: 18px 16px 14px;
+  background: #000;
+  color: #a1a1a6;
+  font: 400 16px/normal -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.family-ribbon ul {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: clamp(28px, 4vw, 56px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.family-ribbon li { margin: 0; padding: 0; }
+.family-ribbon a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: #a1a1a6;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -.01em;
+  white-space: nowrap;
+  text-align: center;
+  text-decoration: none;
+  transition: color .2s;
+}
+.family-ribbon a:hover, .family-ribbon a[aria-current="page"] { color: #f5f5f7; }
+.family-ribbon a:focus-visible { outline: 2px solid #2997ff; outline-offset: 4px; border-radius: 8px; }
+.family-ribbon-icon {
   display: block;
   width: 40px;
   height: 40px;
@@ -8,33 +45,15 @@
   border-radius: 24%;
   clip-path: inset(0 round 24%);
 }
-
-.nav.ribbon .ribbon-icon img { display: block; width: 100%; height: 100%; object-fit: cover; }
-/* Calendar artwork includes a transparent outer margin. Fill the common mask. */
-.nav.ribbon .ribbon-icon img[src$="calendar.png"] { transform: scale(1.25); }
-
+.family-ribbon-icon img { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* Calendar's source artwork includes an outer margin. Fill the common mask. */
+.family-ribbon-icon img[src$="calendar.png"] { transform: scale(1.25); }
 @media (max-width: 480px) {
-  .nav.ribbon ul {
-    width: 100%;
-    min-width: 0;
-    gap: 4px;
-    padding-inline: 8px;
-    justify-content: space-between;
-    align-items: flex-start;
-  }
-  .nav.ribbon li {
-    display: flex;
-    flex: 1 1 0;
-    min-width: 0;
-    justify-content: center;
-  }
-  .nav.ribbon a {
-    font-size: 11px;
-    white-space: normal;
-    text-align: center;
-  }
-  .nav.ribbon .ribbon-icon {
-    width: 36px;
-    height: 36px;
-  }
+  family-ribbon { min-height: 90px; }
+  .family-ribbon { padding-inline: 8px; }
+  .family-ribbon ul { gap: 4px; justify-content: space-between; }
+  .family-ribbon li { display: flex; flex: 1 1 0; min-width: 0; justify-content: center; }
+  .family-ribbon a { font-size: 11px; }
+  .family-ribbon-icon { width: 36px; height: 36px; }
 }
+@media (prefers-reduced-motion: reduce) { .family-ribbon a { transition: none; } }
