@@ -13,8 +13,14 @@ for `family-account-change` to refresh its planning controls after sign-in or sw
 On desktop, the control puts right-aligned text immediately to the left of the avatar.
 At 1000px and below, the account is the sixth equal column in the same row as the five
 app icons, with its label below. Labels fade away in compact mode. Icon slots stay fixed;
-transforms animate the smaller icons without reflowing their sizes and gaps.
-The ribbon uses a translucent, blurred background.
+one scroll-linked progress value drives icon transforms, label opacity, and bar height.
+A short animation-frame smoothing filter follows scroll changes in either direction,
+without restarting separate threshold animations. Reduced motion applies updates immediately.
+The ribbon uses a translucent, blurred background that includes `env(safe-area-inset-top)`.
+Every page opts into the translucent iOS standalone status bar so the same glass can
+extend behind the clock, while interactive controls stay below the safe area.
+The actual installed-iPhone status bar must be checked on a device; browser tests simulate
+the inset and cannot validate iOS system chrome.
 
 Run the browser regression check after ribbon changes:
 

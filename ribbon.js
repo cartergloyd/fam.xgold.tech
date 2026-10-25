@@ -35,14 +35,31 @@
       window.addEventListener('family-account-change', this.updateAccount);
       this.updateAccount();
       window.familyAccount.ready.then(this.updateAccount).catch(this.updateAccount);
-      this.updateScrollState = () => {
-        if (this.scrollFrame) return;
-        this.scrollFrame = requestAnimationFrame(() => {
+      const scrollProgress = () => Math.max(0, Math.min(1, (window.scrollY - 8) / 88));
+      this.motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
+      this.progress = scrollProgress();
+      this.lastFrame = null;
+      this.style.setProperty('--ribbon-progress', this.progress);
+      this.renderScrollFrame = now => {
+        const target = scrollProgress();
+        const elapsed = this.lastFrame ? Math.min(now - this.lastFrame, 64) : 16;
+        const next = this.motionPreference.matches ? target : this.progress + (target - this.progress) * (1 - Math.exp(-elapsed / 50));
+        this.progress = Math.abs(target - next) < .001 ? target : next;
+        this.style.setProperty('--ribbon-progress', this.progress.toFixed(5));
+        const threshold = this.hasAttribute('compact') ? 16 : 48;
+        this.toggleAttribute('compact', window.scrollY > threshold);
+        if (this.progress !== target) {
+          this.lastFrame = now;
+          this.scrollFrame = requestAnimationFrame(this.renderScrollFrame);
+        } else {
+          this.lastFrame = null;
           this.scrollFrame = null;
-          const threshold = this.hasAttribute('compact') ? 16 : 48;
-          this.toggleAttribute('compact', window.scrollY > threshold);
-        });
+        }
       };
+      this.updateScrollState = () => {
+        if (!this.scrollFrame) this.scrollFrame = requestAnimationFrame(this.renderScrollFrame);
+      };
+      this.motionPreference.addEventListener('change', this.updateScrollState);
       window.addEventListener('scroll', this.updateScrollState, { passive: true });
       window.addEventListener('pageshow', this.updateScrollState);
       this.updateScrollState();
@@ -51,6 +68,7 @@
       window.removeEventListener('family-account-change', this.updateAccount);
       window.removeEventListener('scroll', this.updateScrollState);
       window.removeEventListener('pageshow', this.updateScrollState);
+      this.motionPreference.removeEventListener('change', this.updateScrollState);
       cancelAnimationFrame(this.scrollFrame);
       this.scrollFrame = null;
     }

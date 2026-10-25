@@ -31,7 +31,9 @@ test('every page uses the shared component without old streaming handlers', asyn
   for (const path of paths) {
     const html = await readFile(resolve(root, `.${path}index.html`), 'utf8');
     assert.equal((html.match(/<family-ribbon>/g) || []).length, 1, path);
-    assert.match(html, /src="\/ribbon\.js\?v=5" defer/);
+    assert.match(html, /src="\/ribbon\.js\?v=6" defer/);
+    assert.match(html, /name="apple-mobile-web-app-status-bar-style" content="black-translucent"/);
+    assert.match(html, /name="apple-mobile-web-app-capable" content="yes"/);
     assert.doesNotMatch(html, /data-streaming|swiftfin:\/\/|jellyfin:\/\//);
   }
 });
@@ -133,6 +135,8 @@ test('ribbon appearance and actual Streaming clicks agree on every page', async 
         await page.evaluate(() => scrollTo(0, 35));
         await page.waitForTimeout(400);
         assert(await page.locator('family-ribbon').evaluate(el => el.hasAttribute('compact')));
+        const partial = await geometry();
+        assert(partial.icons[0].width > compact.icons[0].width && partial.icons[0].width < expanded.icons[0].width, 'Intermediate scroll positions produce intermediate sizes');
         const expandFrames = await animateScroll(0);
         assert(expandFrames.some(frame => frame.width > 29 && frame.width < expanded.icons[0].width - 1), 'Expansion has intermediate animation frames');
         assert(expandFrames.every((frame, i) => !i || frame.width >= expandFrames[i - 1].width - .5), 'Icons expand without bouncing');
@@ -282,6 +286,46 @@ test('shared account control signs in, switches people and follows the responsiv
       await page.close();
     }
     await context.close();
+  } finally {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  }
+});
+
+test('glass includes the iPhone top safe area while all six controls stay below it', async () => {
+  const server = await startSite();
+  const origin = process.env.FAM_TEST_URL || `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true, args: ['--no-sandbox'] });
+  try {
+    for (const path of paths) {
+      const page = await browser.newPage({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+      await page.route('**/*', route => new URL(route.request().url()).origin === origin ? route.continue() : route.abort());
+      await page.goto(origin + path, { waitUntil: 'domcontentloaded' });
+      await page.locator('.family-ribbon').waitFor();
+      // Browser emulation cannot draw iOS system chrome; simulate its 59px inset.
+      await page.addStyleTag({ content: 'family-ribbon { --ribbon-safe-top: 59px !important; } html { scroll-behavior: auto !important; } body { min-height: 2400px; }' });
+      for (const [y, progress, height, size] of [[0, 0, 149, 36], [52, .5, 126, 32], [200, 1, 103, 28], [0, 0, 149, 36]]) {
+        await page.evaluate(y => scrollTo(0, y), y);
+        await page.waitForFunction(expected => Number(document.querySelector('family-ribbon').style.getPropertyValue('--ribbon-progress')) === expected, progress);
+        const state = await page.locator('.family-ribbon').evaluate(nav => {
+          const r = nav.getBoundingClientRect();
+          const icons = [...nav.querySelectorAll('.family-ribbon-icon'), nav.querySelector('.family-ribbon-account-avatar')].map(el => {
+            const b = el.getBoundingClientRect(); return { top: b.top, width: b.width, center: b.x + b.width / 2 };
+          });
+          const links = [...nav.querySelectorAll('a')].map(el => { const b = el.getBoundingClientRect(); return { top: b.top, height: b.height }; });
+          return { top: r.top, height: r.height, icons, links, blur: getComputedStyle(nav).backdropFilter };
+        });
+        assert.equal(state.top, 0, 'Glass reaches the physical top of the simulated viewport');
+        assert(Math.abs(state.height - height) < .1);
+        assert(state.icons.every(icon => icon.top >= 59 && Math.abs(icon.width - size) < .1));
+        assert(state.links.every(link => link.top >= 59 && link.height >= 44), 'Clock/camera safe area contains no touch controls');
+        const pitch = state.icons[1].center - state.icons[0].center;
+        assert(state.icons.slice(1).every((icon, i) => Math.abs(icon.center - state.icons[i].center - pitch) < 1));
+        assert.match(state.blur, /blur/);
+        if (path === '/' && y === 200) await page.locator('.family-ribbon').screenshot({ path: '/tmp/fam-safe-area-glass.png' });
+      }
+      await page.close();
+    }
   } finally {
     await browser.close();
     await new Promise(resolve => server.close(resolve));

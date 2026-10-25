@@ -65,3 +65,18 @@
 
 .gate *, .gate *::before, .gate *::after { box-sizing: border-box; }
 .gate .dd-list li { margin: 0; }
+/* Keep sign-in controls below the translucent iOS status bar too. */
+.gate {
+  padding-top: calc(24px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+}
+.gate::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  height: env(safe-area-inset-top, 0px);
+  background: rgba(0,0,0,.65);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  pointer-events: none;
+}

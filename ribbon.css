@@ -1,6 +1,9 @@
+html { scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 44px); }
 /* Stable icon slots: animate transforms and opacity, rather than reflowing the row. */
 family-ribbon {
-  --ribbon-motion: 360ms cubic-bezier(.2, 0, .2, 1);
+  --ribbon-progress: 0;
+  --ribbon-safe-top: env(safe-area-inset-top, 0px);
+  --ribbon-expanded-height: 95px;
   --ribbon-icon-size: 40px;
   --ribbon-icon-scale: .7;
   --ribbon-icon-rise: -16px;
@@ -8,13 +11,14 @@ family-ribbon {
   position: sticky;
   top: 0;
   z-index: 20;
-  height: 95px;
+  height: calc(var(--ribbon-safe-top) + var(--ribbon-expanded-height));
   pointer-events: none;
 }
 .family-ribbon {
   position: relative;
   box-sizing: border-box;
-  height: 95px;
+  height: calc(var(--ribbon-safe-top) + var(--ribbon-expanded-height) - (var(--ribbon-expanded-height) - 44px) * var(--ribbon-progress));
+  padding-top: var(--ribbon-safe-top);
   overflow: hidden;
   background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.025)), rgba(0,0,0,.35);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
@@ -24,7 +28,6 @@ family-ribbon {
   font: 400 16px/normal -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   pointer-events: auto;
-  transition: height var(--ribbon-motion);
 }
 .family-ribbon ul {
   display: grid;
@@ -43,7 +46,7 @@ family-ribbon {
   height: 100%;
   margin: 0;
   padding: 0;
-  transition: transform var(--ribbon-motion);
+  transform: translateX(calc(var(--ribbon-slot) * -40px * var(--ribbon-progress)));
 }
 .family-ribbon a {
   position: absolute;
@@ -76,8 +79,8 @@ family-ribbon {
   overflow: hidden;
   border-radius: 24%;
   clip-path: inset(0 round 24%);
-  transform: translateX(-50%);
-  transition: transform var(--ribbon-motion);
+  transform: translate(-50%, calc(var(--ribbon-icon-rise) * var(--ribbon-progress))) scale(calc(1 - (1 - var(--ribbon-icon-scale)) * var(--ribbon-progress)));
+  will-change: transform;
 }
 .family-ribbon-icon img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .family-ribbon-icon img[src$="calendar.png"] { transform: scale(1.25); }
@@ -87,17 +90,13 @@ family-ribbon {
   left: 0;
   right: 0;
   display: block;
-  opacity: 1;
-  transition: opacity .16s ease, transform var(--ribbon-motion);
+  opacity: clamp(0, calc(1 - var(--ribbon-progress) * 2), 1);
+  transform: translateY(calc(-8px * var(--ribbon-progress)));
 }
-family-ribbon[compact] .family-ribbon { height: 44px; }
-family-ribbon[compact] li { transform: translateX(calc(var(--ribbon-slot) * -40px)); }
-family-ribbon[compact] .family-ribbon-icon { transform: translate(-50%, var(--ribbon-icon-rise)) scale(var(--ribbon-icon-scale)); }
-family-ribbon[compact] .family-ribbon-label { opacity: 0; transform: translateY(-8px); }
 .family-ribbon-account {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: calc(var(--ribbon-safe-top) + 16px);
+  right: max(16px, env(safe-area-inset-right, 0px));
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -107,18 +106,16 @@ family-ribbon[compact] .family-ribbon-label { opacity: 0; transform: translateY(
   max-width: 220px;
   margin: 0;
   padding: 5px 5px 5px 14px;
-  border: 1px solid rgba(255,255,255,.35);
+  border: 1px solid rgba(255,255,255,calc(.35 * (1 - var(--ribbon-progress))));
   border-radius: 999px;
-  background: rgba(0,0,0,.35);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
+  background: rgba(0,0,0,calc(.35 * (1 - var(--ribbon-progress))));
   color: #f5f5f7;
   font: 500 15px/1.2 -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
   cursor: pointer;
   pointer-events: auto;
-  transition: transform var(--ribbon-motion), background .16s, border-color .16s;
+  transform: translateY(calc(-16px * var(--ribbon-progress)));
 }
-.family-ribbon-account:hover { background: rgba(255,255,255,.12); }
+.family-ribbon-account:hover { background: rgba(255,255,255,calc(.12 * (1 - var(--ribbon-progress)))); }
 .family-ribbon-account-name {
   display: block;
   min-width: 0;
@@ -127,7 +124,8 @@ family-ribbon[compact] .family-ribbon-label { opacity: 0; transform: translateY(
   text-overflow: ellipsis;
   white-space: nowrap;
   text-align: right;
-  transition: opacity .16s ease, transform var(--ribbon-motion);
+  opacity: clamp(0, calc(1 - var(--ribbon-progress) * 2), 1);
+  transform: translateY(calc(-8px * var(--ribbon-progress)));
 }
 .family-ribbon-account-avatar {
   display: flex;
@@ -139,33 +137,26 @@ family-ribbon[compact] .family-ribbon-label { opacity: 0; transform: translateY(
   overflow: hidden;
   border-radius: 50%;
   background: #2c2c2e;
-  transition: transform var(--ribbon-motion);
+  transform: scale(calc(1 - .125 * var(--ribbon-progress)));
+  will-change: transform;
 }
 .family-ribbon-account-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .family-ribbon-account-avatar svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.5; }
-family-ribbon[compact] .family-ribbon-account {
-  transform: translateY(-16px);
-  border-color: transparent;
-  background: transparent;
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-}
-family-ribbon[compact] .family-ribbon-account-name { opacity: 0; transform: translateY(-8px); }
-family-ribbon[compact] .family-ribbon-account-avatar { transform: scale(.875); }
 /* Mobile and tablet: the account is the sixth equally spaced icon in the same row. */
 @media (max-width: 1000px) {
   family-ribbon {
     --ribbon-icon-size: 36px;
     --ribbon-icon-scale: .77777778;
     --ribbon-icon-rise: -14px;
-    height: 90px;
+    --ribbon-expanded-height: 90px;
   }
-  .family-ribbon { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); height: 90px; padding-inline: 8px; }
+  .family-ribbon { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); padding-left: max(8px, env(safe-area-inset-left, 0px)); padding-right: max(8px, env(safe-area-inset-right, 0px)); }
   .family-ribbon ul { display: contents; }
   .family-ribbon a { width: 100%; font-size: 11px; }
-  family-ribbon[compact] li { transform: none; }
+  .family-ribbon li { transform: none; }
   .family-ribbon-account {
     position: relative;
+    transform: none;
     top: auto;
     right: auto;
     display: block;
@@ -189,11 +180,9 @@ family-ribbon[compact] .family-ribbon-account-avatar { transform: scale(.875); }
     left: 50%;
     width: var(--ribbon-icon-size);
     height: var(--ribbon-icon-size);
-    transform: translateX(-50%);
+    transform: translate(-50%, calc(var(--ribbon-icon-rise) * var(--ribbon-progress))) scale(calc(1 - (1 - var(--ribbon-icon-scale)) * var(--ribbon-progress)));
   }
   .family-ribbon-account-name { position: absolute; top: 62px; left: 0; right: 0; max-width: none; padding-inline: 2px; text-align: center; }
-  family-ribbon[compact] .family-ribbon-account { transform: none; }
-  family-ribbon[compact] .family-ribbon-account-avatar { transform: translate(-50%, var(--ribbon-icon-rise)) scale(var(--ribbon-icon-scale)); }
 }
 @media (prefers-reduced-motion: reduce) {
   .family-ribbon, .family-ribbon li, .family-ribbon a, .family-ribbon-icon,
