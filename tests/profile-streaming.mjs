@@ -35,6 +35,8 @@ async function setup(path = '/', options = {}) {
     const req = route.request(), url = new URL(req.url());
     if (url.hostname === 'fam-api.xgold.tech' && url.pathname.startsWith('/family/')) {
       const endpoint = url.pathname.split('/').pop(), body = req.postDataJSON(); requests.push({ endpoint, body });
+      if (endpoint === 'streaming-search') return route.fulfill({ json: { results: [{id:'95396',type:'tv',title:'Severance',year:2022,poster:null,selection:'signed-tv'}, {id:'5072',type:'movie',title:'Severance',year:2006,poster:null,selection:'signed-movie'}] } });
+      if (endpoint === 'streaming-requests') return route.fulfill({ status:201, json:{requested:true} });
       if (endpoint === 'recent.json') return route.fulfill({ json: { posters: Array.from({length: 24}, (_, i) => ({ image: '/family/streaming-artwork/' + i.toString(16).padStart(32, '0') + '.jpg' })) } });
       if (endpoint.endsWith('.jpg')) return route.fulfill({ contentType: 'image/png', body: await readFile(resolve(root, 'assets/app-icons/jellyfin.png')) });
       if (endpoint === 'users') return route.fulfill({ json: { users } });
@@ -164,5 +166,53 @@ test('an unavailable artwork feed leaves the launch and setup usable', async () 
   assert.equal(await page.locator('#open-jellyfin').isVisible(), true);
   assert.equal(await page.locator('main ol > li').count(), 2);
   assert.equal(await page.locator('#artwork-pause').isVisible(), false);
+  await context.close();
+});
+
+test('title search keeps movies and TV distinct and saves a selected request once', async () => {
+  const { context, page, requests, errors } = await setup('/streaming/');
+  assert.equal(requests.filter(r => r.endpoint === 'streaming-search').length,0);
+  await page.getByRole('searchbox', {name:'Search movies and TV shows'}).fill('Severance');
+  await page.locator('.request-result').first().waitFor();
+  assert.equal(await page.locator('.request-result').count(),2);
+  assert.match(await page.locator('.request-result').first().textContent(),/TV show · 2022/);
+  const button=page.getByRole('button',{name:'Request Severance (2022) TV show',exact:true});
+  await button.click();
+  await page.getByRole('button',{name:'Requested Severance (2022) TV show',exact:true}).waitFor();
+  assert.equal(await page.getByRole('button',{name:'Requested Severance (2022) TV show',exact:true}).isDisabled(),true);
+  const saved=requests.filter(r=>r.endpoint==='streaming-requests');
+  assert.equal(saved.length,1);assert.equal(saved[0].body.selection,'signed-tv');assert.equal(saved[0].body.requested_by,'Guest');
+  assert.match(saved[0].body.client_id,/^[0-9a-f-]{36}$/);
+  await page.getByRole('searchbox').fill('');
+  await page.waitForTimeout(450);assert.equal(await page.locator('.request-result').count(),0);
+  await page.getByRole('searchbox').fill('Severance');await page.locator('.request-result').first().waitFor();
+  assert.equal(await page.getByRole('button',{name:'Requested Severance (2022) TV show',exact:true}).isDisabled(),true);
+  assert.deepEqual(errors,[]);await context.close();
+});
+test('search and submission errors remain retryable without reporting false success', async () => {
+  const { context, page } = await setup('/streaming/');
+  await context.route('**/streaming-search?*',route=>route.fulfill({status:503,json:{error:'Search is unavailable.'}}));
+  await page.getByRole('searchbox').fill('Severance');
+  await page.getByText('Search is unavailable.',{exact:true}).waitFor();
+  assert.equal(await page.locator('.request-result').count(),0);
+  await context.unroute('**/streaming-search?*');
+  await page.getByRole('searchbox').press('Enter');await page.locator('.request-result').first().waitFor();
+  await context.route('**/streaming-requests',route=>route.fulfill({status:503,json:{error:'Could not save.'}}));
+  await page.getByRole('button',{name:'Request Severance (2022) TV show',exact:true}).click();
+  await page.getByText('Could not save.',{exact:true}).waitFor();
+  assert.equal(await page.getByRole('button',{name:'Request Severance (2022) TV show',exact:true}).isEnabled(),true);
+  await context.close();
+});
+test('stale search results never replace the current query and empty matches are explained', async () => {
+  const { context, page }=await setup('/streaming/');
+  await context.route('**/streaming-search?*',async route=>{
+    const q=new URL(route.request().url()).searchParams.get('q');
+    if(q==='old')await new Promise(r=>setTimeout(r,800));
+    await route.fulfill({json:{results:q==='old'?[{id:'1',type:'movie',title:'Old result',selection:'old'}]:[]}}).catch(()=>{});
+  });
+  await page.getByRole('searchbox').fill('old');await page.waitForTimeout(450);
+  await page.getByRole('searchbox').fill('new');
+  await page.getByText('No titles found. Try another name.',{exact:true}).waitFor();
+  await page.waitForTimeout(500);assert.equal(await page.locator('.request-result').count(),0);
   await context.close();
 });
