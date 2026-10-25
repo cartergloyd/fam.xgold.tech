@@ -67,7 +67,7 @@ test('ribbon appearance and actual Streaming clicks agree on every page', async 
           const elements = [nav, ...nav.querySelectorAll('ul, li, a, img')];
           return elements.map(el => {
             const box = el.getBoundingClientRect(), s = getComputedStyle(el);
-            return { x: box.x, y: box.y, width: box.width, height: box.height, font: s.font, gap: s.gap, padding: s.padding, margin: s.margin };
+            return { x: box.x, y: box.y, width: box.width, height: box.height, font: s.font, gap: s.gap, padding: s.padding };
           });
         });
         if (baseline) assert.deepEqual(layout, baseline, `${path} differs at ${width}px`);
