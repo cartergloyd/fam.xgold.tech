@@ -46,14 +46,15 @@
     footer { text-align:center; color:var(--muted); margin-top:36px; font-size:14px; }
     @media (max-width:640px) { .grid { grid-template-columns:1fr; } main { padding-top:24px; } .nav ul { gap:16px; } .nav a { font-size:11px; } .actions .button { flex:1; } }
   </style>
+<link rel="stylesheet" href="/ribbon.css">
 </head>
 <body>
-  <nav class="nav" aria-label="Family sites"><ul>
-    <li><a href="/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7M5 10v10h5v-6h4v6h5V10"/></svg>Home</a></li>
-    <li><a href="/mc"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l8.5 4.75v9.5L12 21.5l-8.5-4.75v-9.5zM3.5 7.25L12 12l8.5-4.75M12 12v9.5"/></svg>Minecraft</a></li>
-    <li><a href="/streaming/" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="4.5" width="19" height="13" rx="2.5"/><path d="M8 21h8M10.5 8.5v5l4.2-2.5z"/></svg>Streaming</a></li>
-    <li><a href="/ff/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19C3 10 10 2 19 5c3 9-5 17-14 14zM8 16l8-8M10 12l2 2M12 10l2 2"/></svg>Fantasy Football</a></li>
-    <li><a href="/6108"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V3h10v18M15 9h5v12M3 21h18M8 7h3M8 11h3M8 15h3"/></svg>Condos</a></li>
+  <nav class="nav ribbon" aria-label="Family sites"><ul>
+    <li><a href="/"><span class="ribbon-icon" aria-hidden="true"><img src="/assets/app-icons/home.png" width="40" height="40" alt=""></span>Home</a></li>
+    <li><a href="/mc"><span class="ribbon-icon" aria-hidden="true"><img src="/assets/app-icons/minecraft.png" width="40" height="40" alt=""></span>Minecraft</a></li>
+    <li><a href="/streaming/" aria-current="page"><span class="ribbon-icon" aria-hidden="true"><img src="/assets/app-icons/jellyfin.png" width="40" height="40" alt=""></span>Streaming</a></li>
+    <li><a href="/ff/"><span class="ribbon-icon" aria-hidden="true"><img src="/assets/app-icons/sleeper.png" width="40" height="40" alt=""></span>Fantasy</a></li>
+    <li><a href="/6108"><span class="ribbon-icon" aria-hidden="true"><img src="/assets/app-icons/calendar.png" width="40" height="40" alt=""></span>Condos</a></li>
   </ul></nav>
   <main>
     <header><span class="eyebrow">Gold family streaming</span><h1>Watch from anywhere.</h1><p>Connect to our Jellyfin server on your phone, computer, or TV—even when you’re away from the home Wi-Fi.</p></header>

@@ -1,0 +1,40 @@
+/* Shared app artwork and sizing for every family navigation ribbon. */
+.nav.ribbon .ribbon-icon {
+  display: block;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  overflow: hidden;
+  border-radius: 24%;
+  clip-path: inset(0 round 24%);
+}
+
+.nav.ribbon .ribbon-icon img { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* Calendar artwork includes a transparent outer margin. Fill the common mask. */
+.nav.ribbon .ribbon-icon img[src$="calendar.png"] { transform: scale(1.25); }
+
+@media (max-width: 480px) {
+  .nav.ribbon ul {
+    width: 100%;
+    min-width: 0;
+    gap: 4px;
+    padding-inline: 8px;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .nav.ribbon li {
+    display: flex;
+    flex: 1 1 0;
+    min-width: 0;
+    justify-content: center;
+  }
+  .nav.ribbon a {
+    font-size: 11px;
+    white-space: normal;
+    text-align: center;
+  }
+  .nav.ribbon .ribbon-icon {
+    width: 36px;
+    height: 36px;
+  }
+}
