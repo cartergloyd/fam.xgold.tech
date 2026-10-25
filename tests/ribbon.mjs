@@ -14,7 +14,7 @@ test('every page uses the shared component without old streaming handlers', asyn
   for (const path of paths) {
     const html = await readFile(resolve(root, `.${path}index.html`), 'utf8');
     assert.equal((html.match(/<family-ribbon>/g) || []).length, 1, path);
-    assert.match(html, /src="\/ribbon\.js\?v=2" defer/);
+    assert.match(html, /src="\/ribbon\.js\?v=3" defer/);
     assert.doesNotMatch(html, /data-streaming|swiftfin:\/\/|jellyfin:\/\//);
   }
 });
@@ -46,6 +46,7 @@ test('ribbon appearance and actual Streaming clicks agree on every page', async 
       // Avoid family account/API calls while exercising the real page and navigation.
       await context.route('**/*', route => new URL(route.request().url()).origin === origin ? route.continue() : route.abort());
       let baseline;
+      let compactBaseline;
       for (const path of paths) {
         const page = await context.newPage();
         let popups = 0;
@@ -66,8 +67,57 @@ test('ribbon appearance and actual Streaming clicks agree on every page', async 
         if (baseline) assert.deepEqual(layout, baseline, `${path} differs at ${width}px`);
         else baseline = layout;
         assert(await nav.evaluate(nav => nav.scrollWidth <= innerWidth));
-        // Isolate navigation from Home's sign-in overlay without supplying credentials.
-        await page.addStyleTag({ content: 'body > :not(family-ribbon) { visibility: hidden !important; }' });
+        // Isolate the sign-in overlay and allow scrolling even if API data is unavailable.
+        await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; } body { min-height: 2200px; } body > :not(family-ribbon) { visibility: hidden !important; }' });
+        const geometry = () => nav.evaluate(nav => {
+          const icons = [...nav.querySelectorAll('.family-ribbon-icon')].map(el => {
+            const r = el.getBoundingClientRect();
+            return { center: r.x + r.width / 2, width: r.width, top: r.y, bottom: r.bottom };
+          });
+          const labels = [...nav.querySelectorAll('.family-ribbon-label')].map(el => {
+            const r = el.getBoundingClientRect();
+            return { center: r.x + r.width / 2, top: r.y, height: r.height, opacity: getComputedStyle(el).opacity };
+          });
+          const r = nav.getBoundingClientRect();
+          return { icons, labels, height: r.height, top: r.y, viewport: innerWidth };
+        });
+        const checkSpacing = state => {
+          assert(Math.abs(state.icons[2].center - state.viewport / 2) < 1, 'Streaming must be centered');
+          const gaps = state.icons.slice(1).map((icon, i) => icon.center - state.icons[i].center);
+          assert(gaps.every(gap => Math.abs(gap - gaps[0]) < 1), 'All icon centers must be equally spaced');
+        };
+        const expanded = await geometry();
+        checkSpacing(expanded);
+        expanded.labels.forEach((label, i) => {
+          assert(Math.abs(label.center - expanded.icons[i].center) < 1, 'Label must be centered under its icon');
+          assert(label.top >= expanded.icons[i].bottom && label.height > 0);
+        });
+        if (path === '/' && [390, 1440].includes(width)) await nav.screenshot({ path: `/tmp/fam-ribbon-expanded-${width}.png` });
+        await page.evaluate(() => scrollTo(0, 200));
+        await page.waitForFunction(() => document.querySelector('family-ribbon').hasAttribute('compact'));
+        await page.waitForTimeout(250);
+        const compact = await geometry();
+        checkSpacing(compact);
+        assert.equal(compact.top, 0, 'Ribbon must stay at the top when scrolled');
+        assert(compact.height < expanded.height);
+        assert(compact.icons.every((icon, i) => icon.width < expanded.icons[i].width && icon.top < expanded.icons[i].top));
+        assert(compact.labels.every(label => label.height === 0 && label.opacity === '0'));
+        assert(await nav.locator('a').evaluateAll(as => as.every(a => a.getBoundingClientRect().height >= 44 && a.getAttribute('aria-label'))), 'Compact links retain touch targets and accessible names');
+        if (compactBaseline) assert.deepEqual(compact, compactBaseline, `Compact ${path} differs at ${width}px`);
+        else compactBaseline = compact;
+        if (path === '/' && [390, 1440].includes(width)) await nav.screenshot({ path: `/tmp/fam-ribbon-compact-${width}.png` });
+        // The stable host height prevents layout changes from toggling the scroll state.
+        await page.evaluate(() => scrollTo(0, 35));
+        await page.waitForTimeout(250);
+        assert(await page.locator('family-ribbon').evaluate(el => el.hasAttribute('compact')));
+        await page.evaluate(() => scrollTo(0, 0));
+        await page.waitForFunction(() => !document.querySelector('family-ribbon').hasAttribute('compact'));
+        await page.waitForTimeout(250);
+        assert.deepEqual(await geometry(), expanded, 'Returning to the top restores labels and spacing');
+        // Exercise Streaming while the ribbon is collapsed too.
+        await page.evaluate(() => scrollTo(0, 200));
+        await page.waitForFunction(() => document.querySelector('family-ribbon').hasAttribute('compact'));
+        await page.waitForTimeout(250);
         await Promise.all([
           page.waitForURL(origin + '/streaming/'),
           nav.getByRole('link', { name: 'Streaming', exact: true }).click(),

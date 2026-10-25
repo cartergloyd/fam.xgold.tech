@@ -16,6 +16,10 @@ npm run test:ribbon
 
 The test compares all three pages at five viewport widths and actually clicks Streaming,
 checks the final URL, waits for delayed redirects, and rejects new tabs.
+It also checks that Streaming is centered, icon spacing is equal, and scrolling compacts
+the sticky ribbon while preserving accessible labels and 44px touch targets.
+Returning to the top restores the expanded ribbon. The ribbon keeps its document space
+to avoid layout jumps when it changes size.
 It isolates the home page's sign-in overlay in the test browser without signing in.
 
 To check the deployed site:
