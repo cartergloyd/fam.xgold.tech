@@ -6,7 +6,8 @@
     "test:requests": "node --test tests/streaming-requests.mjs",
     "test:artwork": "node --test tests/streaming-artwork.mjs && python3 -m unittest discover -s tests -p test_streaming_artwork.py",
     "test:profiles": "node --test tests/profile-match.mjs tests/profile-streaming.mjs",
-    "test:hub": "node --test tests/family-hub-api.mjs tests/family-hub-browser.mjs"
+    "test:hub": "node --test tests/family-hub-api.mjs tests/family-hub-browser.mjs",
+    "test:whitelist": "python3 -m unittest discover -s tests -p test_mc_whitelist.py"
   },
   "devDependencies": {
     "playwright": "1.64.1"

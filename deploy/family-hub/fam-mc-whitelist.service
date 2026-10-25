@@ -1,0 +1,12 @@
+[Unit]
+Description=Apply signed-in family Minecraft whitelist requests
+After=network-online.target minecraft-paper.service
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /home/gold/server-platform/fam-site-src/deploy/family-hub/whitelist-worker.py
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+[Install]
+WantedBy=default.target

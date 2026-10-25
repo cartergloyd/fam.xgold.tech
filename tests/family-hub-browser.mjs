@@ -9,11 +9,13 @@ async function server(){const s=createServer(async(req,res)=>{try{let p=new URL(
 const property={id:'6108',title:'6108',description:'Our place by the water.',house_rules:'Leave it ready for family.',check_in:'16:00:00',check_out:'10:00:00',max_guests:8,max_nights:14,advance_days:0,timezone:'America/Chicago',revision:1};
 const users=[{id:'carter',name:'Carter',registered:true},{id:'member',name:'Member',registered:true}];
 async function mock(context,name='Carter',signed=true){
- const user={id:name==='Carter'?'carter':'member',name,condo_manager:name==='Carter',maintenance_manager:false,instant_booking:name==='Carter'};let reservations=[],tasks=[],writes=[];
+ const user={id:name==='Carter'?'carter':'member',name,condo_manager:name==='Carter',maintenance_manager:false,instant_booking:name==='Carter'};let reservations=[],tasks=[],writes=[],accounts=[];
  await context.addInitScript(({name,signed})=>{localStorage.setItem('destin-who',JSON.stringify({name,email:'test@example.com'}));if(signed)localStorage.setItem('family-session',JSON.stringify({name,token:'test-token'}));},{name,signed});
  await context.route('https://fam-api.xgold.tech/**',async route=>{
   const req=route.request(),url=new URL(req.url()),p=url.pathname.replace('/family',''),body=req.postDataJSON?.()||{};let data={},status=200;
   if(p==='/users')data={users};
+  else if(p==='/hub/mc-whitelist'&&req.method()==='GET')data={accounts};
+  else if(p==='/hub/mc-whitelist'&&req.method()==='POST'){writes.push(body);const account={...body,id:'whitelist'+accounts.length,status:'added'};accounts.push(account);data={account};status=202;}
   else if(p==='/hub/condo')data={user,property,reservations,tasks:tasks.filter(t=>t.kind==='maintenance')};
   else if(p==='/hub/builds')data={user,tasks:tasks.filter(t=>t.kind==='build')};
   else if(p==='/hub/booking-access')data={users:users.map(u=>({...u,instant_booking:u.name==='Carter',condo_manager:u.name==='Carter'}))};
@@ -43,7 +45,17 @@ test('booking, approval access, maintenance, mobile layout and Minecraft board',
    await page.getByRole('button',{name:'Maintenance',exact:true}).click();await page.getByRole('button',{name:'Report an issue',exact:true}).click();await page.locator('#task-form input[name=title]').fill('Check the sink');await page.getByRole('button',{name:'Save card',exact:true}).click();await page.getByRole('heading',{name:'Check the sink'}).waitFor();
    assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
    if(width===1440){await page.getByRole('button',{name:'Reservations',exact:true}).click();await page.screenshot({path:'/tmp/fam-6108-desktop.png',fullPage:true});}
-   await page.goto(origin+'/mc/');await page.locator('#signed-content').waitFor({state:'visible'});await page.getByRole('button',{name:'Follow players',exact:true}).click();assert.match(await page.locator('#live-map').getAttribute('src'),/playername=PlayerOne/);
+   await page.goto(origin+'/mc/');await page.locator('#signed-content').waitFor({state:'visible'});
+   const hero=await page.locator('.map-hero').boundingBox();assert.equal(hero.x,0);assert.equal(hero.y,0);assert.equal(hero.width,width);assert.equal(hero.height,1000);
+   assert.equal(await page.getByText('A world we build together.',{exact:true}).count(),0);
+   await page.locator('#join-platform').selectOption('bedrock');await page.getByRole('button',{name:'Copy Bedrock address',exact:true}).waitFor();
+   assert.equal(await page.locator('#whitelist-form select[name=edition]').inputValue(),'bedrock');
+   await page.locator('#whitelist-form input[name=username]').fill('Player One');await page.getByRole('button',{name:'Add my account',exact:true}).click();await page.getByText('Bedrock · Player One · Whitelisted',{exact:true}).waitFor();
+   await page.locator('#join-platform').selectOption('xbox');assert.match(await page.locator('#platform-instructions').innerText(),/GoldServer2951/);
+   await page.locator('#join-platform').selectOption('switch');assert.match(await page.locator('#platform-instructions').innerText(),/104.238.130.180/);
+   await page.locator('#join-platform').selectOption('playstation');assert.match(await page.locator('#platform-instructions').innerText(),/45.55.68.52/);
+   await page.locator('#join-platform').selectOption('java');await page.locator('#whitelist-form input[name=username]').fill('JavaUser');await page.getByRole('button',{name:'Add my account',exact:true}).click();await page.getByText('Java · JavaUser · Whitelisted',{exact:true}).waitFor();
+   await page.getByRole('button',{name:'Follow players',exact:true}).click();assert.match(await page.locator('#live-map').getAttribute('src'),/playername=PlayerOne/);
    await page.getByRole('button',{name:'Pause following',exact:true}).click();assert.doesNotMatch(await page.locator('#live-map').getAttribute('src'),/playername=/);
    await page.getByRole('button',{name:'Add a build',exact:true}).click();await page.locator('#task-form input[name=title]').fill('The Grand Library');for(const [k,v]of [['x','123'],['y','64'],['z','-456']])await page.locator(`#task-form input[name=${k}]`).fill(v);
    await page.getByRole('button',{name:'Save card',exact:true}).click();await page.getByRole('heading',{name:'The Grand Library'}).waitFor();assert.match(await page.getByRole('link',{name:/Overworld/}).getAttribute('href'),/z=-456/);

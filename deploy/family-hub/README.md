@@ -89,3 +89,48 @@ permissions, approval, cancellation, limits, task assignment and revision confli
 with mocked APIs and no live writes. Existing ribbon, account and directory tests
 also apply. Live verification uses signed sessions without revealing credentials;
 no real bookings/cards need to be created to verify the deployment.
+
+## Minecraft self-whitelisting
+
+The Minecraft hero now fills the first viewport, beneath the shared navigation.
+Join instructions use one platform selector. The same widget lets signed-in family
+members link one Java account and one Bedrock/Xbox account. These names are
+self-reported; the service verifies account existence, not ownership of the game
+account. Only the current family user's own requests are visible. Six attempts
+per family profile per day and a unique active request per edition prevent bulk
+additions; retries for the same active account are idempotent. Carter can reset
+an incorrect link in the private database without removing any whitelist entry.
+
+Apply whitelist-schema.sql to fam. Install whitelist.js as hub-whitelist.js beside
+the existing extension and register whitelistHub(router,{database});
+install-backend.py performs that integration. Recreate family Directus after
+installation. No public Directus collection permissions are added.
+
+Install fam-mc-whitelist.service in the user service directory and enable it. It
+runs whitelist-worker.py from the deployed fam-site-src tree and claims pending
+requests from PostgreSQL. Java account IDs come from Minecraft's profile lookup;
+Bedrock XUIDs come from Geyser's Xbox lookup and use Floodgate's UUID mapping,
+'.' prefix, and space-to-underscore setting. Names never become shell commands.
+
+Minecraft 26.3's Management Protocol runs on 127.0.0.1:25576 with a private
+40-character server secret. It needs management-server-enabled=true,
+management-server-host=127.0.0.1, management-server-port=25576, and
+management-server-tls-enabled=false (loopback only). Secrets stay in the private
+server.properties and never enter this repository or family API container.
+The initial configuration change requires a graceful Minecraft restart. RCON
+remains disabled. See the official protocol reference:
+https://www.minecraft.net/en-us/article/minecraft-java-edition-1-21-9
+
+The worker calls only allowlist query/add, then reads back the whitelist before
+marking an account added. Failed lookups/server writes remain retryable and never
+report success. A stale processing request retries after two minutes. The service
+does not change whitelist enforcement, operators, bans, or existing whitelist
+entries. To roll back, stop the worker and remove its endpoint integration; retain
+the queue and existing server whitelist. Restore the private pre-change
+server.properties backup if disabling the local management listener.
+
+Verify the live connection without writes with
+`python3 deploy/family-hub/whitelist-worker.py --check`.
+Worker verification tests: `python3 -m unittest discover -s tests -p test_mc_whitelist.py`.
+The hub API and browser suites also cover account isolation, input validation,
+idempotent requests, attempt limits, all five platforms, and full-viewport layout.

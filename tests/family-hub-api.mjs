@@ -5,8 +5,13 @@ import { createRequire } from 'node:module';
 const dir=process.env.HUB_SOURCE || new URL('../deploy/family-hub/',import.meta.url).pathname;
 const {issueSession,readSession}=await import(dir+'/hub-session.js');
 const {default:endpoint,validDates}=await import(dir+'/endpoint.js');
+const {default:whitelist,normalizeAccount}=await import(dir+'/whitelist.js');
 const {chooseFocus}=await import(dir+'/minecraft.js');
 const secret='test-secret-only';
+test('whitelist account names reject commands and invalid editions',()=>{
+ assert.equal(normalizeAccount('java',' TestUser '),'TestUser');assert.equal(normalizeAccount('bedrock','Player One'),'Player One');
+ for(const [edition,name]of [['java','Name\nstop'],['bedrock','.Player'],['bedrock','A;op B'],['other','Test'],['java','x']])assert.equal(normalizeAccount(edition,name),null);
+});
 test('session expiry, signature forgery, invalid dates, and map focus',()=>{
  const user={id:'00000000-0000-4000-8000-000000000001',pin_hash:'hash'};
  const token=issueSession(user,secret,10);assert.equal(readSession(token,secret,11).id,user.id);
@@ -26,7 +31,7 @@ test('real PostgreSQL: permissions, overlap races, adjacent stays, approvals, ca
   await db('family_users').insert(user);users[name]={...user,token:issueSession(user,secret)};
  }
  const handlers={};const router={};for(const method of ['get','post','patch','delete'])router[method]=(path,fn)=>handlers[method.toUpperCase()+' '+path]=fn;
- endpoint(router,{database:db},{secret});
+ endpoint(router,{database:db},{secret});whitelist(router,{database:db},{secret});
  async function call(method,path,user='Member',body={},params={},origin='https://fam.xgold.tech'){
   const result={status:200};const res={set(){return res;},status(n){result.status=n;return res;},json(data){result.data=data;return res;}};
   await handlers[method+' '+path]({method,params,body,get:k=>k==='Origin'?origin:k==='X-Family-Session'?(users[user]?users[user].token:'forged'):null},res);return result;
@@ -70,6 +75,20 @@ test('real PostgreSQL: permissions, overlap races, adjacent stays, approvals, ca
   assert.equal((await call('PATCH','/hub/tasks/:id','Instant',{...build,status:'doing'},{id:build.id})).status,200);
   assert.equal((await call('POST','/hub/tasks','Member',{...card,kind:'build',x:1})).status,400);
   assert.equal((await call('DELETE','/hub/tasks/:id','Member',{revision:2},{id:build.id})).status,200);
+  assert.equal((await call('GET','/hub/mc-whitelist','forged')).status,401);
+  assert.equal((await call('POST','/hub/mc-whitelist','Member',{edition:'java',username:'TestUser'},{},'https://evil.example')).status,403);
+  assert.equal((await call('POST','/hub/mc-whitelist','Member',{edition:'java',username:'Bad\nstop'})).status,400);
+  const account={edition:'java',username:'TestUser',user_id:users.Carter.id};
+  assert.equal((await call('POST','/hub/mc-whitelist','Member',account)).status,202);
+  assert.equal((await call('POST','/hub/mc-whitelist','Member',account)).status,200);
+  assert.equal((await call('POST','/hub/mc-whitelist','Member',{edition:'java',username:'OtherUser'})).status,409);
+  assert.equal((await call('POST','/hub/mc-whitelist','Member',{edition:'bedrock',username:'Player One'})).status,202);
+  const own=(await call('GET','/hub/mc-whitelist','Member')).data.accounts;assert.equal(own.length,2);assert.equal(own[0].status,'pending');
+  assert.equal((await call('GET','/hub/mc-whitelist','Carter')).data.accounts.length,0);
+  assert.equal((await db('family_mc_whitelist').where({user_id:users.Member.id})).length,2);
+  await db('family_mc_whitelist').where({user_id:users.Member.id}).update({status:'failed'});
+  for(let i=0;i<4;i++)await db('family_mc_whitelist').insert({user_id:users.Member.id,edition:'java',username:'TestUser',status:'failed'});
+  assert.equal((await call('POST','/hub/mc-whitelist','Member',account)).status,429);
   await db('family_users').where({id:users.Member.id}).update({pin_hash:'changed'});assert.equal((await call('GET','/hub/me','Member')).status,401);
  } finally{await db.destroy();}
 });
