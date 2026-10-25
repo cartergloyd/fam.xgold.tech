@@ -3,100 +3,65 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#161617">
+  <title>Streaming · Gold Family</title>
+  <meta name="description" content="Watch with Jellyfin. Use your family email and four-digit PIN to sign in.">
   <script src="/family-directory.js"></script>
-<script src="/family-account.js?v=1"></script>
-<link rel="stylesheet" href="/family-account.css?v=2">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#161617">
-<title>Streaming · Gold Family</title>
-  <meta name="description" content="Connect to the family Jellyfin server from a browser, phone, or TV, including when you are away from home.">
+  <script src="/profile-match.js?v=1"></script>
+  <script src="/family-account.js?v=2"></script>
+  <link rel="stylesheet" href="/family-account.css?v=3">
+  <link rel="stylesheet" href="/ribbon.css?v=6">
+  <script src="/ribbon.js?v=6" defer></script>
+  <script src="/streaming/launch.js?v=1" defer></script>
   <style>
-    :root { color-scheme: dark; --bg:#000; --card:#101018; --fg:#f5f5f7; --muted:#a1a1a6; --line:#30303b; --accent:#1fe07a; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
+    :root { color-scheme:dark; font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,Arial,sans-serif; color:#f5f5f7; background:#000; }
     * { box-sizing:border-box; }
+    body { margin:0; -webkit-font-smoothing:antialiased; }
     [hidden] { display:none !important; }
-    body { margin:0; background:var(--bg); color:var(--fg); line-height:1.6; -webkit-font-smoothing:antialiased; }
-    a { color:inherit; }
-    :focus-visible { outline:2px solid var(--accent); outline-offset:5px; }
-    main { max-width:900px; margin:auto; padding:40px 20px 80px; }
-    header { text-align:center; margin:10px auto 42px; max-width:640px; }
-    .eyebrow { color:var(--accent); text-transform:uppercase; letter-spacing:.16em; font-size:12px; font-weight:700; }
-    h1 { font-size:clamp(38px,7vw,64px); line-height:1.08; letter-spacing:-.05em; margin:16px 0; }
-    header p { color:var(--muted); font-size:18px; }
-    h2 { font-size:23px; line-height:1.25; letter-spacing:-.025em; margin:0 0 16px; }
-    h3 { font-size:17px; margin:22px 0 8px; }
-    p { margin:0 0 14px; }
-    .card { background:var(--card); border:1px solid var(--line); border-radius:22px; padding:clamp(20px,4vw,32px); margin:18px 0; }
-    .address { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
-    .address a { font-size:clamp(16px,3.6vw,23px); font-weight:600; overflow-wrap:anywhere; }
-    .actions { display:flex; gap:12px; flex-wrap:wrap; margin-top:20px; }
-    .button { display:inline-flex; justify-content:center; align-items:center; min-height:44px; border:1px solid var(--line); border-radius:12px; padding:10px 18px; background:transparent; color:var(--fg); font:inherit; font-size:15px; font-weight:600; text-decoration:none; cursor:pointer; }
-    .button.primary { background:var(--accent); color:#04210f; border-color:var(--accent); }
-    .muted { color:var(--muted); font-size:14px; }
-    ol { padding-left:22px; margin-bottom:0; }
-    li { margin:10px 0; }
-    li:last-child { margin-bottom:0; }
-    .grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
-    .grid .card { margin:0; }
-    details { border-top:1px solid var(--line); padding:16px 0; }
-    details:last-child { padding-bottom:0; }
-    summary { font-weight:600; cursor:pointer; min-height:30px; }
-    details p { color:var(--muted); margin:10px 0 0; }
-    code { color:var(--fg); font-size:.95em; }
-    #copy-status { min-height:24px; margin:8px 0 0; }
-    footer { text-align:center; color:var(--muted); margin-top:36px; font-size:14px; }
-    @media (max-width:640px) { .grid { grid-template-columns:1fr; } main { padding-top:24px; } .actions .button { flex:1; } }
+    main { max-width:680px; margin:0 auto; padding:clamp(48px,8vw,96px) 24px calc(64px + env(safe-area-inset-bottom,0px)); }
+    header { text-align:center; }
+    h1 { margin:0 0 32px; font-size:clamp(40px,7vw,64px); line-height:1.06; letter-spacing:-.045em; font-weight:650; text-wrap:balance; }
+    .launch { display:inline-flex; flex-direction:column; align-items:center; gap:14px; min-width:140px; padding:8px; color:inherit; text-decoration:none; font-size:17px; }
+    .launch img { display:block; width:112px; height:112px; border-radius:24%; transition:transform .18s ease; }
+    .launch:hover img { transform:scale(1.04); }
+    a { color:#8ecaff; text-underline-offset:3px; }
+    :focus-visible { outline:2px solid #2997ff; outline-offset:5px; border-radius:8px; }
+    .launch-note { min-height:20px; margin:12px 0 0; color:#a1a1a6; font-size:14px; line-height:1.4; }
+    section { margin-top:56px; }
+    h2 { margin:0 0 24px; font-size:24px; letter-spacing:-.025em; }
+    ol { display:grid; gap:24px; margin:0; padding-left:24px; }
+    main li { padding-left:6px; font-size:17px; line-height:1.5; color:#a1a1a6; }
+    main li strong { display:block; margin-bottom:4px; color:#f5f5f7; font-weight:600; }
+    main li p { margin:0; }
+    .text-button { border:0; padding:0; background:none; color:#8ecaff; font:inherit; text-decoration:underline; text-underline-offset:3px; cursor:pointer; min-height:44px; }
+    .server { display:inline-block; overflow-wrap:anywhere; color:#f5f5f7; text-decoration:none; font-weight:500; }
+    .small { margin:24px 0 0; font-size:14px; line-height:1.5; color:#a1a1a6; }
+    @media(prefers-reduced-motion:reduce) { .launch img { transition:none; } }
   </style>
-<link rel="stylesheet" href="/ribbon.css?v=6">
-<script src="/ribbon.js?v=6" defer></script>
 </head>
 <body>
   <family-ribbon></family-ribbon>
   <main>
-    <header><span class="eyebrow">Gold family streaming</span><h1>Watch from anywhere.</h1><p>Connect to our Jellyfin server on your phone, computer, or TV—even when you’re away from the home Wi-Fi.</p></header>
-    <aside class="card" aria-label="Connection status"><strong>Away-from-home access is currently unavailable.</strong><p class="muted">Carter is checking the remote connection. The setup details below are ready to use once access is restored.</p></aside>
-    <section class="card" aria-labelledby="address-title">
-      <h2 id="address-title">Your server address</h2>
-      <div class="address"><a href="https://streaming.xgold.tech" target="_blank" rel="noopener">https://streaming.xgold.tech</a></div>
-      <p class="muted">Enter this full address when an app asks you to add a server. Keep <strong>https://</strong>; there’s no port number to add.</p>
-      <div class="actions"><a class="button primary" href="https://streaming.xgold.tech/web/" target="_blank" rel="noopener">Open Jellyfin in browser</a><button class="button" id="copy-address" type="button" hidden>Copy server address</button></div>
-      <p class="muted" id="copy-status" role="status" aria-live="polite"></p>
+    <header>
+      <h1>Watch from anywhere.</h1>
+      <a class="launch" id="open-jellyfin" href="https://streaming.xgold.tech" aria-label="Open Jellyfin">
+        <img src="/assets/app-icons/jellyfin.png" width="112" height="112" alt="">
+        <span id="launch-label">Open Jellyfin</span>
+      </a>
+      <p class="launch-note" id="launch-note"></p>
+      <p class="small"><a href="https://streaming.xgold.tech">Watch in your browser</a></p>
+    </header>
+    <section aria-labelledby="setup-title">
+      <h2 id="setup-title">Get signed in.</h2>
+      <ol>
+        <li><strong>Your family profile.</strong><p><button class="text-button" id="streaming-signin" type="button">Sign in or create your profile</button> using your email and a four-digit PIN.</p></li>
+        <li><strong>Connect to our server.</strong><p>In the Jellyfin app, choose Add Server and enter<br><a class="server" href="https://streaming.xgold.tech">https://streaming.xgold.tech</a></p></li>
+        <li><strong>Use the same login.</strong><p>Enter <span id="login-email">your family email</span> as the username and your four-digit family PIN as the password.</p></li>
+      </ol>
+      <p class="small">Just created your profile or changed your PIN? Allow about a minute, then try signing in to Jellyfin.</p>
     </section>
-    <div class="grid">
-      <section class="card" aria-labelledby="browser-title"><h2 id="browser-title">On a computer or browser</h2><ol>
-        <li>Open <a href="https://streaming.xgold.tech/web/" target="_blank" rel="noopener">Jellyfin</a>.</li>
-        <li>Sign in with the <strong>Jellyfin username and password Carter gives you</strong>.</li>
-        <li>Choose a library, or open <strong>Live TV</strong> to watch the shared stream.</li>
-      </ol></section>
-      <section class="card" aria-labelledby="app-title"><h2 id="app-title">On a phone, tablet, or TV</h2><ol>
-        <li>Install a compatible app from the <a href="https://jellyfin.org/downloads/clients/" target="_blank" rel="noopener">Jellyfin apps list</a>.</li>
-        <li>Choose <strong>Add Server</strong> or <strong>Connect to Server</strong> and enter <strong>https://streaming.xgold.tech</strong>.</li>
-        <li>Sign in with your Jellyfin username and password.</li>
-      </ol></section>
-    </div>
-    <section class="card" aria-labelledby="party-title"><h2 id="party-title">Join the watch party</h2><p>In Jellyfin, open <strong>Live TV → On Now</strong> or <strong>Channels</strong>, then select <strong>Discord Watch Party</strong> (channel <strong>900</strong>).</p><p class="muted">Someone needs to start the source in Discord first. If the source changes, stop and reopen the Jellyfin channel. Jellyfin and Discord can have different playback delays.</p></section>
-    <section class="card" aria-labelledby="help-title"><h2 id="help-title">Need a hand?</h2>
-      <details><summary>I don’t have a login.</summary><p>Ask Carter to create a Jellyfin account or reset your password. Use the credentials supplied for Jellyfin.</p></details>
-      <details><summary>The app can’t find the server.</summary><p>Automatic discovery works only on the home network. Away from home, choose Add Server and enter <strong>https://streaming.xgold.tech</strong> manually. A home address beginning with <code>192.168.</code> won’t work from outside.</p></details>
-      <details><summary>The website won’t open.</summary><p>Check the server address, then try opening it in your browser. On a phone, try cellular data with Wi-Fi off. If it still won’t load, let Carter know so he can check the server and remote connection.</p></details>
-      <details><summary>The watch-party card is there, but it won’t play.</summary><p>The card is a channel listing and can appear while no stream is running. Ask the host to start playback in Discord, then reopen the channel.</p></details>
-      <details><summary>Playback buffers.</summary><p>Try a stronger Wi-Fi connection or a lower playback quality in the app. If the problem persists, tell Carter which device and app you’re using.</p></details>
-    </section>
-    <footer><a href="/">Back to the family site</a></footer>
   </main>
-  <script>
-    (function () {
-      var button = document.getElementById('copy-address');
-      if (!navigator.clipboard || !window.isSecureContext) return;
-      button.hidden = false;
-      button.addEventListener('click', function () {
-        navigator.clipboard.writeText('https://streaming.xgold.tech').then(function () {
-          document.getElementById('copy-status').textContent = 'Server address copied.';
-        }, function () {
-          document.getElementById('copy-status').textContent = 'Select and copy the server address above.';
-        });
-      });
-    })();
-  </script>
 </body>
 </html>

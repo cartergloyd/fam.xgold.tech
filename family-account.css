@@ -80,3 +80,4 @@
   backdrop-filter: blur(16px);
   pointer-events: none;
 }
+.gate .back:disabled { opacity: .35; cursor: default; }

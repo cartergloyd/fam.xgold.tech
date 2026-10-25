@@ -204,7 +204,7 @@ test('shared account control signs in, switches people and follows the responsiv
         assert.equal(await account.getAttribute('aria-label'), 'Sign in');
         assert.equal(await account.locator('.family-ribbon-account-avatar').isVisible(), true);
         await account.click();
-        await page.getByRole('dialog', { name: 'Sign in to the family.' }).waitFor();
+        await page.getByRole('dialog', { name: 'Please Sign-in' }).waitFor();
         assert.equal(page.url(), origin + path, 'Account opens on the current page');
         await page.locator('#g-email').fill('carter@example.test');
         await page.locator('#g-known').waitFor();

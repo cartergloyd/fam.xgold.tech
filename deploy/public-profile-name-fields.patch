@@ -1,0 +1,11 @@
+--- a/deploy/family-directory/directus-extension-family-directory/index.js
++++ b/deploy/family-directory/directus-extension-family-directory/index.js
+@@ -4,7 +4,7 @@
+ const emailOf = value => typeof value === 'string' ? value.trim().toLowerCase() : '';
+ const emailOk = email => email.length <= 200 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+ const pinOk = pin => typeof pin === 'string' && /^\d{4}$/.test(pin);
+-export const publicUser = row => ({ id: row.id, name: row.name, group_id: row.group_id,
++export const publicUser = row => ({ id: row.id, name: row.name, first_name: row.first_name || row.name.split(' ')[0], last_name: row.last_name || null, group_id: row.group_id,
+  fantasy_team: row.fantasy_team, registered: !!row.email,
+  photo_url: row.photo ? `https://fam-api.xgold.tech/family/photos/${row.id}?v=${encodeURIComponent(row.photo)}` : null });
+ 

@@ -1,6 +1,6 @@
 {
   "name": "gold-family-site",
   "private": true,
-  "scripts": { "test:ribbon": "node --test tests/ribbon.mjs" },
+  "scripts": { "test:ribbon": "node --test tests/ribbon.mjs", "test:profiles": "node --test tests/profile-match.mjs tests/profile-streaming.mjs" },
   "devDependencies": { "playwright": "1.64.1" }
 }
