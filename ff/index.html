@@ -324,20 +324,24 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
   .sports-shell,.panel,.weekpick,.btn.ghost { background:#202129; -webkit-backdrop-filter:none; backdrop-filter:none; }
 }
 
-/* Kicker watch: glass rows aligned with the other fantasy widgets. */
-.kicker-watch { padding:10px clamp(14px,2.5vw,24px); }
-.kw-game { padding:16px 0; border-bottom:1px solid rgba(255,255,255,.12); }
+/* Week-scoped primetime kicker cards, matching the glass scoreboard. */
+.kicker-watch { padding:4px clamp(14px,2.5vw,24px); }
+.kw-game { padding:18px 0; border-bottom:1px solid rgba(255,255,255,.12); }
 .kw-game:last-child { border-bottom:0; }
-.kw-top { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:6px 12px; margin-bottom:12px; }
-.kw-slot { color:#f5f5f7; font-size:14px; font-weight:650; }
-.kw-time { color:#c0c0c9; font-size:13px; }
-.kw-matchup { color:#dddde6; font-size:14px; margin:0 0 10px; }
+.kw-header { display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:12px; }
+.kw-day { font-size:15px; font-weight:700; color:#f5f5f7; }
+.kw-matchup { color:#c5c5d0; font-size:13px; }
 .kw-kickers { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
-.kw-player { padding:11px 12px; border-radius:14px; background:rgba(255,255,255,.075); min-width:0; }
-.kw-player b { display:block; font-size:15px; overflow-wrap:anywhere; }
-.kw-player small { display:block; margin-top:4px; font-size:12px; color:#c0c0c9; line-height:1.4; }
-.kw-disclaimer { color:#bcbcc5; font-size:13px; line-height:1.45; margin:12px 0 0; }
-@media(max-width:420px) { .kw-kickers { gap:7px; } .kw-player { padding:10px 8px; } }
+.kw-player { display:flex; gap:10px; align-items:center; min-width:0; padding:12px; border-radius:18px; background:rgba(255,255,255,.075); }
+.kw-headshot { width:54px; height:54px; flex:none; border-radius:15px; object-fit:cover; background:rgba(255,255,255,.09); }
+.kw-info { min-width:0; flex:1; }
+.kw-info b { display:block; font-size:15px; line-height:1.25; overflow-wrap:anywhere; }
+.kw-info small { display:block; color:#c0c0c9; font-size:12px; margin-top:3px; line-height:1.35; }
+.kw-owner { display:flex; align-items:center; gap:6px; min-width:0; margin-top:6px; color:#e3e3eb; font-size:12px; line-height:1.25; }
+.kw-owner img { width:23px; height:23px; flex:none; border-radius:50%; object-fit:cover; background:#30303d; }
+.kw-owner span { overflow-wrap:anywhere; }
+.kw-note { margin:12px 0 0; font-size:13px; line-height:1.45; color:#bcbcc5; }
+@media(max-width:560px) { .kw-kickers { gap:8px; } .kw-player { flex-direction:column; align-items:flex-start; gap:8px; padding:10px; } .kw-headshot { width:50px; height:50px; } .kw-info b { font-size:14px; } }
 </style><link rel="stylesheet" href="/ribbon.css?v=6">
 <script src="/ribbon.js?v=6" defer></script>
 </head><body>
@@ -366,9 +370,9 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
   </section>
 
   <section id="kicker-watch" aria-labelledby="kicker-watch-h">
-    <div class="sec-head"><div><h2 id="kicker-watch-h">Kicker watch</h2><p>Upcoming NFL Thursday, Sunday &amp; Monday night kickers.</p></div></div>
+    <div class="sec-head"><div><h2 id="kicker-watch-h">Kicker watch</h2><p id="kicker-watch-week">Primetime kickers for the selected week.</p></div></div>
     <div class="panel kicker-watch" id="kicker-watch-body"><p class="empty">Loading primetime games…</p></div>
-    <p class="kw-disclaimer">International games and unconfirmed flex-eligible night games are excluded. Kickers and fantasy rosters are sourced from Sleeper; NFL games are sourced from ESPN.</p>
+    <p class="kw-note">NFL schedule via ESPN · Kickers and fantasy ownership via Sleeper. International and unconfirmed flex matchups excluded.</p>
   </section>
 
   <section id="standings" aria-labelledby="standings-h">
@@ -656,6 +660,7 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
     $('wk-prev').disabled=week<=S.first;
     $('wk-next').disabled=week>=S.last;
     renderTabs();
+    loadKickerWatch(week);
     var state=weekState(week);
     if(state==='live'&&S.games[week]===undefined){S.games[week]=null;loadGames(week).then(function(){if(S.week===week)renderScores();},function(){});}
     $('scores-sub').textContent='';
@@ -702,6 +707,7 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
     $('matchups').hidden=false;$('matchup-view').hidden=true;
     $('matchups').innerHTML='<div class="sk"></div><div class="sk"></div>';
     renderTabs();
+    loadKickerWatch(week);
     return matchups(week).then(function(){renderScores();}).catch(function(){$('matchups').innerHTML='<p class="empty">Couldn’t load week '+week+'.</p>';});
   }
   $('wk-prev').addEventListener('click',function(){showWeek(S.week-1);});
@@ -742,72 +748,78 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
 
 
   // ---------- Kicker watch ----------
-  // Exclude unconfirmed flex-window games until the league's minimum notice window.
-  // SNF: weeks 5-10 (two allowed), 11-17; MNF: 12-17; TNF: 13-17.
-  function primetimeSlot(event, week) {
-    var date = new Date(event.date);
-    if (!Number.isFinite(date.getTime())) return '';
-    var parts = new Intl.DateTimeFormat('en-US', {timeZone:'America/New_York',weekday:'short',hour:'numeric',hour12:false}).formatToParts(date);
-    var day = (parts.find(function(p){return p.type==='weekday';})||{}).value;
-    var hour = Number((parts.find(function(p){return p.type==='hour';})||{}).value);
-    if (hour < 19 || hour > 22) return '';
-    var slot = day==='Thu'?'TNF':day==='Sun'?'SNF':day==='Mon'?'MNF':'';
-    if (!slot) return '';
-    // These games remain tentative until the flex decision deadline.
-    var notice = slot==='SNF' && week>=5 ? (week>=14?6:12) :
-      slot==='MNF' && week>=12 ? 12 :
-      slot==='TNF' && week>=13 ? 21 : 0;
-    if (notice && date.getTime()-Date.now()>notice*86400000) return '';
-    var comp=(event.competitions||[])[0]||{}, venue=comp.venue||{};
-    var address=venue.address||{}, country=address.country||'';
-    if (country && !/^(USA|US|United States)$/i.test(country)) return '';
+  var kickerSchedule={}, kickerRequested={}, kickerRosterReady=false;
+  var kickerAliases={WAS:'WSH',WSH:'WSH',LA:'LAR',JAX:'JAC'};
+  function kickerTeam(code) { return kickerAliases[code]||code; }
+  function primetimeSlot(event,week) {
+    var date=new Date(event.date),comp=(event.competitions||[])[0]||{};
+    if(!Number.isFinite(date.getTime()))return '';
+    var parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',weekday:'short',hour:'numeric',hour12:false}).formatToParts(date);
+    var day=(parts.find(function(p){return p.type==='weekday';})||{}).value;
+    var hour=Number((parts.find(function(p){return p.type==='hour';})||{}).value);
+    if(hour<19||hour>22)return '';
+    var slot=day==='Thu'?'TNF':day==='Sun'?'SNF':day==='Mon'?'MNF':'';
+    if(!slot)return '';
+    var country=((comp.venue||{}).address||{}).country||'';
+    if(country&&!/^(USA|US|United States)$/i.test(country))return '';
+    // Flex-eligible games are not treated as confirmed far ahead of kickoff.
+    var notice=slot==='SNF'&&week>=5?(week>=14?6:12):
+      slot==='MNF'&&week>=12?12:slot==='TNF'&&week>=13?21:0;
+    if(notice&&date.getTime()-Date.now()>notice*86400000)return '';
     return slot;
   }
-  function renderKickerWatch(events) {
-    var box=$('kicker-watch-body');
-    if (!events.length) { box.innerHTML='<p class="empty">No confirmed upcoming primetime games yet. Flex-eligible games appear when their scheduling window closes.</p>'; return; }
-    var teamAliases={WAS:'WSH',LA:'LAR',JAX:'JAC'};
-    function nflTeam(c) { return teamAliases[c]||c; }
-    function kicker(team) {
-      var candidates=Object.keys(S.players).filter(function(id){
-        var p=player(id);
-        return p.pos==='K' && nflTeam(p.team)===nflTeam(team);
-      });
-      var rostered=candidates.filter(function(id){return Array.from(S.teams.values()).some(function(t){return t.players.indexOf(id)>=0;});});
-      var pool=rostered.length?rostered:candidates;
-      var id=pool[0];
-      if (!id) return '<b>Not listed</b><small>'+esc(team)+' · no kicker in Sleeper player feed</small>';
+  function kickerCard(code) {
+    var team=kickerTeam(code);
+    var candidates=Object.keys(S.players).filter(function(id){
       var p=player(id);
-      var owners=Array.from(S.teams.values()).filter(function(t){return t.players.indexOf(id)>=0;}).map(function(t){return t.name;});
-      return '<b>'+esc(p.name)+pill(p.inj)+'</b><small>'+esc(team)+' · '+(owners.length?'Rostered by '+esc(owners.join(', ')):'Available in league')+'</small>';
+      return p.pos==='K'&&kickerTeam(p.team)===team;
+    });
+    function owners(id) {
+      return Array.from(S.teams.values()).filter(function(t){return(t.players||[]).indexOf(id)>=0;});
     }
+    // Prefer a kicker currently owned in this league; other team kickers can be backups.
+    candidates.sort(function(a,b){return Number(owners(b).length>0)-Number(owners(a).length>0);});
+    var id=candidates[0],p=id?player(id):null,rosters=id?owners(id):[];
+    var photo=id?'<img class="kw-headshot" loading="lazy" alt="" src="https://sleepercdn.com/content/nfl/players/'+encodeURIComponent(id)+'.jpg" onerror="this.onerror=null;this.style.visibility=\'hidden\'">':'<span class="kw-headshot"></span>';
+    var owned=rosters.length?rosters.map(function(t){
+      return '<div class="kw-owner">'+(t.avatar?'<img loading="lazy" alt="" src="'+esc(t.avatar)+'">':'<span aria-hidden="true">●</span>')+'<span>'+esc(t.name)+'</span></div>';
+    }).join(''):'<div class="kw-owner"><span>Free agent</span></div>';
+    return '<div class="kw-player">'+photo+'<div class="kw-info"><b>'+esc(p?p.name:'Kicker TBD')+'</b><small>'+esc(code)+'</small>'+owned+'</div></div>';
+  }
+  function renderKickerWatch() {
+    var box=$('kicker-watch-body'),week=S.week;
+    $('kicker-watch-week').textContent='Week '+week+' · Thursday, Sunday and Monday night';
+    if(!kickerRosterReady){box.innerHTML='<p class="empty">Loading kickers and rosters…</p>';return;}
+    if(!Object.prototype.hasOwnProperty.call(kickerSchedule,week)) {
+      box.innerHTML='<p class="empty">Loading Week '+week+' primetime games…</p>';return;
+    }
+    if(kickerSchedule[week]===null){box.innerHTML='<p class="empty">Could not load the Week '+week+' NFL schedule.</p>';return;}
+    var events=kickerSchedule[week];
+    if(!events.length){box.innerHTML='<p class="empty">No confirmed primetime matchups for Week '+week+'.</p>';return;}
     box.innerHTML=events.map(function(row){
-      var e=row.event, comp=(e.competitions||[])[0]||{}, sides=(comp.competitors||[]);
-      var away=sides.find(function(x){return x.homeAway==='away';})||sides[0]||{}, home=sides.find(function(x){return x.homeAway==='home';})||sides[1]||{};
+      var comp=(row.event.competitions||[])[0]||{}, sides=comp.competitors||[];
+      var away=sides.find(function(x){return x.homeAway==='away';})||sides[0]||{};
+      var home=sides.find(function(x){return x.homeAway==='home';})||sides[1]||{};
       var a=(away.team||{}).abbreviation||'',h=(home.team||{}).abbreviation||'';
-      var when=new Date(e.date).toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'});
-      return '<div class="kw-game"><div class="kw-top"><span class="kw-slot">'+row.slot+' · Week '+row.week+'</span><time class="kw-time" datetime="'+esc(e.date)+'">'+esc(when)+'</time></div>'+
-        '<p class="kw-matchup">'+esc(a)+' at '+esc(h)+'</p>'+
-        '<div class="kw-kickers"><div class="kw-player">'+kicker(a)+'</div><div class="kw-player">'+kicker(h)+'</div></div></div>';
+      var label={TNF:'Thursday Night Football',SNF:'Sunday Night Football',MNF:'Monday Night Football'}[row.slot];
+      return '<article class="kw-game"><div class="kw-header"><span class="kw-day">'+label+'</span><span class="kw-matchup">'+esc(a)+' @ '+esc(h)+'</span></div>'+
+        '<div class="kw-kickers">'+kickerCard(a)+kickerCard(h)+'</div></article>';
     }).join('');
   }
-  function loadKickerWatch() {
-    var first=Math.max(1,S.current||S.week||1), last=17;
-    var requests=[];
-    for (var w=first;w<=last;w++) (function(week){
-      requests.push(fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?seasontype=2&week='+week+'&dates='+encodeURIComponent(S.league.season))
-        .then(function(r){if(!r.ok)throw Error('ESPN '+r.status);return r.json();})
-        .then(function(j){return (j.events||[]).map(function(e){return {event:e,week:week,slot:primetimeSlot(e,week)};}).filter(function(x){return x.slot&&new Date(x.event.date).getTime()>Date.now();});})
-      );
-    })(w);
-    Promise.allSettled(requests).then(function(results){
-      var events=results.filter(function(r){return r.status==='fulfilled';}).reduce(function(a,r){return a.concat(r.value);},[])
-        .sort(function(a,b){return new Date(a.event.date)-new Date(b.event.date);});
-      if(results.every(function(r){return r.status==='rejected';})) {
-        $('kicker-watch-body').innerHTML='<p class="empty">Could not load the NFL schedule. Try refreshing.</p>';return;
-      }
-      renderKickerWatch(events);
-    });
+  function loadKickerWatch(week) {
+    if(!S.league)return;
+    if(Object.prototype.hasOwnProperty.call(kickerSchedule,week)){renderKickerWatch();return;}
+    if(kickerRequested[week]){renderKickerWatch();return;}
+    kickerRequested[week]=true;
+    renderKickerWatch();
+    fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?seasontype=2&week='+week+'&dates='+encodeURIComponent(S.league.season))
+      .then(function(r){if(!r.ok)throw Error('ESPN '+r.status);return r.json();})
+      .then(function(j){
+        kickerSchedule[week]=(j.events||[]).map(function(event){
+          return {event:event,slot:primetimeSlot(event,week)};
+        }).filter(function(row){return row.slot;}).sort(function(a,b){return new Date(a.event.date)-new Date(b.event.date);});
+      }).catch(function(){kickerSchedule[week]=null;})
+      .then(function(){delete kickerRequested[week];if(S.week===week)renderKickerWatch();});
   }
 
   // ---------- Standings ----------
@@ -946,7 +958,7 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
     return Promise.all([get('/league/' + league.league_id + '/users'), get('/league/' + league.league_id + '/rosters'), familyReady]).then(function (r) {
       S.teams = buildTeams(r[0] || [], r[1] || []);
       renderStandings();
-      playersLoad.then(loadKickerWatch);
+      playersLoad.then(function(){kickerRosterReady=true;loadKickerWatch(S.week);});
       var weeks = [];
       for (var i = S.first; i <= Math.max(completed, S.current || 0) && i <= S.last; i++) weeks.push(i);
       var legs = [S.week, S.week - 1, S.week - 2].filter(function (x) { return x >= 1; });
