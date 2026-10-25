@@ -1,0 +1,18 @@
+.streaming-hero { position:relative; isolation:isolate; overflow:hidden; min-height:440px; display:grid; place-items:center; background:radial-gradient(ellipse at 50% 20%,#263447,#080a10 75%); }
+.artwork-backdrop { position:absolute; inset:-60px -160px; z-index:-2; display:flex; flex-direction:column; justify-content:center; gap:16px; transform:rotate(-7deg) scale(1.06); opacity:0; transition:opacity 1s ease; pointer-events:none; }
+.streaming-hero.has-artwork .artwork-backdrop { opacity:1; }
+.streaming-hero::after { content:""; position:absolute; inset:0; z-index:-1; background:linear-gradient(180deg,rgba(0,0,0,.28),rgba(0,0,0,.36) 65%,#000),radial-gradient(ellipse at center,rgba(0,0,0,.68),rgba(0,0,0,.12)); }
+.hero-content { padding:72px 24px 80px; max-width:780px; text-shadow:0 2px 24px #000; }
+.hero-content h1 { margin-bottom:28px; }
+.hero-content .launch { min-width:0; filter:drop-shadow(0 8px 24px #0009); }
+.hero-content .launch-note { max-width:310px; margin:12px auto 0; color:#e3e3e8; }
+.hero-content .launch-note:empty { display:none; }
+.artwork-row { display:flex; width:max-content; flex:none; gap:0; animation:artwork-slide 100s linear infinite; will-change:transform; }
+.artwork-row:nth-child(2) { animation-direction:reverse; animation-duration:120s; }
+.artwork-group { display:flex; flex:none; gap:16px; padding-right:16px; }
+.artwork-group img { display:block; flex:none; width:144px; height:216px; object-fit:cover; border-radius:12px; background:#17202c; }
+.artwork-pause { position:absolute; right:20px; bottom:24px; width:44px; height:44px; border:1px solid #ffffff40; border-radius:50%; color:#fff; background:#20232a90; backdrop-filter:blur(12px); cursor:pointer; font-size:18px; }
+.streaming-hero.is-paused .artwork-row { animation-play-state:paused; }
+@keyframes artwork-slide { to { transform:translateX(-50%); } }
+@media(min-width:900px) { .streaming-hero { min-height:500px; } .artwork-group img { width:168px; height:252px; } }
+@media(prefers-reduced-motion:reduce) { .artwork-row { animation:none; will-change:auto; } .artwork-backdrop { transition:none; } .artwork-pause { display:none; } }

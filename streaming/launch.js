@@ -1,7 +1,6 @@
 /* Jellyfin Mobile's iOS scheme is registered in its native Info.plist. */
 (() => {
   const icon = document.getElementById('open-jellyfin');
-  const label = document.getElementById('launch-label');
   const note = document.getElementById('launch-note');
   const ios = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
   const android = /Android/i.test(navigator.userAgent);
@@ -25,7 +24,6 @@
   } else if (android) {
     // The official Android app has no BROWSABLE activity; do not invent a launch scheme.
     icon.href = androidStore;
-    label.textContent = 'Open Jellyfin in Google Play';
     note.textContent = 'Choose Open if installed, or Install to get Jellyfin Mobile.';
   }
   document.getElementById('streaming-signin').addEventListener('click', () => window.familyAccount.show());

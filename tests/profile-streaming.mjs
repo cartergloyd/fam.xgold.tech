@@ -35,6 +35,8 @@ async function setup(path = '/', options = {}) {
     const req = route.request(), url = new URL(req.url());
     if (url.hostname === 'fam-api.xgold.tech' && url.pathname.startsWith('/family/')) {
       const endpoint = url.pathname.split('/').pop(), body = req.postDataJSON(); requests.push({ endpoint, body });
+      if (endpoint === 'recent.json') return route.fulfill({ json: { posters: Array.from({length: 24}, (_, i) => ({ image: '/family/streaming-artwork/' + i.toString(16).padStart(32, '0') + '.jpg' })) } });
+      if (endpoint.endsWith('.jpg')) return route.fulfill({ contentType: 'image/png', body: await readFile(resolve(root, 'assets/app-icons/jellyfin.png')) });
       if (endpoint === 'users') return route.fulfill({ json: { users } });
       if (endpoint === 'lookup') return route.fulfill({ json: { user: body.email.endsWith('@registered.test') ? users[2] : null } });
       if (endpoint === 'register') { assert.equal(body.id, 'chester'); assert.equal(body.pin, '0031'); return route.fulfill({ json: { user: users[0] } }); }
@@ -94,7 +96,11 @@ test('initial plus surname works; exact registered email overrides a suggested p
 test('Streaming keeps the shared ribbon, current login instructions, and desktop destination', async () => {
   const { context, page, errors } = await setup('/streaming/', { viewport: { width: 1440, height: 900 } });
   assert.equal(await page.getByRole('heading', { level: 1 }).textContent(), 'Watch from anywhere.');
-  assert.equal(await page.locator('main ol > li').count(), 3);
+  assert.equal(await page.locator('main ol > li').count(), 2);
+  assert.match(await page.locator('main ol > li').first().textContent(), /Connect to our server/);
+  assert.equal(await page.getByText('Watch in your browser', { exact: true }).count(), 0);
+  assert.equal(await page.getByText('Open Jellyfin', { exact: true }).count(), 0);
+  await page.locator('.streaming-hero.has-artwork').waitFor();
   assert.match(await page.locator('main').textContent(), /four-digit family PIN as the password/);
   assert.doesNotMatch(await page.locator('main').textContent(), /currently unavailable|password Carter gives|Discord Watch Party/);
   await page.screenshot({ path: '/tmp/fam-streaming-desktop.png', fullPage: true });
@@ -132,4 +138,31 @@ test('iPhone store fallback runs only while the page stays visible and cancels w
     for (const fn of timers.values()) fn();
     assert.deepEqual(navigations, appOpens ? [] : ['https://apps.apple.com/app/jellyfin-mobile/id1480192618']);
   }
+});
+
+test('recent artwork slides smoothly, pauses on demand, and respects reduced motion', async () => {
+  const { context, page, errors } = await setup('/streaming/', { reducedMotion: 'no-preference', viewport: { width: 1440, height: 900 } });
+  await page.locator('.streaming-hero.has-artwork').waitFor();
+  assert.equal(await page.locator('.artwork-row').count(), 2);
+  assert.equal(await page.locator('.artwork-row img').count(), 48);
+  const position = () => page.locator('.artwork-row').first().evaluate(el => getComputedStyle(el).transform);
+  const start = await position(); await page.waitForTimeout(100); assert.notEqual(await position(), start);
+  await page.getByRole('button', { name: 'Pause artwork' }).click();
+  assert.equal(await page.getByRole('button', { name: 'Play artwork' }).getAttribute('aria-pressed'), 'true');
+  await page.waitForTimeout(100); const stopped = await position(); await page.waitForTimeout(100); assert.equal(await position(), stopped);
+  await page.getByRole('button', { name: 'Play artwork' }).click();
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  assert.equal(await page.locator('.artwork-row').first().evaluate(el => getComputedStyle(el).animationName), 'none');
+  assert.equal(await page.locator('#artwork-pause').isVisible(), false);
+  assert.deepEqual(errors, []);
+  await context.close();
+});
+test('an unavailable artwork feed leaves the launch and setup usable', async () => {
+  const { context, page } = await setup('/streaming/');
+  await context.route('**/streaming-artwork/recent.json', route => route.fulfill({ status:503, body:'Unavailable' }));
+  await page.reload();
+  assert.equal(await page.locator('#open-jellyfin').isVisible(), true);
+  assert.equal(await page.locator('main ol > li').count(), 2);
+  assert.equal(await page.locator('#artwork-pause').isVisible(), false);
+  await context.close();
 });

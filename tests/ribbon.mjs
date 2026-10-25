@@ -180,7 +180,8 @@ test('shared account control signs in, switches people and follows the responsiv
             const endpoint = url.pathname.slice('/family/'.length), body = request.postDataJSON();
             requests.push({ endpoint, body });
             let response;
-            if (endpoint === 'users') response = { users };
+            if (endpoint === 'streaming-artwork/recent.json') response = { posters: [] };
+            else if (endpoint === 'users') response = { users };
             else if (endpoint === 'lookup') response = { user: body.email === 'carter@example.test' ? users[0] : users[1].registered ? users[1] : null };
             else if (endpoint === 'login') {
               if (body.pin === '0000') { await route.fulfill({ status: 401, json: { error: 'Incorrect PIN.' } }); return; }

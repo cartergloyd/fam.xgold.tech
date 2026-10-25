@@ -1,0 +1,11 @@
+[Unit]
+Description=Refresh the family Streaming hero with recent Jellyfin posters
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /home/gold/server-platform/fam-streaming-artwork/refresh.py /home/gold/server-platform/fam-jellyfin-sync/config.json /home/gold/server-platform/public-apps/fam/uploads/streaming-artwork
+UMask=0022
+NoNewPrivileges=true
+PrivateTmp=true
+TimeoutStartSec=300
