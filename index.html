@@ -287,7 +287,7 @@ h1 { margin: 0; font-size: clamp(2.75rem, 10.5vw, 7rem); line-height: 1.04; font
 .rthumb:hover img { transform: scale(1.06); }
 .rthumb:focus-visible { outline: 2px solid #2997ff; outline-offset: 2px; }
 .pcount { position: absolute; right: 4px; bottom: 4px; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: rgba(0,0,0,.65); color: #fff; font-size: 12px; font-weight: 600; display: grid; place-items: center; backdrop-filter: blur(4px); }
-.lb { position: fixed; inset: 0; z-index: 70; background: rgba(0,0,0,.92); display: flex; align-items: center; justify-content: center; gap: 8px; padding: 56px var(--gutter) 24px; animation: gfade .25s ease both; }
+.lb { position: fixed; inset: 0; z-index: 70; background: rgba(0,0,0,.92); display: flex; align-items: center; justify-content: center; gap: 8px; padding: calc(56px + env(safe-area-inset-top, 0px)) var(--gutter) calc(24px + env(safe-area-inset-bottom, 0px)); animation: gfade .25s ease both; }
 .lb[hidden] { display: none; }
 .lb-fig { margin: 0; flex: 1; min-width: 0; max-width: 980px; display: grid; gap: 14px; justify-items: center; }
 .lb-fig img { width: 100%; max-height: 70vh; object-fit: contain; border-radius: 16px; background: #111; }
@@ -297,7 +297,7 @@ h1 { margin: 0; font-size: clamp(2.75rem, 10.5vw, 7rem); line-height: 1.04; font
 .lb-dots i { width: 7px; height: 7px; border-radius: 50%; background: #5a5a5e; transition: background .2s, transform .2s; }
 .lb-dots i.on { background: var(--fg); transform: scale(1.25); }
 .lb-x, .lb-nav { all: unset; cursor: pointer; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,.12); color: var(--fg); flex: none; transition: background .2s; }
-.lb-x { position: absolute; top: 12px; right: var(--gutter); }
+.lb-x { position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); right: var(--gutter); }
 .lb-x:hover, .lb-nav:hover { background: rgba(255,255,255,.22); }
 .lb-x:focus-visible, .lb-nav:focus-visible { outline: 2px solid #2997ff; }
 .lb-x svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2.2; fill: none; stroke-linecap: round; }

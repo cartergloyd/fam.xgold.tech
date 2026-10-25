@@ -131,10 +131,9 @@ test('ribbon appearance and actual Streaming clicks agree on every page', async 
         if (compactBaseline) assert.deepEqual(compact, compactBaseline, `Compact ${path} differs at ${width}px`);
         else compactBaseline = compact;
         if (path === '/' && [390, 1440].includes(width)) await nav.screenshot({ path: `/tmp/fam-ribbon-compact-${width}.png` });
-        // The stable host height prevents layout changes from toggling the scroll state.
+        // Intermediate scrolling now has an intermediate visual state, rather than an on/off threshold.
         await page.evaluate(() => scrollTo(0, 35));
         await page.waitForTimeout(400);
-        assert(await page.locator('family-ribbon').evaluate(el => el.hasAttribute('compact')));
         const partial = await geometry();
         assert(partial.icons[0].width > compact.icons[0].width && partial.icons[0].width < expanded.icons[0].width, 'Intermediate scroll positions produce intermediate sizes');
         const expandFrames = await animateScroll(0);
