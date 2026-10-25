@@ -1,5 +1,9 @@
-/* One sticky ribbon, with five equal columns centered around Streaming. */
+/* Stable icon slots: animate transforms and opacity, rather than reflowing the row. */
 family-ribbon {
+  --ribbon-motion: 360ms cubic-bezier(.2, 0, .2, 1);
+  --ribbon-icon-size: 40px;
+  --ribbon-icon-scale: .7;
+  --ribbon-icon-rise: -16px;
   display: block;
   position: sticky;
   top: 0;
@@ -10,7 +14,8 @@ family-ribbon {
 .family-ribbon {
   position: relative;
   box-sizing: border-box;
-  padding: 18px 16px 14px;
+  height: 95px;
+  overflow: hidden;
   background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.025)), rgba(0,0,0,.35);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
   backdrop-filter: blur(16px) saturate(180%);
@@ -19,27 +24,35 @@ family-ribbon {
   font: 400 16px/normal -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   pointer-events: auto;
-  transition: padding .2s ease;
+  transition: height var(--ribbon-motion);
 }
 .family-ribbon ul {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  align-items: start;
-  width: 100%;
+  width: calc(100% - 32px);
   max-width: 560px;
+  height: 100%;
   margin: 0 auto;
   padding: 0;
   list-style: none;
-  transition: max-width .2s ease;
+  pointer-events: none;
 }
-.family-ribbon li { margin: 0; padding: 0; min-width: 0; }
+.family-ribbon li {
+  position: relative;
+  min-width: 0;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  transition: transform var(--ribbon-motion);
+}
 .family-ribbon a {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
+  position: absolute;
+  left: 50%;
+  display: block;
+  width: 72px;
+  height: 100%;
   min-height: 44px;
+  transform: translateX(-50%);
   color: #a1a1a6;
   font-size: 12px;
   font-weight: 400;
@@ -48,35 +61,39 @@ family-ribbon {
   white-space: nowrap;
   text-align: center;
   text-decoration: none;
-  transition: color .2s, gap .2s ease;
+  pointer-events: auto;
+  transition: color .16s ease;
 }
 .family-ribbon a:hover, .family-ribbon a[aria-current="page"] { color: #f5f5f7; }
-.family-ribbon a:focus-visible { outline: 2px solid #2997ff; outline-offset: -2px; border-radius: 8px; }
+.family-ribbon a:focus-visible, .family-ribbon-account:focus-visible { outline: 2px solid #2997ff; outline-offset: -2px; border-radius: 8px; }
 .family-ribbon-icon {
+  position: absolute;
+  top: 18px;
+  left: 50%;
   display: block;
-  width: 40px;
-  height: 40px;
-  flex: none;
+  width: var(--ribbon-icon-size);
+  height: var(--ribbon-icon-size);
   overflow: hidden;
   border-radius: 24%;
   clip-path: inset(0 round 24%);
-  transition: width .2s ease, height .2s ease;
+  transform: translateX(-50%);
+  transition: transform var(--ribbon-motion);
 }
 .family-ribbon-icon img { display: block; width: 100%; height: 100%; object-fit: cover; }
-/* Calendar's source artwork includes an outer margin. Fill the common mask. */
 .family-ribbon-icon img[src$="calendar.png"] { transform: scale(1.25); }
 .family-ribbon-label {
+  position: absolute;
+  top: calc(26px + var(--ribbon-icon-size));
+  left: 0;
+  right: 0;
   display: block;
-  max-height: 16px;
   opacity: 1;
-  overflow: hidden;
-  transition: max-height .2s ease, opacity .15s ease;
+  transition: opacity .16s ease, transform var(--ribbon-motion);
 }
-family-ribbon[compact] .family-ribbon { padding-block: 0; }
-family-ribbon[compact] ul { max-width: min(360px, calc(100% - 80px)); }
-family-ribbon[compact] a { gap: 0; }
-family-ribbon[compact] .family-ribbon-icon { width: 28px; height: 28px; }
-family-ribbon[compact] .family-ribbon-label { max-height: 0; opacity: 0; }
+family-ribbon[compact] .family-ribbon { height: 44px; }
+family-ribbon[compact] li { transform: translateX(calc(var(--ribbon-slot) * -40px)); }
+family-ribbon[compact] .family-ribbon-icon { transform: translate(-50%, var(--ribbon-icon-rise)) scale(var(--ribbon-icon-scale)); }
+family-ribbon[compact] .family-ribbon-label { opacity: 0; transform: translateY(-8px); }
 .family-ribbon-account {
   position: absolute;
   top: 16px;
@@ -86,7 +103,7 @@ family-ribbon[compact] .family-ribbon-label { max-height: 0; opacity: 0; }
   justify-content: flex-end;
   gap: 8px;
   min-width: 44px;
-  min-height: 44px;
+  height: 44px;
   max-width: 220px;
   margin: 0;
   padding: 5px 5px 5px 14px;
@@ -98,11 +115,10 @@ family-ribbon[compact] .family-ribbon-label { max-height: 0; opacity: 0; }
   color: #f5f5f7;
   font: 500 15px/1.2 -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
   cursor: pointer;
-  transition: top .2s, padding .2s, gap .2s, background .2s;
+  pointer-events: auto;
+  transition: transform var(--ribbon-motion), background .16s, border-color .16s;
 }
 .family-ribbon-account:hover { background: rgba(255,255,255,.12); }
-.family-ribbon-account:focus-visible { outline: 2px solid #2997ff; outline-offset: -2px; }
-.family-ribbon-account:not([data-member]) { padding-right: 14px; }
 .family-ribbon-account-name {
   display: block;
   min-width: 0;
@@ -111,7 +127,7 @@ family-ribbon[compact] .family-ribbon-label { max-height: 0; opacity: 0; }
   text-overflow: ellipsis;
   white-space: nowrap;
   text-align: right;
-  transition: max-width .2s, opacity .15s;
+  transition: opacity .16s ease, transform var(--ribbon-motion);
 }
 .family-ribbon-account-avatar {
   display: flex;
@@ -123,35 +139,63 @@ family-ribbon[compact] .family-ribbon-label { max-height: 0; opacity: 0; }
   overflow: hidden;
   border-radius: 50%;
   background: #2c2c2e;
+  transition: transform var(--ribbon-motion);
 }
-.family-ribbon-account:not([data-member]) .family-ribbon-account-avatar { display: none; }
 .family-ribbon-account-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .family-ribbon-account-avatar svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.5; }
 family-ribbon[compact] .family-ribbon-account {
-  top: 0;
-  gap: 0;
-  padding: 7px;
+  transform: translateY(-16px);
   border-color: transparent;
   background: transparent;
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
-family-ribbon[compact] .family-ribbon-account-name { max-width: 0; opacity: 0; }
-family-ribbon[compact] .family-ribbon-account .family-ribbon-account-avatar { display: flex; width: 28px; height: 28px; }
-/* Give the account its own upper row on narrow screens, preserving icon centering. */
+family-ribbon[compact] .family-ribbon-account-name { opacity: 0; transform: translateY(-8px); }
+family-ribbon[compact] .family-ribbon-account-avatar { transform: scale(.875); }
+/* Mobile and tablet: the account is the sixth equally spaced icon in the same row. */
 @media (max-width: 1000px) {
-  family-ribbon { height: 145px; }
-  .family-ribbon { padding-top: 68px; }
-  .family-ribbon-account { top: 10px; }
-}
-@media (max-width: 480px) {
-  family-ribbon { height: 136px; }
-  .family-ribbon { padding-top: 64px; padding-inline: 8px; }
-  .family-ribbon-account { right: 8px; top: 8px; }
-  .family-ribbon a { font-size: 11px; }
-  .family-ribbon-icon { width: 36px; height: 36px; }
+  family-ribbon {
+    --ribbon-icon-size: 36px;
+    --ribbon-icon-scale: .77777778;
+    --ribbon-icon-rise: -14px;
+    height: 90px;
+  }
+  .family-ribbon { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); height: 90px; padding-inline: 8px; }
+  .family-ribbon ul { display: contents; }
+  .family-ribbon a { width: 100%; font-size: 11px; }
+  family-ribbon[compact] li { transform: none; }
+  .family-ribbon-account {
+    position: relative;
+    top: auto;
+    right: auto;
+    display: block;
+    min-width: 0;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    font-size: 11px;
+    font-weight: 400;
+  }
+  .family-ribbon-account-avatar {
+    position: absolute;
+    top: 18px;
+    left: 50%;
+    width: var(--ribbon-icon-size);
+    height: var(--ribbon-icon-size);
+    transform: translateX(-50%);
+  }
+  .family-ribbon-account-name { position: absolute; top: 62px; left: 0; right: 0; max-width: none; padding-inline: 2px; text-align: center; }
+  family-ribbon[compact] .family-ribbon-account { transform: none; }
+  family-ribbon[compact] .family-ribbon-account-avatar { transform: translate(-50%, var(--ribbon-icon-rise)) scale(var(--ribbon-icon-scale)); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .family-ribbon, .family-ribbon ul, .family-ribbon a,
-  .family-ribbon-icon, .family-ribbon-label, .family-ribbon-account, .family-ribbon-account-name { transition: none; }
+  .family-ribbon, .family-ribbon li, .family-ribbon a, .family-ribbon-icon,
+  .family-ribbon-label, .family-ribbon-account, .family-ribbon-account-name, .family-ribbon-account-avatar { transition: none; }
 }

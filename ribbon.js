@@ -10,9 +10,9 @@
   class FamilyRibbon extends HTMLElement {
     connectedCallback() {
       const path = location.pathname.replace(/\/index\.html$/, '/').replace(/\/$/, '') || '/';
-      this.innerHTML = `<nav class="family-ribbon" aria-label="Family sites"><ul>${items.map(item => {
+      this.innerHTML = `<nav class="family-ribbon" aria-label="Family sites"><ul role="list">${items.map((item, index) => {
         const current = path === (item.href.replace(/\/$/, '') || '/');
-        return `<li><a href="${item.href}" aria-label="${item.label}" title="${item.label}"${current ? ' aria-current="page"' : ''}><span class="family-ribbon-icon" aria-hidden="true"><img src="/assets/app-icons/${item.icon}.png" width="40" height="40" alt=""></span><span class="family-ribbon-label">${item.label}</span></a></li>`;
+        return `<li style="--ribbon-slot: ${index - 2}"><a href="${item.href}" aria-label="${item.label}" title="${item.label}"${current ? ' aria-current="page"' : ''}><span class="family-ribbon-icon" aria-hidden="true"><img src="/assets/app-icons/${item.icon}.png" width="40" height="40" alt=""></span><span class="family-ribbon-label">${item.label}</span></a></li>`;
       }).join('')}</ul><button class="family-ribbon-account" type="button" aria-label="Sign in"><span class="family-ribbon-account-name">Sign in</span><span class="family-ribbon-account-avatar" aria-hidden="true"></span></button></nav>`;
       this.accountButton = this.querySelector('.family-ribbon-account');
       this.accountButton.addEventListener('click', () => window.familyAccount.show());
