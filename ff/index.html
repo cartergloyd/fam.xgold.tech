@@ -370,7 +370,7 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
   </section>
 
   <section id="kicker-watch" aria-labelledby="kicker-watch-h">
-    <div class="sec-head"><div><h2 id="kicker-watch-h">Kicker watch</h2><p id="kicker-watch-week">Primetime kickers for the selected week.</p></div></div>
+    <div class="sec-head"><div><h2 id="kicker-watch-h">Kicker watch</h2></div></div>
     <div class="panel kicker-watch" id="kicker-watch-body"><p class="empty">Loading primetime games…</p></div>
     <p class="kw-note">NFL schedule via ESPN · Kickers and fantasy ownership via Sleeper. International and unconfirmed flex matchups excluded.</p>
   </section>
@@ -788,7 +788,7 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
   }
   function renderKickerWatch() {
     var box=$('kicker-watch-body'),week=S.week;
-    $('kicker-watch-week').textContent='Week '+week+' · Thursday, Sunday and Monday night';
+
     if(!kickerRosterReady){box.innerHTML='<p class="empty">Loading kickers and rosters…</p>';return;}
     if(!Object.prototype.hasOwnProperty.call(kickerSchedule,week)) {
       box.innerHTML='<p class="empty">Loading Week '+week+' primetime games…</p>';return;
