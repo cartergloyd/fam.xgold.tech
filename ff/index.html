@@ -324,7 +324,7 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
   .sports-shell,.panel,.weekpick,.btn.ghost { background:#202129; -webkit-backdrop-filter:none; backdrop-filter:none; }
 }
 
-/* Week-scoped primetime kicker cards, matching the glass scoreboard. */
+/* Kicker watch: outside fantasy crests, inside kicker headshots. */
 .kicker-watch { padding:4px clamp(14px,2.5vw,24px); }
 .kw-game { padding:18px 0; border-bottom:1px solid rgba(255,255,255,.12); }
 .kw-game:last-child { border-bottom:0; }
@@ -332,16 +332,20 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
 .kw-day { font-size:15px; font-weight:700; color:#f5f5f7; }
 .kw-matchup { color:#c5c5d0; font-size:13px; }
 .kw-kickers { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
-.kw-player { display:flex; gap:10px; align-items:center; min-width:0; padding:12px; border-radius:18px; background:rgba(255,255,255,.075); }
-.kw-headshot { width:54px; height:54px; flex:none; border-radius:15px; object-fit:cover; background:rgba(255,255,255,.09); }
-.kw-info { min-width:0; flex:1; }
-.kw-info b { display:block; font-size:15px; line-height:1.25; overflow-wrap:anywhere; }
-.kw-info small { display:block; color:#c0c0c9; font-size:12px; margin-top:3px; line-height:1.35; }
-.kw-owner { display:flex; align-items:center; gap:6px; min-width:0; margin-top:6px; color:#e3e3eb; font-size:12px; line-height:1.25; }
-.kw-owner img { width:23px; height:23px; flex:none; border-radius:50%; object-fit:cover; background:#30303d; }
-.kw-owner span { overflow-wrap:anywhere; }
+.kw-player { min-width:0; padding:12px; border-radius:18px; background:rgba(255,255,255,.075); text-align:center; }
+.kw-images { display:flex; align-items:center; justify-content:space-evenly; gap:10px; margin:0 auto 10px; }
+.kw-headshot,.kw-team-logo { width:64px; height:64px; flex:none; object-fit:cover; background:rgba(255,255,255,.09); }
+.kw-headshot { border-radius:18px; }
+.kw-team-logo { border-radius:50%; }
+.kw-images .kw-placeholder { display:grid; place-items:center; color:#a1a1a6; font-size:11px; text-align:center; }
+.kw-player.away .kw-team-logo { order:0; }
+.kw-player.away .kw-headshot { order:1; }
+.kw-player.home .kw-headshot { order:0; }
+.kw-player.home .kw-team-logo { order:1; }
+.kw-name { display:block; font-size:15px; line-height:1.3; font-weight:650; overflow-wrap:anywhere; }
+.kw-fantasy-name { display:block; color:#c6c6cf; font-size:13px; line-height:1.4; margin-top:3px; overflow-wrap:anywhere; }
 .kw-note { margin:12px 0 0; font-size:13px; line-height:1.45; color:#bcbcc5; }
-@media(max-width:560px) { .kw-kickers { gap:8px; } .kw-player { flex-direction:column; align-items:flex-start; gap:8px; padding:10px; } .kw-headshot { width:50px; height:50px; } .kw-info b { font-size:14px; } }
+@media(max-width:560px) { .kw-kickers { gap:8px; } .kw-player { padding:10px 7px; } .kw-images { gap:5px; } .kw-headshot,.kw-team-logo { width:clamp(36px,10vw,56px); height:clamp(36px,10vw,56px); } .kw-name { font-size:13px; } .kw-fantasy-name { font-size:12px; } }
 </style><link rel="stylesheet" href="/ribbon.css?v=6">
 <script src="/ribbon.js?v=6" defer></script>
 </head><body>
@@ -768,7 +772,7 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
     if(notice&&date.getTime()-Date.now()>notice*86400000)return '';
     return slot;
   }
-  function kickerCard(code) {
+  function kickerCard(code,side) {
     var team=kickerTeam(code);
     var candidates=Object.keys(S.players).filter(function(id){
       var p=player(id);
@@ -777,14 +781,16 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
     function owners(id) {
       return Array.from(S.teams.values()).filter(function(t){return(t.players||[]).indexOf(id)>=0;});
     }
-    // Prefer a kicker currently owned in this league; other team kickers can be backups.
+    // Prefer a kicker currently rostered in this league.
     candidates.sort(function(a,b){return Number(owners(b).length>0)-Number(owners(a).length>0);});
     var id=candidates[0],p=id?player(id):null,rosters=id?owners(id):[];
-    var photo=id?'<img class="kw-headshot" loading="lazy" alt="" src="https://sleepercdn.com/content/nfl/players/'+encodeURIComponent(id)+'.jpg" onerror="this.onerror=null;this.style.visibility=\'hidden\'">':'<span class="kw-headshot"></span>';
-    var owned=rosters.length?rosters.map(function(t){
-      return '<div class="kw-owner">'+(t.avatar?'<img loading="lazy" alt="" src="'+esc(t.avatar)+'">':'<span aria-hidden="true">●</span>')+'<span>'+esc(t.name)+'</span></div>';
-    }).join(''):'<div class="kw-owner"><span>Free agent</span></div>';
-    return '<div class="kw-player">'+photo+'<div class="kw-info"><b>'+esc(p?p.name:'Kicker TBD')+'</b><small>'+esc(code)+'</small>'+owned+'</div></div>';
+    var photo=id?'<img class="kw-headshot" loading="lazy" alt="" src="https://sleepercdn.com/content/nfl/players/'+encodeURIComponent(id)+'.jpg" onerror="this.onerror=null;this.style.visibility=\'hidden\'">':'<span class="kw-headshot kw-placeholder">No photo</span>';
+    var owner=rosters[0];
+    var logo=owner&&owner.avatar?'<img class="kw-team-logo" loading="lazy" alt="" src="'+esc(owner.avatar)+'">':'<span class="kw-team-logo kw-placeholder">'+(owner?'No logo':'FA')+'</span>';
+    var fantasyName=rosters.length?rosters.map(function(t){return t.name;}).join(', '):'Free agent';
+    return '<div class="kw-player '+side+'"><div class="kw-images">'+logo+photo+'</div>'+
+      '<span class="kw-name">'+esc(p?p.name:'Kicker TBD')+' ('+esc(code)+')</span>'+
+      '<span class="kw-fantasy-name">'+esc(fantasyName)+'</span></div>';
   }
   function renderKickerWatch() {
     var box=$('kicker-watch-body'),week=S.week;
@@ -803,7 +809,7 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
       var a=(away.team||{}).abbreviation||'',h=(home.team||{}).abbreviation||'';
       var label={TNF:'Thursday Night Football',SNF:'Sunday Night Football',MNF:'Monday Night Football'}[row.slot];
       return '<article class="kw-game"><div class="kw-header"><span class="kw-day">'+label+'</span><span class="kw-matchup">'+esc(a)+' @ '+esc(h)+'</span></div>'+
-        '<div class="kw-kickers">'+kickerCard(a)+kickerCard(h)+'</div></article>';
+        '<div class="kw-kickers">'+kickerCard(a,'away')+kickerCard(h,'home')+'</div></article>';
     }).join('');
   }
   function loadKickerWatch(week) {
