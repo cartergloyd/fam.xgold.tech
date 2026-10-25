@@ -1,0 +1,7 @@
+[Unit]
+Description=Record Minecraft area activity every minute
+[Timer]
+OnBootSec=2m
+OnUnitActiveSec=60s
+[Install]
+WantedBy=timers.target

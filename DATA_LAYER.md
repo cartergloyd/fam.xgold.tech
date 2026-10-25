@@ -65,3 +65,14 @@ Run `node test-directus-db.mjs` and `node test-family-directory.mjs` for offline
 client checks. Server verification covers profiles/privacy, all assigned photos,
 CORS, sign-in, duplicate registrations and concurrent claims, PIN handling,
 disabled users, Jellyfin links/photos and unchanged shared trip collections.
+
+## 6108 bookings and Minecraft builds
+
+`/6108/` and `/mc/` use the authenticated endpoints in `deploy/family-hub/`.
+Email/PIN login and registration now also issue a signed seven-day session.
+Existing browser profiles must sign in once for these pages. The shared trip
+collections keep their existing behavior. No new public collection access is
+introduced. Carter and Chester manage condo reservations/settings/instant-booking
+access; Jaime manages maintenance. Minecraft cards are shared by signed-in family
+members. See `deploy/family-hub/README.md` for database constraints, installation,
+map activity collection, verification and rollback.

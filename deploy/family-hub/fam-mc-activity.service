@@ -1,0 +1,5 @@
+[Unit]
+Description=Collect anonymous Minecraft area activity for family map
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /home/gold/server-platform/fam-site-src/deploy/family-hub/collect-activity.py

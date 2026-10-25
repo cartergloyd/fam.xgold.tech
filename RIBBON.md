@@ -48,3 +48,6 @@ FAM_TEST_URL=https://fam.xgold.tech npm run test:ribbon
 ```
 
 Publish changes directly to `main`, per the owner's preference.
+
+Minecraft and Condos now resolve to `/mc/` and `/6108/`. Both mount the same ribbon
+and account control; the ribbon's existing `/mc` and `/6108` links are preserved.
