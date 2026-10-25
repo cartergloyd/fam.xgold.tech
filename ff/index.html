@@ -292,6 +292,37 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
   body::before,body::after { animation:none; }
   .hero .sleeper-launch img { transition:none; }
 }
+
+/* Readable liquid-glass surfaces for fantasy widgets. */
+:root {
+  --glass-fill:rgba(26,29,40,.78);
+  --glass-edge:rgba(255,255,255,.16);
+}
+.sports-shell,.panel,.weekpick {
+  background:var(--glass-fill);
+  border:1px solid var(--glass-edge);
+  -webkit-backdrop-filter:blur(22px) saturate(145%);
+  backdrop-filter:blur(22px) saturate(145%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 14px 45px rgba(0,0,0,.20);
+}
+.sports-shell {
+  background:rgba(20,23,34,.84);
+}
+.inj .panel {
+  background:rgba(26,29,40,.82);
+}
+.week-tabs,#scores .mu { border-color:rgba(255,255,255,.12); }
+.ic { background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.10); }
+.btn.ghost {
+  background:rgba(30,34,46,.75);
+  border:1px solid var(--glass-edge);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.09);
+  -webkit-backdrop-filter:blur(18px);
+  backdrop-filter:blur(18px);
+}
+@media(prefers-reduced-transparency:reduce) {
+  .sports-shell,.panel,.weekpick,.btn.ghost { background:#202129; -webkit-backdrop-filter:none; backdrop-filter:none; }
+}
 </style><link rel="stylesheet" href="/ribbon.css?v=6">
 <script src="/ribbon.js?v=6" defer></script>
 </head><body>
