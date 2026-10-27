@@ -941,7 +941,6 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
   function fail(e) {
     console.error(e);
     $('title').textContent = 'Couldn’t reach Sleeper';
-    $('status').textContent = '';
     $('main').innerHTML = '<div class="err"><p>Sleeper didn’t answer. It may be down for a minute.</p><button class="btn" type="button" onclick="location.reload()">Try again</button></div>';
   }
 
