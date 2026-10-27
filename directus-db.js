@@ -4,8 +4,13 @@
   var BASE = 'https://fam-api.xgold.tech';
   var COLLECTIONS = ['plans', 'bedrooms', 'flights', 'members', 'progress', 'meals', 'groceries'];
   var subscriptions = Object.create(null), socket = null, timer = null, reconnect = null, backoff = 1000;
+  // Documents belong to a trip. Stored ids are "trip:id" so fixed ids like bedrooms/b1 can repeat per trip;
+  // callers keep using the plain id.
+  var TRIP = null;
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 10); }
   function valid(name) { if (COLLECTIONS.indexOf(name) < 0) throw new Error('Unknown collection'); }
+  function scoped(id) { return TRIP ? TRIP + ':' + id : id; }
+  function unscoped(id) { return TRIP && String(id).indexOf(TRIP + ':') === 0 ? String(id).slice(TRIP.length + 1) : id; }
   function request(method, path, body) {
     var controller = new AbortController(), timeout = setTimeout(function () { controller.abort(); }, 20000);
     return fetch(BASE + path, {
@@ -26,9 +31,10 @@
   }
   function load(name) {
     valid(name);
-    return request('GET', '/items/kv?filter[coll][_eq]=' + encodeURIComponent(name) + '&fields=id,data&limit=-1').then(function (r) {
+    var query = '/items/kv?filter[coll][_eq]=' + encodeURIComponent(name) + (TRIP ? '&filter[trip][_eq]=' + encodeURIComponent(TRIP) : '') + '&fields=id,data&limit=-1';
+    return request('GET', query).then(function (r) {
       if (!r || !Array.isArray(r.data)) throw new Error('Invalid data response');
-      return r.data.map(function (row) { return { id: row.id, data: function () { return row.data || {}; } }; });
+      return r.data.map(function (row) { return { id: unscoped(row.id), data: function () { return row.data || {}; } }; });
     });
   }
   function refresh(name) { (subscriptions[name] || []).slice().forEach(function (run) { run(); }); }
@@ -80,10 +86,12 @@
   }
   function mutate(name, id, data, remove) {
     valid(name);
-    var key = name + '/' + id, path = '/items/kv/' + encodeURIComponent(key);
+    var stored = scoped(id), key = name + '/' + stored, path = '/items/kv/' + encodeURIComponent(key);
+    var row = { key: key, coll: name, id: stored, data: data };
+    if (TRIP) row.trip = TRIP;
     var work = remove ? request('DELETE', path) : request('PATCH', path, { data: data }).catch(function (error) {
       if (error.status !== 403 && error.status !== 404) throw error;
-      return request('POST', '/items/kv', { key: key, coll: name, id: id, data: data }).catch(function (created) {
+      return request('POST', '/items/kv', row).catch(function (created) {
         // Another browser may have created the same document after our PATCH.
         if (created.status === 409 || created.code === 'RECORD_NOT_UNIQUE') return request('PATCH', path, { data: data });
         throw created;
@@ -107,6 +115,11 @@
     var slash = path.indexOf('/');
     if (slash < 1 || slash === path.length - 1) throw new Error('A document path must contain a collection and id');
     return collection(path.slice(0, slash)).doc(path.slice(slash + 1));
+  }, trip: function (id) {
+    if (id != null && !/^[a-z0-9][a-z0-9-]{0,39}$/.test(String(id))) throw new Error('Invalid trip id');
+    TRIP = id == null ? null : String(id);
+    refreshAll();
+    return db;
   } };
   var user = { id: function () {
     var value; try { value = localStorage.getItem('destin-uid'); if (!value) { value = uid(); localStorage.setItem('destin-uid', value); } } catch (_) { value = value || uid(); }

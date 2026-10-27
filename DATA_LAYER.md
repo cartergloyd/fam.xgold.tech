@@ -48,12 +48,26 @@ renames the existing account and preserves its watch history. Disabled rows
 disable their linked account; no account is deleted automatically. The separate
 cartgold administrator is outside this directory.
 
+## Trips, houses and rooms
+
+The home page reads the featured trip from the public, read-only
+`GET /family/trip`: the trip (`family_trips`), its house (`family_properties`,
+which also holds 6108) and the claimable bedrooms (`family_rooms`). Title, dates,
+airports, the airport driver, house facts, spaces, amenities, nearby places, the
+hero slideshow, gallery, highlight-card art and pins, and bedroom names and photos
+are all database rows; the page has no trip literals. Photos are plain files under
+`photos/<property>/` and the rows store their URLs. The featured trip is the one in
+progress or the next to start; `?trip=<id>` shows another. Manage trips, properties
+and rooms in fam's Directus admin. See `deploy/family-trips/README.md`.
+
 ## Trip data
 
 `directus-db.js` preserves the `window.claude.use('db'|'user')` document API for
-`kv(key,coll,id,data)`. Allowed collections remain plans, bedrooms, flights,
+`kv(key,coll,id,data,trip)`. Allowed collections remain plans, bedrooms, flights,
 members, progress, meals and groceries. PostgreSQL enforces the allowlist and
-immutable paths. Public WebSocket subscriptions fall back to 15-second polling.
+immutable paths. Every document carries its `trip`; the page calls `db.trip(id)`
+once, after which stored ids are `trip:id` (so `bedrooms/destin-2027:b1`) while page
+code keeps using `b1`. Public WebSocket subscriptions fall back to 15-second polling.
 No administrator token is embedded in the site. Legacy member claim credentials
 are retired; registration writes the directory instead.
 

@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import vm from 'node:vm';
 let browser, server, origin;
+const trip = JSON.parse(await readFile(new URL('./fixtures/trip.json', import.meta.url), 'utf8'));
 const root = fileURLToPath(new URL('../', import.meta.url));
 before(async () => {
   server = createServer(async (req, res) => {
@@ -39,6 +40,7 @@ async function setup(path = '/', options = {}) {
       if (endpoint === 'streaming-requests') return route.fulfill({ status:201, json:{requested:true} });
       if (endpoint === 'recent.json') return route.fulfill({ json: { posters: Array.from({length: 24}, (_, i) => ({ image: '/family/streaming-artwork/' + i.toString(16).padStart(32, '0') + '.jpg' })) } });
       if (endpoint.endsWith('.jpg')) return route.fulfill({ contentType: 'image/png', body: await readFile(resolve(root, 'assets/app-icons/jellyfin.png')) });
+      if (endpoint === 'trip') return route.fulfill({ json: trip });
       if (endpoint === 'users') return route.fulfill({ json: { users } });
       if (endpoint === 'lookup') return route.fulfill({ json: { user: body.email.endsWith('@registered.test') ? users[2] : null } });
       if (endpoint === 'register') { assert.equal(body.id, 'chester'); assert.equal(body.pin, '0031'); return route.fulfill({ json: { user: users[0] } }); }

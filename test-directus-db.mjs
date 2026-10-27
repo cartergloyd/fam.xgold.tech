@@ -21,7 +21,8 @@ const context = vm.createContext({
     const u = new URL(url), encoded = u.pathname.slice('/items/kv/'.length), key = decodeURIComponent(encoded);
     let status = 200, value;
     const body = options.body ? JSON.parse(options.body) : null;
-    if (options.method === 'GET') value = [...rows.values()].filter(r => r.coll === u.searchParams.get('filter[coll][_eq]'));
+    const trip = u.searchParams.get('filter[trip][_eq]');
+    if (options.method === 'GET') value = [...rows.values()].filter(r => r.coll === u.searchParams.get('filter[coll][_eq]') && (!trip || r.trip === trip));
     if (options.method === 'PATCH') { if (!rows.has(key)) status = 403; else { rows.get(key).data = body.data; value = rows.get(key); } }
     if (options.method === 'POST') { rows.set(body.key, body); value = body; }
     if (options.method === 'DELETE') { rows.delete(key); status = 204; }
@@ -54,6 +55,26 @@ assert.equal(calls.length, before + 1, 'uncertain network failure never retries 
 failNetwork = false;
 await db.doc('plans/path/with slash & #').delete(); assert.ok(!rows.has('plans/path/with slash & #'));
 assert.throws(() => db.collection('private'), /Unknown collection/);
+// Trip scoping: stored ids carry the trip prefix and the trip column; callers keep plain ids.
+assert.throws(() => db.trip('Bad Trip!'), /Invalid trip id/);
+db.trip('destin-2027');
+await db.collection('bedrooms').doc('b1').set({ name: 'Carter' });
+assert.ok(rows.has('bedrooms/destin-2027:b1'));
+assert.equal(rows.get('bedrooms/destin-2027:b1').trip, 'destin-2027');
+assert.equal(rows.get('bedrooms/destin-2027:b1').id, 'destin-2027:b1');
+const scopedDocs = await db.collection('bedrooms').get();
+assert.deepEqual(scopedDocs.map(d => d.id), ['b1'], 'the trip prefix is stripped on read');
+assert.ok(calls.at(-1).url.includes('filter[trip][_eq]=destin-2027'));
+await db.collection('bedrooms').doc('b1').set({ name: 'Marisa' });
+assert.equal(rows.get('bedrooms/destin-2027:b1').data.name, 'Marisa', 'updates target the prefixed document');
+db.trip('summer-2028');
+assert.equal((await db.collection('bedrooms').get()).length, 0, 'another trip starts with free bedrooms');
+await db.collection('bedrooms').doc('b1').set({ name: 'Chester' });
+assert.equal(rows.size, 3, 'the same bedroom id is independent per trip');
+await db.collection('bedrooms').doc('b1').delete();
+assert.ok(!rows.has('bedrooms/summer-2028:b1') && rows.has('bedrooms/destin-2027:b1'));
+db.trip(null);
+assert.equal((await db.collection('bedrooms').get())[0].id, 'destin-2027:b1', 'unscoped reads expose stored ids');
 for (const call of calls) assert.equal(call.options.credentials, 'omit');
 stop();
-console.log('Directus shim passed: preserved browser identity, reads, create/update/delete, path encoding, coll isolation, snapshots, heartbeat, polling, unsubscribe and no uncertain write replay.');
+console.log('Directus shim passed: preserved browser identity, reads, create/update/delete, path encoding, coll isolation, snapshots, heartbeat, polling, unsubscribe, trip scoping and no uncertain write replay.');

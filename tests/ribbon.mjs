@@ -7,6 +7,7 @@ import { resolve, sep } from 'node:path';
 import { chromium } from 'playwright';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
+const trip = JSON.parse(await readFile(new URL('./fixtures/trip.json', import.meta.url), 'utf8'));
 const paths = ['/', '/ff/', '/streaming/'];
 const links = ['/', '/mc', '/streaming/', '/ff/', '/6108'];
 
@@ -181,6 +182,7 @@ test('shared account control signs in, switches people and follows the responsiv
             requests.push({ endpoint, body });
             let response;
             if (endpoint === 'streaming-artwork/recent.json') response = { posters: [] };
+            else if (endpoint === 'trip') response = trip;
             else if (endpoint === 'users') response = { users };
             else if (endpoint === 'lookup') response = { user: body.email === 'carter@example.test' ? users[0] : users[1].registered ? users[1] : null };
             else if (endpoint === 'login') {

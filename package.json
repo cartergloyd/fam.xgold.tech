@@ -7,6 +7,7 @@
     "test:artwork": "node --test tests/streaming-artwork.mjs && python3 -m unittest discover -s tests -p test_streaming_artwork.py",
     "test:profiles": "node --test tests/profile-match.mjs tests/profile-streaming.mjs",
     "test:hub": "node --test tests/family-hub-api.mjs tests/family-hub-browser.mjs",
+    "test:trip": "node test-directus-db.mjs && node --test tests/family-trips.mjs tests/home-trip.mjs",
     "test:whitelist": "python3 -m unittest discover -s tests -p test_mc_whitelist.py"
   },
   "devDependencies": {

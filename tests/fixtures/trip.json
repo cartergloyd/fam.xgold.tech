@@ -1,0 +1,62 @@
+{
+  "trip": {
+    "id": "destin-2027",
+    "property_id": "seastar-palazzo",
+    "title": "Spring Break '27: Destin, Florida",
+    "start_date": "2027-03-28",
+    "end_date": "2027-04-04",
+    "origin_airport": "STL",
+    "local_airports": ["VPS", "ECP", "PNS"],
+    "driver": "Jaime",
+    "tagline": "Seven nights of sun, sand and family.",
+    "countdown": "the beach"
+  },
+  "property": {
+    "id": "seastar-palazzo",
+    "title": "Seastar Palazzo",
+    "kind": "rental",
+    "description": "",
+    "house_rules": "",
+    "check_in": "16:00",
+    "check_out": "10:00",
+    "timezone": "America/Chicago",
+    "address": "3491 Scenic Highway 98, Destin, FL 32541",
+    "bedrooms": 9,
+    "bathrooms": 9,
+    "sleeps": 22,
+    "spaces": ["Balcony", "Kitchen", "Deck/patio", "Kitchenette", "Dining area", "Living room"],
+    "amenities": ["Private pool", "Outdoor grill with bar seating", "Gulf views from the living room", "Elevator", "Washer and dryer", "Pet friendly"],
+    "nearby": ["Miramar Beach · 5 min walk", "James Lee Park · 5 min walk", "James Lee Beach · 5 min walk", "Northwest Florida Regional Airport (VPS) · 34 min drive"],
+    "hero": [
+      {"image": "/photos/seastar-palazzo/hero-1.webp", "position": "50% 62%", "mobile_position": "66% 50%"},
+      {"image": "/photos/seastar-palazzo/hero-2.webp", "position": "50% 55%", "mobile_position": "50% 50%"}
+    ],
+    "gallery": [
+      {"image": "/photos/seastar-palazzo/hero-1.webp", "alt": "Three-story stucco house at sunset with a lit pool, gazebo and spiral staircase", "caption": "Sunset from the pool deck"},
+      {"image": "/photos/seastar-palazzo/hero-2.webp", "alt": "Front of the three-story house with balconies, palm trees, a pool and outdoor kitchen", "caption": "Balconies, gazebo and outdoor kitchen"},
+      {"image": "/photos/seastar-palazzo/house-1.webp", "alt": "Kitchen with a large granite island, bar stools and pendant lights", "caption": "The kitchen island"}
+    ],
+    "cards": {
+      "flights": {"image": "/photos/seastar-palazzo/card-flights.webp"},
+      "rooms": {"image": "/photos/seastar-palazzo/card-rooms.webp", "alt": "Bedroom with a king bed, Gulf views and a balcony"},
+      "area": {"headline": "Walk to the beach.", "image": "/photos/seastar-palazzo/card-map.webp", "alt": "Map of 3491 Scenic Highway 98, Destin, with the beach and Gulf just across the road",
+               "pins": [{"icon": "home", "x": 49.3, "y": 40}, {"icon": "beach", "x": 34, "y": 74.7}, {"icon": "water", "x": 21, "y": 90.7}]},
+      "amenities": {"headline": "Check out the pool, gazebo and outdoor kitchen.", "image": "/photos/seastar-palazzo/card-amenities.webp", "alt": "House with a private pool and a gazebo with an outdoor kitchen",
+               "pins": [{"icon": "gazebo", "x": 18, "y": 63}, {"icon": "pool", "x": 50, "y": 86}]}
+    }
+  },
+  "rooms": [
+    {"id": "b1", "name": "King Bedroom With Private Bathroom On 1st Floor", "photos": ["/photos/seastar-palazzo/b1-1.webp", "/photos/seastar-palazzo/b1-2.webp", "/photos/seastar-palazzo/b1-3.webp", "/photos/seastar-palazzo/b1-4.webp"]},
+    {"id": "b2", "name": "Guest Bedroom With Four Queen Beds On 1st Floor #1", "photos": ["/photos/seastar-palazzo/b2-1.webp", "/photos/seastar-palazzo/b2-2.webp"]},
+    {"id": "b3", "name": "Guest Bedroom With Four Queen Beds On 1st Floor #2", "photos": ["/photos/seastar-palazzo/b3-1.webp", "/photos/seastar-palazzo/b3-2.webp"]},
+    {"id": "b4", "name": "King Bedroom With Bathroom On 2nd Floor", "photos": ["/photos/seastar-palazzo/b4-1.webp", "/photos/seastar-palazzo/b4-2.webp"]},
+    {"id": "b5", "name": "Queen Bedroom With Bathroom On 2nd Floor", "photos": ["/photos/seastar-palazzo/b5-1.webp", "/photos/seastar-palazzo/b5-2.webp"]},
+    {"id": "b6", "name": "King Bedroom With Bathroom On 3rd Floor", "photos": ["/photos/seastar-palazzo/b6-1.webp", "/photos/seastar-palazzo/b6-2.webp"]},
+    {"id": "b7", "name": "Primary King Bedroom With Bathroom On 3rd Floor", "photos": ["/photos/seastar-palazzo/b7-1.webp", "/photos/seastar-palazzo/b7-2.webp", "/photos/seastar-palazzo/b7-3.webp"]},
+    {"id": "b8", "name": "Primary King Bedroom With Bathroom 3rd Floor", "photos": ["/photos/seastar-palazzo/b8-1.webp", "/photos/seastar-palazzo/b8-2.webp"]},
+    {"id": "b9", "name": "King Bedroom With Private Bathroom On 3rd Floor", "photos": []}
+  ],
+  "trips": [
+    {"id": "destin-2027", "title": "Spring Break '27: Destin, Florida", "start_date": "2027-03-28", "end_date": "2027-04-04"}
+  ]
+}
