@@ -30,6 +30,10 @@
   --promo-badge-rim: 3px solid #ffffff;
 
   --hairline: rgba(0, 0, 0, 0.12);
+  --lake: #34c759;               /* calendar presence marks only */
+  --lake-tint: rgba(52, 199, 89, 0.22);
+  --away: #ff9f0a;               /* calendar: schedule owner out of town */
+  --away-tint: rgba(255, 159, 10, 0.22);
   --nav-bg: rgba(255, 255, 255, 0.8);
   --focus-ring: var(--accent);
 
@@ -115,6 +119,9 @@
     --label-accent: #ff9f0a;
 
     --hairline: rgba(255, 255, 255, 0.16);
+    --lake: #30d158;
+    --lake-tint: rgba(48, 209, 88, 0.26);
+    --away-tint: rgba(255, 159, 10, 0.24);
     --nav-bg: rgba(0, 0, 0, 0.72);
   }
 }

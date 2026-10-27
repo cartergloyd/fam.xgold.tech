@@ -8,17 +8,34 @@ const dateString=d=>typeof d==='string'?d.slice(0,10):d.toISOString().slice(0,10
 function failure(code,message){const e=Error(message);e.status=code;throw e;}
 export default function familyHub(router,{database},options={}) {
  const secret=options.secret||process.env.SECRET;
- const run=fn=>async(req,res)=>{
+ // `anonymous` routes serve visitors without an account; `u` is then null.
+ const run=(fn,{anonymous=false}={})=>async(req,res)=>{
   res.set('Cache-Control','no-store');
   try {
    if(req.method!=='GET'&&req.get('Origin')!==ORIGIN)failure(403,'Please use the family website.');
    const u=await sessionUser(database,req.get('X-Family-Session')||'',secret);
-   if(!u)failure(401,'Sign in with your email and PIN to continue.');
+   if(!u&&!anonymous)failure(401,'Sign in with your email and PIN to continue.');
    await fn(req,res,u);
   }catch(e){res.status(e.code==='23P01'?409:e.status||503).json({error:e.code==='23P01'?'Those dates are already held. Choose another stay.':e.status?e.message:'Could not save or load this information. Please try again.'});}
  };
- const manager=u=>{if(!u.condo_manager)failure(403,'Carter or Chester can manage the property.');};
+ const manager=u=>{if(!u?.condo_manager)failure(403,'Carter or Chester can manage the property.');};
+ const limits=new Map();
+ function limited(req,maximum){
+  const now=Date.now();for(const [k,v]of limits)if(v.until<now)limits.delete(k);
+  const key=req.ip||'unknown',value=limits.get(key)||{count:0,until:now+600000};limits.set(key,value);
+  if(++value.count>maximum)failure(429,'Too many requests. Please try again in a few minutes.');
+ }
  const taskManager=(u,kind)=>kind==='build'||u.maintenance_manager||u.condo_manager;
+ const SUITES=['master','disney'];
+ // Guest names per suite. Returns null when the client sent none, so a plain `guests` count still works.
+ function suiteNames(value){
+  if(value===undefined)return null;
+  if(!value||typeof value!=='object'||Array.isArray(value))failure(400,'Add guest names for each suite.');
+  const suites={};let total=0;
+  for(const k of SUITES){const names=value[k]??[];if(!Array.isArray(names)||names.length>10||names.some(n=>typeof n!=='string'||!n.trim()||n.trim().length>60))failure(400,'Enter up to 10 guest names per suite, 60 characters each.');suites[k]=names.map(n=>n.trim());total+=suites[k].length;}
+  if(!total)failure(400,'Add at least one guest name.');
+  return {suites,total};
+ }
  async function validateStay(trx,body,blocked=false){
   const p=await trx('family_properties').where({id:'6108'}).forUpdate().first();
   if(!validDates(body.start_date,body.end_date))failure(400,'Choose valid check-in and check-out dates, up to 365 nights apart.');
@@ -31,20 +48,32 @@ export default function familyHub(router,{database},options={}) {
   if(text(body.note??'',2000)===null)failure(400,'Keep notes under 2,000 characters.');
  }
  router.get('/hub/me',run(async(_req,res,u)=>res.json({user:roles(u)})));
+ // Public availability: dates and status only, never names, notes or ids.
+ router.get('/hub/availability',run(async(_req,res)=>{
+  const p=await database('family_properties').where({id:'6108'}).first('title','description','house_rules','max_guests','max_nights','advance_days','timezone');
+  const today=new Intl.DateTimeFormat('en-CA',{timeZone:p.timezone}).format(new Date());
+  const rows=await database('family_reservations').where({property_id:'6108'}).whereIn('status',active).where('end_date','>=',today).select('start_date','end_date','status').orderBy('start_date');
+  res.json({property:p,reservations:rows.map(r=>({...r,start_date:dateString(r.start_date),end_date:dateString(r.end_date)}))});
+ },{anonymous:true}));
  router.get('/hub/condo',run(async(_req,res,u)=>{
   const [property,reservations,tasks]=await Promise.all([
    database('family_properties').where({id:'6108'}).first(),
-   database('family_reservations as r').join('family_users as u','r.user_id','u.id').select('r.*','u.name').orderBy('r.start_date'),
+   database('family_reservations as r').leftJoin('family_users as u','r.user_id','u.id').select('r.*',database.raw('coalesce(u.name, r.guest_name) as name')).orderBy('r.start_date'),
    database('family_tasks as t').join('family_users as u','t.user_id','u.id').select('t.*','u.name').where('t.kind','maintenance').orderBy('t.date_created','desc')]);
   res.json({user:roles(u),property,reservations:reservations.map(r=>({...r,start_date:dateString(r.start_date),end_date:dateString(r.end_date)})),tasks});
  }));
  router.post('/hub/reservations',run(async(req,res,u)=>{
   const b=req.body||{}, blocked=b.status==='blocked';if(blocked)manager(u);
+  if(!u)limited(req,10);
+  const named=blocked?null:suiteNames(b.suites);
+  if(!u&&!named)failure(400,'Add guest names for each suite.');
+  if(named)b.guests=named.total;else if(blocked&&b.guests===undefined)b.guests=1;
   const row=await database.transaction(async trx=>{
    await validateStay(trx,b,blocked);
-   const [r]=await trx('family_reservations').insert({property_id:'6108',user_id:u.id,start_date:b.start_date,end_date:b.end_date,guests:b.guests,note:text(b.note??'',2000),status:blocked?'blocked':u.instant_booking||u.condo_manager?'confirmed':'pending'}).returning('*');return r;
+   // Requests from visitors without an account always wait for approval; the first guest named is the contact.
+   const [r]=await trx('family_reservations').insert({property_id:'6108',user_id:u?.id||null,guest_name:u?null:(named.suites.master[0]||named.suites.disney[0]),start_date:b.start_date,end_date:b.end_date,guests:b.guests,suites:JSON.stringify(named?named.suites:{}),note:text(b.note??'',2000),status:blocked?'blocked':u&&(u.instant_booking||u.condo_manager)?'confirmed':'pending'}).returning('*');return r;
   });res.status(201).json({reservation:row});
- }));
+ },{anonymous:true}));
  router.patch('/hub/reservations/:id',run(async(req,res,u)=>{
   const b=req.body||{};
   const result=await database.transaction(async trx=>{

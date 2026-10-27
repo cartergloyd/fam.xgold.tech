@@ -1,0 +1,812 @@
+{
+ "owner": "Chester",
+ "days": {
+  "2026-04-09": "yes",
+  "2026-04-11": "yes",
+  "2026-04-16": "yes",
+  "2026-04-20": "yes",
+  "2026-04-24": "yes",
+  "2026-04-26": "yes",
+  "2026-05-14": "yes",
+  "2026-05-17": "yes",
+  "2026-05-20": "yes",
+  "2026-05-26": "yes",
+  "2026-05-29": "yes",
+  "2026-06-08": "yes",
+  "2026-06-11": "yes",
+  "2026-06-15": "yes",
+  "2026-06-25": "yes",
+  "2026-07-06": "yes",
+  "2026-07-09": "yes",
+  "2026-07-13": "yes",
+  "2026-07-23": "yes",
+  "2026-07-25": "yes",
+  "2026-07-30": "yes",
+  "2026-08-03": "yes",
+  "2026-08-06": "yes",
+  "2026-08-10": "yes",
+  "2026-08-27": "yes",
+  "2026-09-08": "yes",
+  "2026-09-17": "yes",
+  "2026-09-21": "yes",
+  "2026-04-10": "yes",
+  "2026-04-17": "yes",
+  "2026-04-18": "yes",
+  "2026-04-19": "yes",
+  "2026-04-25": "yes",
+  "2026-05-15": "yes",
+  "2026-05-16": "yes",
+  "2026-05-21": "yes",
+  "2026-05-22": "yes",
+  "2026-05-23": "yes",
+  "2026-05-24": "yes",
+  "2026-05-25": "yes",
+  "2026-05-30": "yes",
+  "2026-05-31": "yes",
+  "2026-06-01": "yes",
+  "2026-06-02": "yes",
+  "2026-06-03": "yes",
+  "2026-06-04": "yes",
+  "2026-06-05": "yes",
+  "2026-06-06": "yes",
+  "2026-06-07": "yes",
+  "2026-06-12": "yes",
+  "2026-06-13": "yes",
+  "2026-06-14": "yes",
+  "2026-06-26": "yes",
+  "2026-06-27": "yes",
+  "2026-06-28": "yes",
+  "2026-06-29": "yes",
+  "2026-06-30": "yes",
+  "2026-07-01": "yes",
+  "2026-07-02": "yes",
+  "2026-07-03": "yes",
+  "2026-07-04": "yes",
+  "2026-07-05": "yes",
+  "2026-07-10": "yes",
+  "2026-07-11": "yes",
+  "2026-07-12": "yes",
+  "2026-07-24": "yes",
+  "2026-07-31": "yes",
+  "2026-08-01": "yes",
+  "2026-08-02": "yes",
+  "2026-08-07": "yes",
+  "2026-08-08": "yes",
+  "2026-08-09": "yes",
+  "2026-08-28": "yes",
+  "2026-08-29": "yes",
+  "2026-08-30": "yes",
+  "2026-08-31": "yes",
+  "2026-09-04": "yes",
+  "2026-09-05": "yes",
+  "2026-09-06": "yes",
+  "2026-09-07": "yes",
+  "2026-09-18": "yes",
+  "2026-09-19": "yes",
+  "2026-09-20": "yes",
+  "2026-06-19": "no",
+  "2026-06-20": "no",
+  "2026-06-21": "no",
+  "2026-07-14": "no",
+  "2026-07-15": "no",
+  "2026-07-26": "no",
+  "2026-08-15": "no",
+  "2026-09-03": "no"
+ },
+ "day_sources": {
+  "2026-04-09": "TRAVEL",
+  "2026-04-11": "TRAVEL",
+  "2026-04-16": "TRAVEL",
+  "2026-04-20": "TRAVEL",
+  "2026-04-24": "TRAVEL",
+  "2026-04-26": "TRAVEL",
+  "2026-05-14": "TRAVEL",
+  "2026-05-17": "TRAVEL",
+  "2026-05-20": "TRAVEL",
+  "2026-05-26": "TRAVEL",
+  "2026-05-29": "TRAVEL",
+  "2026-06-08": "TRAVEL",
+  "2026-06-11": "TRAVEL",
+  "2026-06-15": "TRAVEL",
+  "2026-06-25": "TRAVEL",
+  "2026-07-06": "TRAVEL",
+  "2026-07-09": "TRAVEL",
+  "2026-07-13": "TRAVEL",
+  "2026-07-23": "TRAVEL",
+  "2026-07-25": "TRAVEL",
+  "2026-07-30": "TRAVEL",
+  "2026-08-03": "TRAVEL",
+  "2026-08-06": "TRAVEL",
+  "2026-08-10": "TRAVEL",
+  "2026-08-27": "TRAVEL",
+  "2026-09-08": "TRAVEL",
+  "2026-09-17": "TRAVEL",
+  "2026-09-21": "TRAVEL",
+  "2026-04-10": "YES",
+  "2026-04-17": "YES",
+  "2026-04-18": "YES",
+  "2026-04-19": "YES",
+  "2026-04-25": "YES",
+  "2026-05-15": "YES",
+  "2026-05-16": "YES",
+  "2026-05-21": "YES",
+  "2026-05-22": "YES",
+  "2026-05-23": "YES",
+  "2026-05-24": "YES",
+  "2026-05-25": "YES",
+  "2026-05-30": "YES",
+  "2026-05-31": "YES",
+  "2026-06-01": "YES",
+  "2026-06-02": "YES",
+  "2026-06-03": "YES",
+  "2026-06-04": "YES",
+  "2026-06-05": "YES",
+  "2026-06-06": "YES",
+  "2026-06-07": "YES",
+  "2026-06-12": "YES",
+  "2026-06-13": "YES",
+  "2026-06-14": "YES",
+  "2026-06-26": "YES",
+  "2026-06-27": "YES",
+  "2026-06-28": "YES",
+  "2026-06-29": "YES",
+  "2026-06-30": "YES",
+  "2026-07-01": "YES",
+  "2026-07-02": "YES",
+  "2026-07-03": "YES",
+  "2026-07-04": "YES",
+  "2026-07-05": "YES",
+  "2026-07-10": "YES",
+  "2026-07-11": "YES",
+  "2026-07-12": "YES",
+  "2026-07-24": "YES",
+  "2026-07-31": "YES",
+  "2026-08-01": "YES",
+  "2026-08-02": "YES",
+  "2026-08-07": "YES",
+  "2026-08-08": "YES",
+  "2026-08-09": "YES",
+  "2026-08-28": "YES",
+  "2026-08-29": "YES",
+  "2026-08-30": "YES",
+  "2026-08-31": "YES",
+  "2026-09-04": "YES",
+  "2026-09-05": "YES",
+  "2026-09-06": "YES",
+  "2026-09-07": "YES",
+  "2026-09-18": "YES",
+  "2026-09-19": "YES",
+  "2026-09-20": "YES",
+  "2026-06-19": "",
+  "2026-06-20": "",
+  "2026-06-21": "",
+  "2026-07-14": "",
+  "2026-07-15": "",
+  "2026-07-26": "",
+  "2026-08-15": "",
+  "2026-09-03": ""
+ },
+ "away": [
+  {
+   "id": "away1",
+   "start_date": "2026-07-17",
+   "end_date": "2026-07-19",
+   "reason": "Carter has 6108",
+   "as_written": "Nah -Carter"
+  },
+  {
+   "id": "away2",
+   "start_date": "2026-08-04",
+   "end_date": "2026-08-05",
+   "reason": "",
+   "as_written": "NO"
+  }
+ ],
+ "weekends": [
+  {
+   "friday": "2026-03-27",
+   "title": "",
+   "notes_9112": "",
+   "notes": "Sun: Cardinals Home Opener 3/26, Ally Wedding 3/27, Boat dewinterized 3/27",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-04-03",
+   "title": "Easter",
+   "notes_9112": "",
+   "notes": "RISE & Towers Board (Wed) \u00b7 Easter (Sun)",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-04-10",
+   "title": "",
+   "notes_9112": "",
+   "notes": "Sun: Battlehawks",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-04-17",
+   "title": "",
+   "notes_9112": "",
+   "notes": "Wed: GPMO MTG",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-04-24",
+   "title": "",
+   "notes_9112": "",
+   "notes": "Camp Braveways Golf (Fri) \u00b7 HOA meeting (Sat) \u00b7 LIZ 7:00 (Sun)",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-05-01",
+   "title": "",
+   "notes_9112": "",
+   "notes": "Boots & Bling (Wed) \u00b7 Kentucky Derby? (Thu, Fri, Sat, Sun)",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-05-08",
+   "title": "Mother's Day",
+   "notes_9112": "",
+   "notes": "Dinner MAC Clayton 7:00; Towers Board Mtg (Wed) \u00b7 Ella Langley? (Fri) \u00b7 Bush, Ozark Amphitheater (Sat) \u00b7 Mother's Day (Sun)",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-05-15",
+   "title": "",
+   "notes_9112": "Gina",
+   "notes": "Sam's graduation party evening; Machine Gun Symphony, Papa Chubbies? (Fri) \u00b7 Becky concert (Sun)",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-05-22",
+   "title": "Memorial Day weekend",
+   "notes_9112": "Family",
+   "notes": "GPMO Meeting (Wed) \u00b7 Home Maint Solutions (Thu) \u00b7 Family (Fri, Sat) \u00b7 Family; Steve Aoki Level5? (Sun)",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-05-29",
+   "title": "Girls weekend",
+   "notes_9112": "",
+   "notes": "girls weekend (Fri) \u00b7 girls weekend; email out to high tide for 5/30 (Sat)",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-06-05",
+   "title": "Carter's birthday",
+   "notes_9112": "Rick & Cheryl",
+   "notes": "white party? (Tue) \u00b7 Towers Board Mtg (Wed) \u00b7 Porta Cima 9 am (Sun)",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-06-12",
+   "title": "Jill & Friends birthday",
+   "notes_9112": "",
+   "notes": "Uncle Kracker, Lazy Gators (Fri) \u00b7 Fantasy Football (Sun)",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-06-19",
+   "title": "Kevin Ortmeyer \u00b7 Father's Day",
+   "notes_9112": "",
+   "notes": "GPMO MTG (Wed) \u00b7 Father's Day (Sun)",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-07-03",
+   "title": "4th Family Weekend",
+   "notes_9112": "",
+   "notes": "Wed: Towers Board Mtg",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-07-10",
+   "title": "Quello/Talir",
+   "notes_9112": "",
+   "notes": "",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-07-17",
+   "title": "WWT Friends (Carter)",
+   "notes_9112": "Carter Booked",
+   "notes": "Sat: aquapalooza",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-07-24",
+   "title": "Rodenbaughs",
+   "notes_9112": "",
+   "notes": "STL Who Care (Tue) \u00b7 GPMO MTG (Wed) \u00b7 Yacht Gala reserve 7/24 5-9 (Fri) \u00b7 Pageant Urge thing (Sat)",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-07-31",
+   "title": "",
+   "notes_9112": "",
+   "notes": "Sat: Carter Boat Day",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-08-07",
+   "title": "Kayla and friends",
+   "notes_9112": "",
+   "notes": "Wed: Towers Board Mtg",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-08-14",
+   "title": "Carter and Jennings",
+   "notes_9112": "",
+   "notes": "Mike Bruce Funeral (Thu) \u00b7 G&R (Sun)",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-08-21",
+   "title": "",
+   "notes_9112": "",
+   "notes": "JD team dinner (Tue) \u00b7 GPMO MTG (Wed) \u00b7 PGA Bellerive (Thu)",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-08-28",
+   "title": "Shootout weekend",
+   "notes_9112": "",
+   "notes": "SHOOTOUT (Sat) \u00b7 Fantasy Football Draft (Sun)",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-09-04",
+   "title": "Labor Day \u00b7 Carter, Marisa, J&R",
+   "notes_9112": "",
+   "notes": "Towers Board Mtg (Wed) \u00b7 Ark Pine Bluff 7 (Thu)",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-09-11",
+   "title": "",
+   "notes_9112": "",
+   "notes": "Labor Day (Mon) \u00b7 at Kansas (Sat)",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-09-18",
+   "title": "",
+   "notes_9112": "Rick & Cheryl",
+   "notes": "GPMO MTG (Wed) \u00b7 Troy (Sat)",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-09-25",
+   "title": "",
+   "notes_9112": "",
+   "notes": "GOLF Tapawingo 10:30 start; Chef's Dinner (Fri) \u00b7 at Miss St (Sat)",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-10-02",
+   "title": "",
+   "notes_9112": "",
+   "notes": "Sat: Florida",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-10-09",
+   "title": "",
+   "notes_9112": "",
+   "notes": "Towers Board Mtg (Wed) \u00b7 Texas A&M (Sat)",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-10-16",
+   "title": "",
+   "notes_9112": "",
+   "notes": "Sat: at Ole Miss",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-10-23",
+   "title": "",
+   "notes_9112": "",
+   "notes": "STL Who Care (Tue) \u00b7 GPMO MTG (Wed) \u00b7 BYE (Sat)",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-10-30",
+   "title": "",
+   "notes_9112": "",
+   "notes": "Sat: at Arkansas",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-11-06",
+   "title": "",
+   "notes_9112": "",
+   "notes": "Sat: Texas",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-11-13",
+   "title": "",
+   "notes_9112": "",
+   "notes": "Sat: at Georgia",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-11-20",
+   "title": "",
+   "notes_9112": "",
+   "notes": "Sat: Kentucky",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  },
+  {
+   "friday": "2026-11-27",
+   "title": "",
+   "notes_9112": "",
+   "notes": "Sat: Oklahoma",
+   "queen": [],
+   "bunks": [],
+   "revision": 1
+  }
+ ],
+ "invites": [
+  {
+   "id": "inv1",
+   "group": 1,
+   "name": "Brad/Tarah",
+   "note": "Kristy? \u00b7 messaged, no commits",
+   "weekends": [
+    "2026-08-28"
+   ]
+  },
+  {
+   "id": "inv2",
+   "group": 2,
+   "name": "Mark Wolff",
+   "note": "",
+   "weekends": []
+  },
+  {
+   "id": "inv3",
+   "group": 2,
+   "name": "Melissa Wolff",
+   "note": "no",
+   "weekends": []
+  },
+  {
+   "id": "inv4",
+   "group": 2,
+   "name": "Andy & Becca",
+   "note": "messaged 4/16",
+   "weekends": []
+  },
+  {
+   "id": "inv5",
+   "group": 1,
+   "name": "Andrew/Marisa",
+   "note": "ongoing",
+   "weekends": []
+  },
+  {
+   "id": "inv6",
+   "group": 1,
+   "name": "Rick/Cheryl",
+   "note": "booked",
+   "weekends": [
+    "2026-06-05",
+    "2026-09-18"
+   ]
+  },
+  {
+   "id": "inv7",
+   "group": 1,
+   "name": "Sam Fearn",
+   "note": "messaged 4/16",
+   "weekends": []
+  },
+  {
+   "id": "inv8",
+   "group": 3,
+   "name": "Kayla & Laney",
+   "note": "girls weekend",
+   "weekends": [
+    "2026-05-29",
+    "2026-08-07"
+   ]
+  },
+  {
+   "id": "inv9",
+   "group": 3,
+   "name": "Theresa Family",
+   "note": "messaged 4/22",
+   "weekends": []
+  },
+  {
+   "id": "inv10",
+   "group": 3,
+   "name": "Aieme Family",
+   "note": "",
+   "weekends": []
+  },
+  {
+   "id": "inv11",
+   "group": 4,
+   "name": "Kevin Ortmeyer",
+   "note": "messaged 4/28",
+   "weekends": [
+    "2026-06-19"
+   ]
+  },
+  {
+   "id": "inv12",
+   "group": 4,
+   "name": "Tracy Kraus",
+   "note": "",
+   "weekends": []
+  },
+  {
+   "id": "inv13",
+   "group": 5,
+   "name": "Chris Owen",
+   "note": "",
+   "weekends": []
+  },
+  {
+   "id": "inv14",
+   "group": null,
+   "name": "Doziers",
+   "note": "messaged in April, can't do June",
+   "weekends": []
+  },
+  {
+   "id": "inv15",
+   "group": null,
+   "name": "Sullivan",
+   "note": "invited for Shootout weekend",
+   "weekends": [
+    "2026-08-28"
+   ]
+  },
+  {
+   "id": "inv16",
+   "group": null,
+   "name": "Platipotis",
+   "note": "invited for Shootout weekend",
+   "weekends": [
+    "2026-08-28"
+   ]
+  },
+  {
+   "id": "inv17",
+   "group": null,
+   "name": "Hurlbert",
+   "note": "invited for Shootout weekend",
+   "weekends": [
+    "2026-08-28"
+   ]
+  },
+  {
+   "id": "inv18",
+   "group": null,
+   "name": "Pfaff?",
+   "note": "invited for Shootout weekend",
+   "weekends": [
+    "2026-08-28"
+   ]
+  },
+  {
+   "id": "inv19",
+   "group": null,
+   "name": "Freeman?",
+   "note": "invited for Shootout weekend",
+   "weekends": [
+    "2026-08-28"
+   ]
+  }
+ ],
+ "bookings": [
+  {
+   "start_date": "2026-05-22",
+   "end_date": "2026-05-24",
+   "guest_name": "Family",
+   "title": "Family",
+   "status": "confirmed"
+  },
+  {
+   "start_date": "2026-05-29",
+   "end_date": "2026-06-01",
+   "guest_name": "girls weekend",
+   "title": "girls weekend",
+   "status": "confirmed"
+  },
+  {
+   "start_date": "2026-06-04",
+   "end_date": "2026-06-08",
+   "guest_name": "Carter Birthday",
+   "title": "Carter Birthday",
+   "status": "confirmed"
+  },
+  {
+   "start_date": "2026-06-12",
+   "end_date": "2026-06-15",
+   "guest_name": "Jill & Friends BDay",
+   "title": "Jill & Friends BDay",
+   "status": "confirmed"
+  },
+  {
+   "start_date": "2026-06-19",
+   "end_date": "2026-06-22",
+   "guest_name": "Kevin Ortmeyer",
+   "title": "Kevin Ortmeyer",
+   "status": "confirmed"
+  },
+  {
+   "start_date": "2026-07-02",
+   "end_date": "2026-07-06",
+   "guest_name": "4th Family Weekend",
+   "title": "4th Family Weekend",
+   "status": "confirmed"
+  },
+  {
+   "start_date": "2026-07-10",
+   "end_date": "2026-07-16",
+   "guest_name": "Quello/Talir",
+   "title": "Quello/Talir",
+   "status": "confirmed"
+  },
+  {
+   "start_date": "2026-07-17",
+   "end_date": "2026-07-20",
+   "guest_name": "WWT Friends (Carter)",
+   "title": "WWT Friends (Carter)",
+   "status": "confirmed"
+  },
+  {
+   "start_date": "2026-07-24",
+   "end_date": "2026-07-27",
+   "guest_name": "Rodenbaughs",
+   "title": "Rodenbaughs",
+   "status": "confirmed"
+  },
+  {
+   "start_date": "2026-08-07",
+   "end_date": "2026-08-10",
+   "guest_name": "Kayla and friends",
+   "title": "Kayla and friends",
+   "status": "confirmed"
+  },
+  {
+   "start_date": "2026-08-15",
+   "end_date": "2026-08-16",
+   "guest_name": "carter and jennings",
+   "title": "carter and jennings",
+   "status": "confirmed"
+  },
+  {
+   "start_date": "2026-08-29",
+   "end_date": "2026-08-30",
+   "guest_name": "Brad Tarah",
+   "title": "Brad Tarah",
+   "status": "confirmed"
+  },
+  {
+   "start_date": "2026-09-03",
+   "end_date": "2026-09-08",
+   "guest_name": "Carter, Marisa, J&R",
+   "title": "Carter, Marisa, J&R",
+   "status": "confirmed"
+  }
+ ],
+ "open_weekends_snapshot": [
+  [
+   "2026-05-15",
+   ""
+  ],
+  [
+   "2026-05-22",
+   "Memorial Day weekend"
+  ],
+  [
+   "2026-05-29",
+   "good for girls weekend"
+  ],
+  [
+   "2026-06-19",
+   ""
+  ],
+  [
+   "2026-06-26",
+   ""
+  ],
+  [
+   "2026-07-10",
+   ""
+  ],
+  [
+   "2026-08-07",
+   ""
+  ],
+  [
+   "2026-08-14",
+   ""
+  ],
+  [
+   "2026-08-21",
+   ""
+  ],
+  [
+   "2026-08-28",
+   "Shootout weekend"
+  ]
+ ]
+}

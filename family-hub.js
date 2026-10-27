@@ -5,22 +5,32 @@
  const node=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
  const session=()=>{try{return JSON.parse(localStorage.getItem('family-session'));}catch{return null;}};
  const notice=(id,message,error=false)=>{const n=$(id);if(n){n.textContent=message;n.classList.toggle('error',error);}};
- let currentUser=null, refresh=()=>{},editing=null,kind;
- async function api(path,{method='GET',body}={}){
-  const s=session();
-  if(!s?.token||s.name!==window.familyAccount.current?.name)throw Object.assign(Error('Sign in with your email and PIN to continue.'),{status:401});
-  const r=await fetch(BASE+path,{method,credentials:'omit',cache:'no-store',headers:{Accept:'application/json','X-Family-Session':s.token,...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined,signal:AbortSignal.timeout(15000)});
-  let data;try{data=await r.json();}catch{throw Error('The family service is temporarily unavailable.');}
+ let currentUser=null, refresh=()=>{},editing=null,kind,anonymous=false;
+ const signedIn=()=>{const s=session();return !!s?.token&&s.name===window.familyAccount.current?.name;};
+ // `anonymous` lets a public page call open endpoints without a session; signed-in calls still carry the token.
+ async function api(path,{method='GET',body,anonymous:open=false}={}){
+  const s=session(),signed=signedIn();
+  if(!signed&&!open)throw Object.assign(Error('Sign in with your email and PIN to continue.'),{status:401});
+  const r=await fetch(BASE+path,{method,credentials:'omit',cache:'no-store',headers:{Accept:'application/json',...(signed?{'X-Family-Session':s.token}:{}),...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined,signal:AbortSignal.timeout(15000)});
+  let data;try{data=await r.json();}catch{throw Error('The service is temporarily unavailable.');}
   if(!r.ok){if(r.status===401){localStorage.removeItem('family-session');auth(false);}throw Object.assign(Error(data.error||'Please try again.'),{status:r.status});}
   return data;
  }
- function auth(ok){$('auth-panel').hidden=ok;$('signed-content').hidden=!ok;if($('add-build'))$('add-build').hidden=!ok;}
+ // Pages without a sign-in wall have no auth panel, so each of these ids is optional.
+ function auth(ok){for(const [id,hide]of [['auth-panel',ok],['signed-content',!ok],['add-build',!ok]])if($(id))$(id).hidden=hide;}
  async function load(){
+  let signed=false;
   try{
-   await window.familyAccount.ready;
-   if(!session()?.token||session()?.name!==window.familyAccount.current?.name){currentUser=null;auth(false);return;}
-   await refresh();auth(true);notice('page-message','');
-  }catch(e){if(e.status===401){currentUser=null;auth(false);}notice('page-message',e.message,true);}
+   try{await window.familyAccount.ready;}catch(e){if(!anonymous)throw e;}
+   signed=signedIn();
+   if(!signed){currentUser=null;auth(false);if(!anonymous)return;}
+   await refresh(signed);if(signed)auth(true);notice('page-message','');
+  }catch(e){
+   if(e.status===401){currentUser=null;auth(false);
+    // An expired session on a public page falls back to the visitor view.
+    if(anonymous&&signed){try{await refresh(false);notice('page-message','');return;}catch(err){e=err;}}}
+   notice('page-message',e.message,true);
+  }
  }
  async function action(button,fn){button.disabled=true;try{await fn();}catch(e){notice('page-message',e.message,true);}finally{button.disabled=false;}}
  function openTask(type,task=null){
@@ -62,6 +72,6 @@
  $('task-dialog').addEventListener('close',()=>{delete $('delete-task').dataset.confirm;$('delete-task').textContent='Delete card';});
  window.addEventListener('family-account-change',load);
  window.addEventListener('storage',e=>{if(e.key==='family-session')load();});
- window.familyHub={api,$,node,notice,board,openTask,load,action,get user(){return currentUser;},set user(u){currentUser=u;},init(fn){refresh=fn;load();}};
+ window.familyHub={api,$,node,notice,board,openTask,load,action,signedIn,get user(){return currentUser;},set user(u){currentUser=u;},init(fn,options={}){refresh=fn;anonymous=!!options.anonymous;load();}};
  setInterval(()=>{if(!document.hidden&&!$('task-dialog').open)load();},60000);
 })();

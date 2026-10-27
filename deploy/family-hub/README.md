@@ -15,8 +15,27 @@ until either manager enables instant booking in Manage. Pending requests hold
 dates. PostgreSQL excludes overlapping pending/confirmed/blocked stays, including
 concurrent requests; checkout is exclusive, so same-day handovers work. Members
 can cancel their own active stays; managers can approve, decline, cancel, and
-unblock. To reschedule, cancel and create a new stay. Closed stays remain in the
-database. The UI shows upcoming reservations, including closed requests.
+unblock. Managers can also open a stay from the calendar and edit its title, dates,
+guests and notes; the page sends those fields with the revision on
+PATCH /hub/reservations/:id, which the deployed router does not accept yet (it takes
+status changes only). Until it does, to reschedule, cancel and create a new stay.
+Closed stays remain in the database. Stays open from the calendar, where managers
+approve, decline or cancel them.
+
+Lake schedule: schema.sql adds a `lake_schedule` flag on users (set for Chester), a
+`title` on reservations, and the family_lake_days, family_lake_away, family_lake_weekends
+and family_lake_invites tables. `lake-schedule-2026.xlsx` beside this file holds Chester's
+2026 data to load, one sheet per table. The /hub/lake routes the page calls (listed on
+the spreadsheet's README sheet) are not written yet, so until they exist the page shows
+the owner the ordinary manager view and keeps the lake tabs hidden.
+Bookings name the guests in each suite (Master Suite and Disney Suite) in the
+additive `suites` jsonb column; the guest count is derived from those names, and
+the page sends the count too so it works until schema.sql is re-applied.
+Anyone with the 6108 link can see availability (dates and status only, no names,
+notes or ids) and request a stay without signing in. Those requests always wait
+for manager approval, are rate limited per address, and store the first guest
+named as the contact in `guest_name` with a null `user_id`. The site ribbon and
+the Maintenance and Manage tabs appear only after signing in.
 
 Defaults: 4 pm check-in, 10 am check-out, America/Chicago, no guest/stay limit beyond
 input sanity bounds (100 guests, 365 nights), no advance notice. Managers should
