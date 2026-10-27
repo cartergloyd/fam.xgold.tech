@@ -41,8 +41,8 @@
  }
  function reservations(){
   const list=$('reservation-list');list.replaceChildren();const upcoming=state.reservations.filter(r=>r.end_date>=new Intl.DateTimeFormat('en-CA',{timeZone:state.property.timezone}).format(new Date()));
-  if(!upcoming.length)list.append(node('p','The calendar is open. Choose dates for the next family visit.','empty'));
-  for(const r of upcoming){const card=node('article',undefined,'reservation');card.append(node('h3',fmt(r.start_date)+' – '+fmt(r.end_date)));card.append(node('span',r.status==='pending'?'Awaiting Carter or Chester':r.status[0].toUpperCase()+r.status.slice(1),'pill'));card.append(node('p',r.status==='blocked'?'Property unavailable':`${r.name} · ${r.guests} guest${r.guests===1?'':'s'}`));if(r.note)card.append(node('p',r.note,'muted'));
+  if(!upcoming.length)list.append(node('p','No upcoming reservations.','empty'));
+  for(const r of upcoming){const card=node('article',undefined,'reservation');card.append(node('h3',fmt(r.start_date)+' – '+fmt(r.end_date)));card.append(node('span',r.status==='pending'?'Pending approval':r.status[0].toUpperCase()+r.status.slice(1),'pill'));card.append(node('p',r.status==='blocked'?'Property unavailable':`${r.name} · ${r.guests} guest${r.guests===1?'':'s'}`));if(r.note)card.append(node('p',r.note,'muted'));
    const controls=node('div',undefined,'row');
    const add=(label,status)=>{const b=node('button',label,'quiet');b.type='button';b.addEventListener('click',()=>H.action(b,async()=>{await api('/hub/reservations/'+r.id,{method:'PATCH',body:{status,revision:r.revision}});await H.load();notice('page-message',status==='confirmed'?'Stay approved.':status==='declined'?'Request declined. Dates are available again.':'Reservation cancelled. Dates are available again.');}));controls.append(b);};
    if(r.status==='pending'&&state.user.condo_manager){add('Approve','confirmed');add('Decline','declined');}
@@ -55,11 +55,11 @@
   $('property-title').textContent=state.property.title;$('block-option').hidden=!state.user.condo_manager;$('manage-tab').hidden=!state.user.condo_manager;
   if(!state.user.condo_manager&&document.querySelector('[data-panel=manage]').hidden===false)document.querySelector('[data-tab=stays]').click();
   const instant=state.user.instant_booking||state.user.condo_manager;
-  $('booking-policy').textContent=instant?'You can book available dates instantly.':'Carter or Chester will approve your request. Your dates are held while it’s pending.';
+  $('booking-policy').textContent=instant?'You can book available dates instantly.':'Requests need manager approval. Your dates are held while pending.';
   $('book-submit').textContent=form.elements.blocked.checked?'Block dates':instant?'Book stay':'Request stay';
   form.elements.start_date.min=new Intl.DateTimeFormat('en-CA',{timeZone:state.property.timezone}).format(new Date());form.elements.guests.max=state.property.max_guests||100;
-  $('property-description').textContent=state.property.description||'Carter and Chester will add property details here.';
-  $('property-rules').textContent=state.property.house_rules||'House rules will be added here.';
+  $('property-description').textContent=state.property.description||'No property details yet.';
+  $('property-rules').textContent=state.property.house_rules||'No house rules yet.';
   $('property-times').textContent=`Check-in ${state.property.check_in.slice(0,5)} · Check-out ${state.property.check_out.slice(0,5)} (${state.property.timezone})`;
   if(state.user.condo_manager){if(!propertyDirty){propertyRevision=state.property.revision;for(const k of ['title','description','house_rules','check_in','check_out','max_guests','max_nights','advance_days','timezone'])$('property-form').elements[k].value=(k==='check_in'||k==='check_out')?state.property[k].slice(0,5):state.property[k]??'';}await loadAccess();}
   updateSelection();reservations();H.board('maintenance-board',state.tasks,'maintenance',state.user);
@@ -68,9 +68,9 @@
  for(const k of ['start_date','end_date'])form.elements[k].addEventListener('change',()=>{selected=null;updateSelection();});
  form.elements.blocked.addEventListener('change',()=>{$('book-submit').textContent=form.elements.blocked.checked?'Block dates':state.user.instant_booking||state.user.condo_manager?'Book stay':'Request stay';});
  form.addEventListener('submit',async event=>{
-  event.preventDefault();const b=$('book-submit');b.disabled=true;notice('booking-message','Saving your dates…');
+  event.preventDefault();const b=$('book-submit');b.disabled=true;notice('booking-message','Saving…');
   const body={start_date:form.elements.start_date.value,end_date:form.elements.end_date.value,guests:Number(form.elements.guests.value),note:form.elements.note.value,status:form.elements.blocked.checked?'blocked':undefined};
-  try{const {reservation}=await api('/hub/reservations',{method:'POST',body});form.reset();selected=null;await H.load();notice('booking-message',reservation.status==='pending'?'Request sent. Your dates are held for Carter or Chester to review.':reservation.status==='blocked'?'Dates blocked.':'Your stay is confirmed.');}catch(e){notice('booking-message',e.message,true);if(e.status===409)await H.load();}finally{b.disabled=false;}
+  try{const {reservation}=await api('/hub/reservations',{method:'POST',body});form.reset();selected=null;await H.load();notice('booking-message',reservation.status==='pending'?'Request sent. Your dates are held pending approval.':reservation.status==='blocked'?'Dates blocked.':'Stay confirmed.');}catch(e){notice('booking-message',e.message,true);if(e.status===409)await H.load();}finally{b.disabled=false;}
  });
  document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(t=>t.setAttribute('aria-pressed',t===b?'true':'false'));document.querySelectorAll('[data-panel]').forEach(p=>p.hidden=p.dataset.panel!==b.dataset.tab);}));
  $('add-maintenance').addEventListener('click',()=>H.openTask('maintenance'));

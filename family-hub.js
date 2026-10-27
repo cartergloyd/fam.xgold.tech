@@ -34,10 +34,10 @@
   for(const [status,title]of [['todo','To do'],['doing','In progress'],['done','Done']]){
    const column=node('section',undefined,'column');column.append(node('h3',title+' · '+tasks.filter(t=>t.status===status).length));
    const cards=tasks.filter(t=>t.status===status);
-   if(!cards.length)column.append(node('p',status==='todo'?'Room for your next idea.':'Nothing here yet.','empty'));
+   if(!cards.length)column.append(node('p',status!=='todo'?'Nothing here yet.':type==='maintenance'?'No open issues.':'Room for your next idea.','empty'));
    for(const task of cards){
     const card=node('article',undefined,'card');card.append(node('h4',task.title));if(task.description)card.append(node('p',task.description));
-    card.append(node('p',type==='maintenance'?'Assigned to Jaime · Reported by '+task.name:'Added by '+task.name,'caption'));
+    card.append(node('p',type==='maintenance'?'Reported by '+task.name:'Added by '+task.name,'caption'));
     if(type==='build'&&task.x!==null){const coords=node('a',`${({world:'Overworld',world_nether:'Nether',world_the_end:'The End'})[task.world]} · ${task.x}, ${task.y}, ${task.z}`);coords.href=BASE+'/mc-map/?'+new URLSearchParams({worldname:task.world,mapname:task.world==='world'?'surface':'flat',x:task.x,y:task.y,z:task.z,zoom:5});coords.target='_blank';coords.rel='noopener';card.append(coords);}
     if(type==='build'||user.maintenance_manager||user.condo_manager){
      const controls=node('div',undefined,'row');const edit=node('button','Edit','quiet');edit.type='button';edit.addEventListener('click',()=>openTask(type,task));controls.append(edit);
