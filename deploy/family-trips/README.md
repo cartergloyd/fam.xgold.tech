@@ -28,6 +28,11 @@ access; the endpoint serializes only the fields the page renders.
 
 ## Install
 
+The site is already published. While the API answers `ROUTE_NOT_FOUND` for
+`/family/trip`, the home page renders `trip.json`, the site's own snapshot of the
+same response built from the seed rows in `schema.sql`, and kv documents keep their
+unprefixed ids. Do the steps below back to back; nothing needs to be published after.
+
 1. Back up fam with the normal private process. Apply `schema.sql` as the owner:
    `docker exec -i gold-platform-postgres sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d fam' < schema.sql`.
    It is additive and idempotent; seeded rows use `ON CONFLICT DO NOTHING`.
@@ -35,11 +40,16 @@ access; the endpoint serializes only the fields the page renders.
    active and canonical extension directories and registers `familyTrips(router,{database})`.
 3. Restart family Directus so it reloads the extension and its schema cache.
 4. Check `curl -s https://fam-api.xgold.tech/family/trip | head -c 400` shows the trip.
-5. Publish the site to main. Until this step, the old page keeps working except
-   that renamed bedroom claims and plans are not shown; nothing is lost.
+   Reload the home page: it now reads the database and scopes documents by trip.
 
-Between steps 1 and 5 the old page does not see the renamed documents, and the new
-page needs step 3, so do them together.
+Between steps 1 and 3 the page still uses the snapshot with unprefixed ids although
+the migration has already renamed the documents, so a claim made in that window
+lands as an unprefixed row. Re-running `schema.sql` afterwards renames such strays.
+
+Whenever the trip, house or rooms change in Directus, refresh the snapshot so the
+fallback stays truthful: `curl -s https://fam-api.xgold.tech/family/trip > trip.json`,
+then commit it. `tests/family-trips.mjs` checks the snapshot's shape and that every
+photo it references exists in the repo.
 
 ## Next trip
 
@@ -51,10 +61,10 @@ under their trip id.
 
 ## Rollback
 
-Restore the extension backup named by `install.py`, restart family Directus and
-revert the site commit. Keep the tables and the `kv.trip` column; the old page
-ignores the extra column but expects unprefixed ids, so only roll back the site if
-you also rename `kv` ids back (reverse the migration's INSERT/DELETE).
+Restore the extension backup named by `install.py` and restart family Directus; the
+page falls back to the snapshot on its own. Keep the tables and the `kv.trip`
+column, but the snapshot mode expects unprefixed ids, so also reverse the
+migration's INSERT/DELETE if claims and plans must keep showing.
 
 ## Tests
 

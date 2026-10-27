@@ -80,3 +80,26 @@ test('publicProperty tolerates missing optional columns', () => {
   const p = publicProperty({ id: 'x', title: 'X', check_in: '15:00:00', check_out: '11:00:00', timezone: 'America/Chicago' });
   assert.deepEqual([p.spaces, p.gallery, p.cards, p.bedrooms, p.address], [[], [], {}, null, '']);
 });
+
+test('trip.json is a faithful snapshot of the endpoint response', async () => {
+  const { readFile, access } = await import('node:fs/promises');
+  const root = new URL('../', import.meta.url);
+  const snapshot = JSON.parse(await readFile(new URL('trip.json', root), 'utf8'));
+  const fixture = JSON.parse(await readFile(new URL('./fixtures/trip.json', import.meta.url), 'utf8'));
+  assert.deepEqual(Object.keys(snapshot), Object.keys(fixture));
+  assert.deepEqual(Object.keys(snapshot.trip), Object.keys(fixture.trip));
+  assert.deepEqual(Object.keys(snapshot.property), Object.keys(fixture.property));
+  assert.match(snapshot.trip.id, /^[a-z0-9][a-z0-9-]{0,39}$/);
+  assert.ok(snapshot.rooms.length > 0 && snapshot.rooms.every(r => /^[a-z0-9][a-z0-9-]{0,39}$/.test(r.id) && r.name && Array.isArray(r.photos)));
+  const images = [...snapshot.property.hero.map(h => h.image), ...snapshot.property.gallery.map(g => g.image),
+    ...Object.values(snapshot.property.cards).map(c => c.image), ...snapshot.rooms.flatMap(r => r.photos)];
+  assert.ok(images.length > 0);
+  for (const image of images) {
+    assert.match(image, /^\/photos\/[a-z0-9-]+\/[a-z0-9-]+\.webp$/);
+    await access(new URL(`.${image}`, root));
+  }
+  // Every photo the seed migration references is in the snapshot too.
+  const sql = await readFile(new URL('deploy/family-trips/schema.sql', root), 'utf8');
+  assert.deepEqual(new Set(sql.match(/\/photos\/[a-z0-9/-]+\.webp/g)), new Set(images));
+  for (const key of ['pin_hash', 'email', 'driver_id', 'revision', 'max_guests']) assert.equal(JSON.stringify(snapshot).includes(`"${key}"`), false);
+});

@@ -29,7 +29,7 @@ async function startSite() {
 }
 
 // Mocks the family API: directory, trip details and the kv document store with trip filtering.
-async function mock(context, { name = 'Carter', trip = fixture, tripStatus = 200, rows = [] } = {}) {
+async function mock(context, { name = 'Carter', trip = fixture, tripStatus = 200, rows = [], migrated = true } = {}) {
   const users = [{ id: 'carter', name: 'Carter', group_id: 'g1', registered: true }, { id: 'marisa', name: 'Marisa', group_id: 'g1', registered: true }, { id: 'chester', name: 'Chester', registered: true }];
   const store = new Map(rows.map(r => [r.key, r])), writes = [], tripRequests = [];
   if (name) await context.addInitScript(who => localStorage.setItem('destin-who', JSON.stringify({ name: who, email: 'test@example.test' })), name);
@@ -37,11 +37,16 @@ async function mock(context, { name = 'Carter', trip = fixture, tripStatus = 200
     const req = route.request(), url = new URL(req.url());
     if (url.origin !== 'https://fam-api.xgold.tech') return url.hostname === '127.0.0.1' ? route.continue() : route.abort();
     if (url.pathname === '/family/users') return route.fulfill({ json: { users } });
-    if (url.pathname === '/family/trip') { tripRequests.push(url.search); return route.fulfill({ status: tripStatus, json: tripStatus === 200 ? trip : { error: 'Trip details are temporarily unavailable. Please try again.' } }); }
+    if (url.pathname === '/family/trip') {
+      tripRequests.push(url.search);
+      if (tripStatus === 'missing') return route.fulfill({ status: 404, json: { errors: [{ message: "Route /family/trip doesn't exist.", extensions: { code: 'ROUTE_NOT_FOUND' } }] } });
+      return route.fulfill({ status: tripStatus, json: tripStatus === 200 ? trip : { error: 'Trip details are temporarily unavailable. Please try again.' } });
+    }
     if (url.pathname.startsWith('/items/kv')) {
       const body = req.postDataJSON?.(), key = decodeURIComponent(url.pathname.slice('/items/kv/'.length));
       if (req.method() === 'GET') {
         const coll = url.searchParams.get('filter[coll][_eq]'), trip = url.searchParams.get('filter[trip][_eq]');
+        if (trip && !migrated) return route.fulfill({ status: 403, json: { errors: [{ message: 'You don\'t have permission to access field "trip" in collection "kv" or it does not exist.', extensions: { code: 'FORBIDDEN' } }] } });
         return route.fulfill({ json: { data: [...store.values()].filter(r => r.coll === coll && (!trip || r.trip === trip)).map(r => ({ id: r.id, data: r.data })) } });
       }
       if (req.method() === 'PATCH') { if (!store.has(key)) return route.fulfill({ status: 404, json: { errors: [{ message: 'Not found' }] } }); store.get(key).data = body.data; writes.push({ method: 'PATCH', key, body }); return route.fulfill({ json: { data: store.get(key) } }); }
@@ -52,6 +57,11 @@ async function mock(context, { name = 'Carter', trip = fixture, tripStatus = 200
   });
   return { store, writes, tripRequests };
 }
+const snapshot = JSON.parse(await readFile(new URL('../trip.json', import.meta.url), 'utf8'));
+const unmigrated = [
+  { key: 'bedrooms/b7', coll: 'bedrooms', id: 'b7', data: { name: 'Chester', by: 'Chester', people: ['Chester'], ts: 1 } },
+  { key: 'plans/abc', coll: 'plans', id: 'abc', data: { day: '2027-03-31', time: '19:00', text: 'Date Night', by: 'Carter', people: ['Carter', 'Marisa'], ts: 1 } },
+];
 const existing = [
   { key: 'bedrooms/destin-2027:b7', coll: 'bedrooms', id: 'destin-2027:b7', trip: 'destin-2027', data: { name: 'Chester', by: 'Chester', people: ['Chester'], ts: 1 } },
   { key: 'bedrooms/summer-2028:b2', coll: 'bedrooms', id: 'summer-2028:b2', trip: 'summer-2028', data: { name: 'Marisa', by: 'Marisa', people: ['Marisa'], ts: 1 } },
@@ -149,6 +159,30 @@ test('home page renders the trip, house and rooms from the API and scopes docume
     await chosenPage.getByRole('heading', { level: 1, name: fixture.trip.title }).waitFor();
     assert.deepEqual(chosenApi.tripRequests, ['?id=summer-2028']);
     await chosen.close();
+    // Before the endpoint is installed, Directus answers ROUTE_NOT_FOUND: the page renders the site's snapshot
+    // and keeps kv ids unprefixed, exactly as the old page wrote them.
+    for (const width of [390, 1440]) {
+      const context = await browser.newContext({ viewport: { width, height: width < 768 ? 844 : 1000 } });
+      const api = await mock(context, { tripStatus: 'missing', migrated: false, rows: structuredClone(unmigrated) });
+      const page = await context.newPage(); const errors = []; page.on('pageerror', e => errors.push(e.message));
+      await page.goto(origin + '/', { waitUntil: 'domcontentloaded' });
+      await page.getByRole('heading', { level: 1, name: snapshot.trip.title }).waitFor();
+      assert.equal(await page.locator('#trip-note').isVisible(), false, 'no error note in snapshot mode');
+      assert.equal(await page.locator('#gallery figure').count(), snapshot.property.gallery.length);
+      await page.locator('#days > .day').nth(3).locator('.day-head').click();
+      await page.getByText('Date Night', { exact: true }).waitFor();
+      await page.locator('#book-open').click();
+      assert.equal(await page.locator('#rooms-list > li').count(), snapshot.rooms.length);
+      await page.getByText('Claimed by Chester', { exact: true }).waitFor();
+      await page.locator('#rooms-list > li').first().getByRole('button', { name: 'Claim' }).click();
+      await page.getByText('Claimed by Carter', { exact: true }).waitFor();
+      const claim = api.writes.find(w => w.method === 'POST' && w.key.startsWith('bedrooms/'));
+      assert.deepEqual([claim.key, claim.body.id, 'trip' in claim.body, claim.body.coll], ['bedrooms/b1', 'b1', false, 'bedrooms']);
+      assert.ok(api.tripRequests.length >= 1 && api.tripRequests.every(q => q === ''));
+      assert.deepEqual(errors, []);
+      await page.screenshot({ path: join(shots, `fam-home-snapshot-${width}.png`), fullPage: true });
+      await context.close();
+    }
     const down = await browser.newContext({ viewport: { width: 390, height: 844 } });
     await mock(down, { tripStatus: 503 }); const downPage = await down.newPage(); const downErrors = []; downPage.on('pageerror', e => downErrors.push(e.message));
     await downPage.goto(origin + '/', { waitUntil: 'domcontentloaded' });

@@ -58,7 +58,9 @@ hero slideshow, gallery, highlight-card art and pins, and bedroom names and phot
 are all database rows; the page has no trip literals. Photos are plain files under
 `photos/<property>/` and the rows store their URLs. The featured trip is the one in
 progress or the next to start; `?trip=<id>` shows another. Manage trips, properties
-and rooms in fam's Directus admin. See `deploy/family-trips/README.md`.
+and rooms in fam's Directus admin. Until the endpoint is installed, the page renders
+`trip.json`, a snapshot of the same response built from the seed rows, and leaves kv
+ids unprefixed. See `deploy/family-trips/README.md`.
 
 ## Trip data
 

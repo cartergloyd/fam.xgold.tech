@@ -674,15 +674,27 @@ h2 { margin: 0 0 20px; font-size: clamp(1.75rem, 6vw, 3rem); line-height: 1.08; 
 <script>
 (function () {
   // The trip, its house and bedrooms come from the family database; this page only renders them.
-  var TRIP_API = 'https://fam-api.xgold.tech/family/trip';
+  var TRIP_API = 'https://fam-api.xgold.tech/family/trip', TRIP_SNAPSHOT = '/trip.json';
+  function fetchTrip(url) {
+    return fetch(url, { credentials: 'omit', signal: AbortSignal.timeout(15000) })
+      .then(function (r) { return r.text().then(function (text) {
+        var data = null; try { data = JSON.parse(text); } catch (_) {}
+        if (r.ok && data && data.trip) return data;
+        var error = new Error(data && typeof data.error === 'string' ? data.error : 'Trip details could not load.');
+        // Directus answers 404 ROUTE_NOT_FOUND (no `error` field) until the trip endpoint is installed on the home server.
+        error.noEndpoint = r.status === 404 && !(data && data.error);
+        throw error;
+      }); });
+  }
   function loadTrip() {
     var want = new URLSearchParams(location.search).get('trip');
-    var url = TRIP_API + (want && /^[a-z0-9][a-z0-9-]{0,39}$/.test(want) ? '?id=' + encodeURIComponent(want) : '');
-    return fetch(url, { credentials: 'omit', signal: AbortSignal.timeout(15000) })
-      .then(function (r) { return r.json().then(function (data) { if (!r.ok || !data || !data.trip) throw new Error(data && data.error || 'Trip details could not load.'); return data; }); })
+    return fetchTrip(TRIP_API + (want && /^[a-z0-9][a-z0-9-]{0,39}$/.test(want) ? '?id=' + encodeURIComponent(want) : ''))
       .catch(function (e) {
-        var error = new Error(e && e.name === 'TimeoutError' ? 'Trip details took too long to load. Please try again.' : (e && e.message) || 'Trip details could not load.');
-        error.trip = true; throw error;
+        var error = new Error(e && e.name === 'TimeoutError' ? 'Trip details took too long to load. Please try again.' : (e && e.noEndpoint === false && e.message) || 'Trip details could not load.');
+        error.trip = true;
+        if (!e || !e.noEndpoint) throw error;
+        // Without the endpoint, the site's own snapshot of the trip stands in and kv documents keep their unprefixed ids.
+        return fetchTrip(TRIP_SNAPSHOT).then(function (data) { data.snapshot = true; return data; }, function () { throw error; });
       });
   }
   function tripFailed(message) {
@@ -1435,7 +1447,7 @@ h2 { margin: 0 0 20px; font-size: clamp(1.75rem, 6vw, 3rem); line-height: 1.08; 
     claude.use('user').then(function (u) { userh = u; saveMember(); }, function () {});
     claude.use('db').then(function (db) {
       if (!db) { rmsg.textContent = 'Sign in to book a bedroom.'; Object.keys(ui).forEach(function (k) { ui[k].note.textContent = 'Sign in to see and add plans.'; }); return; }
-      dbh = db.trip(trip.id); saveMember(); progCol = db.collection('progress');
+      dbh = TRIP.snapshot ? db : db.trip(trip.id); saveMember(); progCol = db.collection('progress');
       progCol.onSnapshot(function (snap) { progAll = {}; snap.docs.forEach(function (s) { progAll[s.id] = s.data() || {}; }); updateTodo(); }, function () {}); fcol = db.collection('flights');
       fcol.orderBy('ts').onSnapshot(function (snap) { renderFlights(snap.docs); }, function () { fmsg.textContent = 'Flights couldn\u2019t load right now.'; });
       col = db.collection('plans'); bcol = db.collection('bedrooms');
