@@ -38,6 +38,12 @@
   if(selected==='java'){paragraph('In Minecraft, choose Multiplayer → Add Server.');address();}
   else if(selected==='bedrock'){paragraph('In Minecraft, choose Servers → Add Server.');address(true);}
   else if(selected==='xbox'){paragraph('Add GoldServer2951 as an Xbox friend. The server will appear in Minecraft’s Friends tab.');const d=H.node('details');d.append(H.node('summary','Use the DNS option'));dns('xbox',d);instructions.append(d);}
+  else if(selected==='switch'){
+   paragraph('Join through Microsoft / Xbox friends. Custom DNS is not needed for this option.');
+   steps(['Sign into Minecraft on Switch with your Microsoft account.','Add GoldServer2951 through Minecraft’s cross-platform friend search, or use the Xbox app signed into that same Microsoft account.','Look for GoldServer2951 in Minecraft’s Friends / Joinable Friends list and select it to join.']);
+   paragraph('Use your Microsoft / Xbox friends inside Minecraft, not the Nintendo Switch friend list. If you previously changed DNS, you can restore DNS Settings to Automatic.','caption');
+   const d=H.node('details');d.append(H.node('summary','Use the DNS option'));dns('switch',d);instructions.append(d);
+  }
   else dns(selected);
   if(!['java','bedrock'].includes(selected))paragraph('If custom DNS stops working, restore automatic DNS and try again later.','caption');
   const edition=selected==='java'?'java':'bedrock';if(whitelistForm.elements.edition.value!==edition)whitelistForm.elements.username.value='';whitelistForm.elements.edition.value=edition;editionHint();renderAccounts();
