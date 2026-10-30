@@ -69,6 +69,15 @@ ALTER TABLE family_properties OWNER TO fam;
 ALTER TABLE family_reservations OWNER TO fam;
 ALTER TABLE family_tasks OWNER TO fam;
 ALTER TABLE family_mc_activity OWNER TO fam;
+-- Minecraft accounts per family member. Formats match whitelist.js; the UUIDs are what
+-- whitelist-worker.py resolves (Mojang profile id; Floodgate UUID from the Xbox XUID).
+-- Bedrock names are the gamertag as entered, without Floodgate's '.' prefix.
+ALTER TABLE family_users ADD COLUMN IF NOT EXISTS mc_java_username text CHECK(mc_java_username ~ '^[A-Za-z0-9_]{3,16}$');
+ALTER TABLE family_users ADD COLUMN IF NOT EXISTS mc_java_uuid uuid;
+ALTER TABLE family_users ADD COLUMN IF NOT EXISTS mc_bedrock_username text CHECK(mc_bedrock_username ~ '^[A-Za-z0-9][A-Za-z0-9 _]{0,15}$');
+ALTER TABLE family_users ADD COLUMN IF NOT EXISTS mc_bedrock_uuid uuid;
+CREATE UNIQUE INDEX IF NOT EXISTS family_users_mc_java_uuid ON family_users(mc_java_uuid) WHERE mc_java_uuid IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS family_users_mc_bedrock_uuid ON family_users(mc_bedrock_uuid) WHERE mc_bedrock_uuid IS NOT NULL;
 INSERT INTO directus_collections(collection,icon,note) VALUES
  ('family_properties','home','Condo configuration. Managed by Carter and Chester.'),
  ('family_reservations','event','Pending reservations hold dates. Checkout dates are exclusive.'),

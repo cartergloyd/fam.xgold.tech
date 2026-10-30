@@ -120,6 +120,12 @@ per family profile per day and a unique active request per edition prevent bulk
 additions; retries for the same active account are idempotent. Carter can reset
 an incorrect link in the private database without removing any whitelist entry.
 
+schema.sql also adds optional Minecraft account columns to family_users:
+mc_java_username, mc_java_uuid, mc_bedrock_username and mc_bedrock_uuid. Names follow
+whitelist.js (Bedrock gamertags without Floodgate's '.' prefix); the UUIDs are the ones
+whitelist-worker.py resolves, and each can belong to only one family member. Nothing
+writes them yet.
+
 Apply whitelist-schema.sql to fam. Install whitelist.js as hub-whitelist.js beside
 the existing extension and register whitelistHub(router,{database});
 install-backend.py performs that integration. Recreate family Directus after
