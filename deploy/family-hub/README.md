@@ -156,8 +156,10 @@ Management Protocol is not used; it stays disabled in server.properties.
 family-names/ is a small Paper plugin. It reads names.json and, for each matching
 player, sets the display name (chat, DiscordSRV's %displayname%, Dynmap labels), the tab
 list name, and renames the player's profile, which changes the name tag above their head
-for everyone else. It re-reads the file every 30 seconds and applies changes to online
-players. config.yml can turn the profile rename off for everyone or for Bedrock players
+for everyone else, the server-list player sample (the Discord status embed) and leave and
+death messages. The join line is built before plugins run, so the plugin rewrites it with
+the first name; DiscordSRV's join and leave embeds should use %displayname%. It re-reads
+the file every 30 seconds and applies changes to online players. config.yml can turn the profile rename off for everyone or for Bedrock players
 only; chat and the tab list keep the first name either way. Permissions, ops and the
 whitelist are keyed by UUID and are not affected. Build with `family-names/build.sh`
 (Maven in Docker, no JDK needed) and copy target/FamilyNames.jar into the server's

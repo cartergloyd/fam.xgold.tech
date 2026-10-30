@@ -4,11 +4,13 @@ import com.destroystokyo.paper.profile.PlayerProfile;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.IOException;
@@ -27,9 +29,10 @@ import java.util.logging.Level;
  *
  * names.json (account UUID -> first name) is written by the family website's whitelist worker.
  * Chat and the tab list use the first name through the display name and player-list name.
- * The player's profile is renamed too, which is what changes the name tag above their head and
- * the tab-list entry other players see. Nothing here touches permissions, ops or the whitelist,
- * which are all keyed by UUID.
+ * The player's profile is renamed too, which is what changes the name tag above their head,
+ * the tab-list entry other players see, the server-list player sample and plain-name uses such
+ * as death and leave messages. The join line is built by the server before any plugin runs, so
+ * it is rebuilt here. Nothing touches permissions, ops or the whitelist, which are keyed by UUID.
  */
 public final class FamilyNames extends JavaPlugin implements Listener {
     private static final Gson GSON = new Gson();
@@ -49,9 +52,24 @@ public final class FamilyNames extends JavaPlugin implements Listener {
         }, CHECK_TICKS, CHECK_TICKS);
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
+    /** LOW priority so plugins that read the display name later in the same event (DiscordSRV) see the first name. */
+    @EventHandler(priority = EventPriority.LOW)
     public void onJoin(PlayerJoinEvent event) {
-        apply(event.getPlayer());
+        Player player = event.getPlayer();
+        String name = names.get(player.getUniqueId());
+        if (name == null) return;
+        apply(player);
+        if (event.joinMessage() != null) {
+            event.joinMessage(Component.translatable("multiplayer.player.joined", NamedTextColor.YELLOW, Component.text(name)));
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOW)
+    public void onQuit(PlayerQuitEvent event) {
+        String name = names.get(event.getPlayer().getUniqueId());
+        if (name != null && event.quitMessage() != null) {
+            event.quitMessage(Component.translatable("multiplayer.player.left", NamedTextColor.YELLOW, Component.text(name)));
+        }
     }
 
     /** Re-reads names.json when its timestamp changed. Returns true when the mapping changed. */
