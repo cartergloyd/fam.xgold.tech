@@ -1,0 +1,7 @@
+# FamilyNames reads names.json next to this file: {"<account uuid>": "First name", ...}.
+# The family website's whitelist worker rewrites that file from the family directory.
+# Chat and the tab list always use the first name. The two switches below also rename the
+# player's profile, which changes the name tag above their head for everyone else.
+rename-profiles: true
+# Bedrock players join through Geyser/Floodgate (their UUIDs start with 00000000-0000-0000-0009).
+rename-bedrock-profiles: true

@@ -5,12 +5,20 @@ import { createRequire } from 'node:module';
 const dir=process.env.HUB_SOURCE || new URL('../deploy/family-hub/',import.meta.url).pathname;
 const {issueSession,readSession}=await import(dir+'/hub-session.js');
 const {default:endpoint,validDates}=await import(dir+'/endpoint.js');
-const {default:whitelist,normalizeAccount}=await import(dir+'/whitelist.js');
+const {default:whitelist,normalizeAccount,accountsFor}=await import(dir+'/whitelist.js');
 const {chooseFocus}=await import(dir+'/minecraft.js');
 const secret='test-secret-only';
 test('whitelist account names reject commands and invalid editions',()=>{
  assert.equal(normalizeAccount('java',' TestUser '),'TestUser');assert.equal(normalizeAccount('bedrock','Player One'),'Player One');
  for(const [edition,name]of [['java','Name\nstop'],['bedrock','.Player'],['bedrock','A;op B'],['other','Test'],['java','x']])assert.equal(normalizeAccount(edition,name),null);
+});
+test('accounts linked on the directory row show without a request, pending until verified',()=>{
+ const user={mc_java_username:'Wolfgang12',mc_java_uuid:'0b8959cd-9329-40d3-bc0e-1cc93d641a13',mc_bedrock_username:'Player One',mc_bedrock_uuid:null};
+ assert.deepEqual(accountsFor(user,[]).map(a=>[a.edition,a.username,a.status]),[['java','Wolfgang12','added'],['bedrock','Player One','pending']]);
+ const request={id:'r1',edition:'bedrock',username:'Player One',status:'processing',error:null};
+ assert.deepEqual(accountsFor(user,[request]).map(a=>a.id),[null,'r1'],'an active request replaces the synthesized row for its edition');
+ assert.equal(accountsFor({},[request]).length,1);
+ assert.equal(accountsFor(user,[{...request,status:'failed'}]).length,3,'a failed request stays listed and the row still shows as pending');
 });
 test('session expiry, signature forgery, invalid dates, and map focus',()=>{
  const user={id:'00000000-0000-4000-8000-000000000001',pin_hash:'hash'};

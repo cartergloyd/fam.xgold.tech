@@ -90,5 +90,8 @@ Existing browser profiles must sign in once for these pages. The shared trip
 collections keep their existing behavior. No new public collection access is
 introduced. Carter and Chester manage condo reservations/settings/instant-booking
 access; Jaime manages maintenance. Minecraft cards are shared by signed-in family
-members. See `deploy/family-hub/README.md` for database constraints, installation,
+members.
+Members link their Minecraft accounts on `/mc/`: the Java username, Xbox gamertag and
+verified UUIDs live on `family_users`, the server whitelist follows those rows, and the
+FamilyNames plugin shows each player by their directory first name. See `deploy/family-hub/README.md` for database constraints, installation,
 map activity collection, verification and rollback.

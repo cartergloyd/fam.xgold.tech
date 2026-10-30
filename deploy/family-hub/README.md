@@ -109,7 +109,7 @@ with mocked APIs and no live writes. Existing ribbon, account and directory test
 also apply. Live verification uses signed sessions without revealing credentials;
 no real bookings/cards need to be created to verify the deployment.
 
-## Minecraft self-whitelisting
+## Minecraft self-whitelisting and first names
 
 The Minecraft hero now fills the first viewport, beneath the shared navigation.
 Join instructions use one platform selector. The same widget lets signed-in family
@@ -120,42 +120,51 @@ per family profile per day and a unique active request per edition prevent bulk
 additions; retries for the same active account are idempotent. Carter can reset
 an incorrect link in the private database without removing any whitelist entry.
 
-schema.sql also adds optional Minecraft account columns to family_users:
-mc_java_username, mc_java_uuid, mc_bedrock_username and mc_bedrock_uuid. Names follow
-whitelist.js (Bedrock gamertags without Floodgate's '.' prefix); the UUIDs are the ones
-whitelist-worker.py resolves, and each can belong to only one family member. Nothing
-writes them yet.
+The directory row is the source of truth. schema.sql adds optional Minecraft account
+columns to family_users: mc_java_username, mc_java_uuid, mc_bedrock_username and
+mc_bedrock_uuid. Names follow whitelist.js (Bedrock gamertags without Floodgate's '.'
+prefix) and each UUID can belong to only one family member. POST /hub/mc-whitelist
+stores the self-reported name on the member's row and queues a family_mc_whitelist
+request; GET lists the member's requests plus any account linked straight on their row
+(pending until it has a UUID). Carter can also type a username into Directus: the worker
+resolves its UUID within a minute. To unlink an account, clear its two columns and set
+any 'added' request for that edition to 'failed'; the server's whitelist entry stays.
 
-Apply whitelist-schema.sql to fam. Install whitelist.js as hub-whitelist.js beside
-the existing extension and register whitelistHub(router,{database});
-install-backend.py performs that integration. Recreate family Directus after
-installation. No public Directus collection permissions are added.
+Apply whitelist-schema.sql to fam (schema.sql holds the account columns). Install
+whitelist.js as hub-whitelist.js beside the existing extension and register
+whitelistHub(router,{database}); install-backend.py performs that integration. Restart
+family Directus afterwards. No public Directus collection permissions are added.
 
-Install fam-mc-whitelist.service in the user service directory and enable it. It
-runs whitelist-worker.py from the deployed fam-site-src tree and claims pending
-requests from PostgreSQL. Java account IDs come from Minecraft's profile lookup;
-Bedrock XUIDs come from Geyser's Xbox lookup and use Floodgate's UUID mapping,
-'.' prefix, and space-to-underscore setting. Names never become shell commands.
+Install fam-mc-whitelist.service in the user service directory and enable it. It runs
+whitelist-worker.py from the deployed fam-site-src tree. Every two seconds it claims one
+pending request from PostgreSQL, verifies the account (Java account IDs come from
+Minecraft's profile lookup; Bedrock XUIDs from Geyser's Xbox lookup, mapped with
+Floodgate's UUID scheme, '.' prefix and space-to-underscore setting), writes the username
+and UUID onto the member's row, and syncs. Every minute, and after each request, the sync
+merges the directory into whitelist.json by UUID (adding or renaming, never removing an
+entry, and never adding a disabled member) and sends `whitelist reload` over RCON. RCON
+settings are read from server.properties (enable-rcon, rcon.port, rcon.password);
+Minecraft binds RCON to server-ip, so it stays on the LAN. Only 'whitelist reload' and
+'whitelist list' are ever sent, and names never become commands or shell arguments. A
+request is marked added only after its UUID is present in whitelist.json; failures stay
+retryable and a stale processing request retries after two minutes. The sync also writes
+plugins/FamilyNames/names.json (account UUID -> first name) for the plugin below. The
+Management Protocol is not used; it stays disabled in server.properties.
 
-Minecraft 26.3's Management Protocol runs on 127.0.0.1:25576 with a private
-40-character server secret. It needs management-server-enabled=true,
-management-server-host=127.0.0.1, management-server-port=25576, and
-management-server-tls-enabled=false (loopback only). Secrets stay in the private
-server.properties and never enter this repository or family API container.
-The initial configuration change requires a graceful Minecraft restart. RCON
-remains disabled. See the official protocol reference:
-https://www.minecraft.net/en-us/article/minecraft-java-edition-1-21-9
+### FamilyNames plugin
 
-The worker calls only allowlist query/add, then reads back the whitelist before
-marking an account added. Failed lookups/server writes remain retryable and never
-report success. A stale processing request retries after two minutes. The service
-does not change whitelist enforcement, operators, bans, or existing whitelist
-entries. To roll back, stop the worker and remove its endpoint integration; retain
-the queue and existing server whitelist. Restore the private pre-change
-server.properties backup if disabling the local management listener.
+family-names/ is a small Paper plugin. It reads names.json and, for each matching
+player, sets the display name (chat, DiscordSRV's %displayname%, Dynmap labels), the tab
+list name, and renames the player's profile, which changes the name tag above their head
+for everyone else. It re-reads the file every 30 seconds and applies changes to online
+players. config.yml can turn the profile rename off for everyone or for Bedrock players
+only; chat and the tab list keep the first name either way. Permissions, ops and the
+whitelist are keyed by UUID and are not affected. Build with `family-names/build.sh`
+(Maven in Docker, no JDK needed) and copy target/FamilyNames.jar into the server's
+plugins folder; loading it needs a server restart.
 
-Verify the live connection without writes with
-`python3 deploy/family-hub/whitelist-worker.py --check`.
-Worker verification tests: `python3 -m unittest discover -s tests -p test_mc_whitelist.py`.
-The hub API and browser suites also cover account isolation, input validation,
-idempotent requests, attempt limits, all five platforms, and full-viewport layout.
+Verify without writes with `python3 deploy/family-hub/whitelist-worker.py --check`;
+`--sync` runs one reconcile and prints the whitelist size. Worker tests:
+`python3 -m unittest discover -s tests -p test_mc_whitelist.py`. The hub API and browser
+suites also cover account isolation, input validation, idempotent requests, attempt
+limits, all five platforms, and full-viewport layout.

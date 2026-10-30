@@ -1,0 +1,6 @@
+name: FamilyNames
+version: 1.0.0
+main: tech.xgold.familynames.FamilyNames
+api-version: '1.21'
+description: Shows family members by the first name in the family directory.
+author: Gold family
