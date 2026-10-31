@@ -1,7 +1,14 @@
-# FamilyNames reads names.json next to this file: {"<account uuid>": "First name", ...}.
-# The family website's whitelist worker rewrites that file from the family directory.
-# Chat and the tab list always use the first name. The two switches below also rename the
-# player's profile, which changes the name tag above their head for everyone else.
+# FamilyNames reads names.json next to this file: {"<account uuid>": {"name": "First", "color": "#rrggbb"}}.
+# The family website's whitelist worker rewrites that file from the family directory; the color is
+# the member's Discord role color. Chat and the tab list always use the first name. The two
+# switches below also rename the player's profile, which changes the name tag above their head.
 rename-profiles: true
 # Bedrock players join through Geyser/Floodgate (their UUIDs start with 00000000-0000-0000-0009).
 rename-bedrock-profiles: true
+# Register the first name as a second lookup name on the server, so /tp Carter, /msg Carter and the
+# tab-completed first names work from the game, the console, RCON and Discord's console relay, while
+# the Minecraft name keeps working too. If the server's lookup table cannot be reached, typed commands
+# are rewritten to the Minecraft name instead.
+resolve-first-names-in-commands: true
+# Show each first name in the tab list in the member's Discord role color.
+color-tab-list: true

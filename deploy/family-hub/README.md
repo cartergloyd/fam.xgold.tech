@@ -148,8 +148,11 @@ Minecraft binds RCON to server-ip, so it stays on the LAN. Only 'whitelist reloa
 'whitelist list' are ever sent, and names never become commands or shell arguments. A
 request is marked added only after its UUID is present in whitelist.json; failures stay
 retryable and a stale processing request retries after two minutes. The sync also writes
-plugins/FamilyNames/names.json (account UUID -> first name) for the plugin below. The
-Management Protocol is not used; it stays disabled in server.properties.
+plugins/FamilyNames/names.json for the plugin below: account UUID -> {name, color}, where
+color is the member's Discord role color (the highest colored role, as Discord shows their
+name), looked up every five minutes with the bot token from the owner's secrets file through
+family_users.discord_user_id. The Management Protocol is not used; it stays disabled in
+server.properties.
 
 ### FamilyNames plugin
 
@@ -159,7 +162,13 @@ list name, and renames the player's profile, which changes the name tag above th
 for everyone else, the server-list player sample (the Discord status embed) and leave and
 death messages. The join line is built before plugins run, so the plugin rewrites it with
 the first name; DiscordSRV's join and leave embeds should use %displayname%. It re-reads
-the file every 30 seconds and applies changes to online players. config.yml can turn the profile rename off for everyone or for Bedrock players
+the file every 30 seconds and applies changes to online players. The tab list shows each
+first name in the member's Discord color. The server looks players up by login name, so the
+plugin registers the first name as a second lookup name: /tp Carter, /msg Carter and the
+tab-completed first names work from the game, the console, RCON and Discord's console relay,
+and the Minecraft name keeps working. Should that table move in a future Paper build, the
+plugin logs it and rewrites typed commands to the Minecraft name instead. config.yml has
+switches for the profile rename, the Bedrock rename, the command names and the tab color. config.yml can turn the profile rename off for everyone or for Bedrock players
 only; chat and the tab list keep the first name either way. Permissions, ops and the
 whitelist are keyed by UUID and are not affected. Build with `family-names/build.sh`
 (Maven in Docker, no JDK needed) and copy target/FamilyNames.jar into the server's

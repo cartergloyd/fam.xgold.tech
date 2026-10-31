@@ -78,6 +78,9 @@ ALTER TABLE family_users ADD COLUMN IF NOT EXISTS mc_bedrock_username text CHECK
 ALTER TABLE family_users ADD COLUMN IF NOT EXISTS mc_bedrock_uuid uuid;
 CREATE UNIQUE INDEX IF NOT EXISTS family_users_mc_java_uuid ON family_users(mc_java_uuid) WHERE mc_java_uuid IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS family_users_mc_bedrock_uuid ON family_users(mc_bedrock_uuid) WHERE mc_bedrock_uuid IS NOT NULL;
+-- Discord member id, for the member's role color in the Minecraft tab list (see README, FamilyNames).
+ALTER TABLE family_users ADD COLUMN IF NOT EXISTS discord_user_id text CHECK(discord_user_id ~ '^[0-9]{15,22}$');
+CREATE UNIQUE INDEX IF NOT EXISTS family_users_discord_user_id ON family_users(discord_user_id) WHERE discord_user_id IS NOT NULL;
 INSERT INTO directus_collections(collection,icon,note) VALUES
  ('family_properties','home','Condo configuration. Managed by Carter and Chester.'),
  ('family_reservations','event','Pending reservations hold dates. Checkout dates are exclusive.'),

@@ -7,10 +7,12 @@ endpoint stores it on their family_users row and queues a request. This worker t
     for Bedrock) and stores the account UUID on the member's family_users row;
  2. keeps whitelist.json in step with family_users, adding or renaming entries by UUID and
     never removing one, then asks the server to re-read it over LAN-only RCON; and
- 3. writes plugins/FamilyNames/names.json (account UUID -> first name) for the FamilyNames
-    plugin, which shows family members by first name in chat, the tab list and name tags.
+ 3. writes plugins/FamilyNames/names.json (account UUID -> first name and the member's
+    Discord role color) for the FamilyNames plugin, which shows family members by first
+    name in chat, the tab list and name tags.
 Only the fixed commands 'whitelist reload' and 'whitelist list' are ever sent over RCON.
-Player-typed names never become commands or shell arguments.
+Player-typed names never become commands or shell arguments. The Discord bot token is read
+from the owner's secrets file for read-only guild lookups and never written anywhere.
 """
 import datetime
 import json
@@ -31,11 +33,15 @@ PROPERTIES = pathlib.Path('/home/gold/Minecraft Server/server.properties')
 SERVER_DIR = PROPERTIES.parent
 WHITELIST = SERVER_DIR / 'whitelist.json'
 NAMES = SERVER_DIR / 'plugins' / 'FamilyNames' / 'names.json'
+SECRETS = pathlib.Path('/home/gold/secrets.env')
+DISCORD_API = 'https://discord.com/api/v10'
 RCON_COMMANDS = ('whitelist reload', 'whitelist list')
 SYNC_INTERVAL = 60
 LOOKUP_RETRY = 600
+COLOR_TTL = 300
 LAST_SYNC = 0.0
 _lookup_backoff = {}
+_discord = {'guild': None, 'colors': {}, 'fetched': 0.0, 'failed': False}
 
 class AccountError(Exception):
     pass
@@ -80,6 +86,16 @@ def floodgate_name(gamertag):
 
 def properties():
     return dict(line.split('=',1) for line in PROPERTIES.read_text().splitlines() if '=' in line and not line.startswith('#'))
+
+def secret(name):
+    """One KEY=VALUE line from secrets.env. The file is read, never sourced: it holds non-shell lines."""
+    try:
+        for line in SECRETS.read_text().splitlines():
+            if line.startswith(name+'='):
+                return line.split('=',1)[1].strip().strip('"\'')
+    except OSError:
+        pass
+    return ''
 
 def rcon_packet(packet_id,kind,body):
     payload=struct.pack('<ii',packet_id,kind)+body.encode()+b'\x00\x00'
@@ -146,7 +162,7 @@ def merge_whitelist(entries,desired):
     return result,changed
 
 def directory():
-    raw=sql("SELECT coalesce(json_agg(row_to_json(u)),'[]') FROM (SELECT id,name,first_name,status,mc_java_username,mc_java_uuid,mc_bedrock_username,mc_bedrock_uuid FROM family_users WHERE mc_java_username IS NOT NULL OR mc_bedrock_username IS NOT NULL OR mc_java_uuid IS NOT NULL OR mc_bedrock_uuid IS NOT NULL ORDER BY name) u;")
+    raw=sql("SELECT coalesce(json_agg(row_to_json(u)),'[]') FROM (SELECT id,name,first_name,status,discord_user_id,mc_java_username,mc_java_uuid,mc_bedrock_username,mc_bedrock_uuid FROM family_users WHERE mc_java_username IS NOT NULL OR mc_bedrock_username IS NOT NULL OR mc_java_uuid IS NOT NULL OR mc_bedrock_uuid IS NOT NULL ORDER BY name) u;")
     return json.loads(raw or '[]')
 
 def desired_entries(rows):
@@ -160,15 +176,58 @@ def desired_entries(rows):
             desired.append({'uuid':row['mc_bedrock_uuid'],'name':floodgate_name(row['mc_bedrock_username'])})
     return desired
 
-def names_payload(rows):
-    """Account UUID -> first name, for every linked account of a member who is not disabled."""
+def discord_json(path,token):
+    req=urllib.request.Request(DISCORD_API+path,headers={'Authorization':'Bot '+token,'User-Agent':'GoldFamilyWhitelist/1.0 (fam.xgold.tech)','Accept':'application/json'})
+    with urllib.request.urlopen(req,timeout=12) as response:
+        return json.load(response)
+
+def member_colors(roles,members):
+    """Discord user id -> '#rrggbb' of the member's highest colored role: the color Discord shows their name in."""
+    by_id={r['id']:r for r in roles if isinstance(r,dict) and 'id' in r}
+    colors={}
+    for member in members:
+        if not isinstance(member,dict) or 'user' not in member:continue
+        colored=sorted((by_id[r] for r in member.get('roles',[]) if r in by_id and by_id[r].get('color')),key=lambda r:-r.get('position',0))
+        colors[str(member['user']['id'])]='#%06x'%colored[0]['color'] if colored else None
+    return colors
+
+def discord_colors(fetch=discord_json):
+    """Cached for five minutes. Failures keep the last known colors so names still sync."""
+    now=time.time()
+    if now-_discord['fetched']<COLOR_TTL:return _discord['colors']
+    _discord['fetched']=now
+    token=secret('DISCORD_BOT_TOKEN')
+    if not token:return _discord['colors']
+    try:
+        if not _discord['guild']:
+            _discord['guild']=str(fetch('/users/@me/guilds',token)[0]['id'])
+        guild=_discord['guild']
+        roles=fetch(f'/guilds/{guild}/roles',token)
+        members,after=[],'0'
+        while True:
+            page=fetch(f'/guilds/{guild}/members?limit=100&after={after}',token)
+            members+=page
+            if len(page)<100:break
+            after=str(page[-1]['user']['id'])
+        _discord['colors']=member_colors(roles,members)
+        if _discord['failed']:print('Discord colors are available again.',flush=True)
+        _discord['failed']=False
+    except Exception as e:
+        if not _discord['failed']:print(f'Discord colors unavailable; keeping the last known ones. ({type(e).__name__})',flush=True)
+        _discord['failed']=True
+    return _discord['colors']
+
+def names_payload(rows,colors=None):
+    """Account UUID -> {name, color} for every linked account of a member who is not disabled."""
+    colors=colors or {}
     names={}
     for row in rows:
         if row.get('status')=='disabled':continue
         first=(row.get('first_name') or str(row.get('name') or '').split(' ')[0]).strip()
         if not first:continue
+        color=colors.get(str(row.get('discord_user_id') or ''))
         for key in ('mc_java_uuid','mc_bedrock_uuid'):
-            if row.get(key):names[str(row[key]).lower()]=first
+            if row.get(key):names[str(row[key]).lower()]={'name':first,'color':color}
     return dict(sorted(names.items()))
 
 def store_account(user_id,edition,profile,typed):
@@ -212,7 +271,7 @@ def sync():
     if changed:
         write_json(WHITELIST,entries)
         print(rcon('whitelist reload') or 'Whitelist reloaded.',flush=True)
-    names=names_payload(rows)
+    names=names_payload(rows,discord_colors())
     if read_json(NAMES,None)!=names:
         write_json(NAMES,names)
         print(f'Wrote {len(names)} family names for the FamilyNames plugin.',flush=True)
@@ -242,7 +301,8 @@ if __name__=='__main__':
     if '--check' in sys.argv:
         listed=rcon('whitelist list')
         print(f'RCON connected: {listed[:200]}')
-        print(f'{len(read_json(WHITELIST,[]))} entries in whitelist.json; {len(directory())} directory rows with Minecraft accounts. No changes made.')
+        colors=discord_colors()
+        print(f'{len(read_json(WHITELIST,[]))} entries in whitelist.json; {len(directory())} directory rows with Minecraft accounts; {sum(1 for c in colors.values() if c)} Discord members with a role color. No changes made.')
     elif '--sync' in sys.argv:
         print(f'{len(sync())} whitelist entries after sync at {datetime.datetime.now().isoformat(timespec="seconds")}.')
     else:

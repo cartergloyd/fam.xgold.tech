@@ -51,18 +51,38 @@ class WhitelistTests(unittest.TestCase):
               {'id':'u2','name':'Alex','first_name':None,'status':'invited','mc_java_username':'Pending1','mc_java_uuid':None,'mc_bedrock_username':None,'mc_bedrock_uuid':None},
               {'id':'u3','name':'Sam','first_name':'Sam','status':'disabled','mc_java_username':'Gone','mc_java_uuid':'3b7a2a82-fb39-43b1-8f88-2d41f8a025ee','mc_bedrock_username':None,'mc_bedrock_uuid':None}]
         self.assertEqual(worker.desired_entries(rows),[{'uuid':'0b8959cd-9329-40d3-bc0e-1cc93d641a13','name':'Wolfgang12'},{'uuid':'00000000-0000-0000-0009-01fdfa563835','name':'.Player_One'}])
-        self.assertEqual(worker.names_payload(rows),{'00000000-0000-0000-0009-01fdfa563835':'Carter','0b8959cd-9329-40d3-bc0e-1cc93d641a13':'Carter'})
+        self.assertEqual(worker.names_payload(rows),{'00000000-0000-0000-0009-01fdfa563835':{'name':'Carter','color':None},'0b8959cd-9329-40d3-bc0e-1cc93d641a13':{'name':'Carter','color':None}})
+        rows[0]['discord_user_id']='212015321664585728'
+        colored=worker.names_payload(rows,{'212015321664585728':'#663399'})
+        self.assertEqual(colored['0b8959cd-9329-40d3-bc0e-1cc93d641a13'],{'name':'Carter','color':'#663399'})
+    def test_discord_role_color_is_the_highest_colored_role(self):
+        roles=[{'id':'r1','name':'Carter','color':0x663399,'position':18},{'id':'r2','name':'Server Admin','color':0,'position':11},{'id':'r3','name':'Bridgeton Fire','color':0xe90d2a,'position':10}]
+        members=[{'user':{'id':'212015321664585728'},'roles':['r3','r1','r2']},{'user':{'id':'490015743774162944'},'roles':[]},{'user':{'id':'1','bot':True},'roles':['missing']}]
+        self.assertEqual(worker.member_colors(roles,members),{'212015321664585728':'#663399','490015743774162944':None,'1':None})
+        calls=[]
+        def fetch(path,token):
+            calls.append(path)
+            if path=='/users/@me/guilds':return [{'id':'874080193306820628'}]
+            if path.endswith('/roles'):return roles
+            return members
+        with mock.patch.object(worker,'secret',return_value='token'),mock.patch.dict(worker._discord,{'guild':None,'colors':{},'fetched':0.0,'failed':False}):
+            self.assertEqual(worker.discord_colors(fetch)['212015321664585728'],'#663399')
+            self.assertEqual(worker.discord_colors(fetch)['212015321664585728'],'#663399')
+        self.assertEqual(len(calls),3,'the second call within five minutes is served from the cache')
+        def failing(path,token):raise OSError('down')
+        with mock.patch.object(worker,'secret',return_value='token'),mock.patch.dict(worker._discord,{'guild':'g','colors':{'x':'#000001'},'fetched':0.0,'failed':False}):
+            self.assertEqual(worker.discord_colors(failing),{'x':'#000001'},'a failure keeps the last known colors')
     def test_sync_writes_files_reloads_once_and_reports_uuids(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=pathlib.Path(tmp)
             (root/'whitelist.json').write_text(json.dumps([{'uuid':'3b7a2a82-fb39-43b1-8f88-2d41f8a025ee','name':'sevnak'}]))
             rows=[{'id':'u1','name':'Carter','first_name':'Carter','status':'ready','mc_java_username':'Wolfgang12','mc_java_uuid':'0b8959cd-9329-40d3-bc0e-1cc93d641a13','mc_bedrock_username':None,'mc_bedrock_uuid':None}]
             commands=[]
-            with mock.patch.multiple(worker,WHITELIST=root/'whitelist.json',NAMES=root/'plugins/FamilyNames/names.json',directory=lambda:rows,rcon=lambda c:commands.append(c) or 'Reloaded the whitelist'):
+            with mock.patch.multiple(worker,WHITELIST=root/'whitelist.json',NAMES=root/'plugins/FamilyNames/names.json',directory=lambda:rows,rcon=lambda c:commands.append(c) or 'Reloaded the whitelist',discord_colors=lambda:{}):
                 uuids=worker.sync()
                 self.assertEqual(uuids,{'3b7a2a82-fb39-43b1-8f88-2d41f8a025ee','0b8959cd-9329-40d3-bc0e-1cc93d641a13'})
                 self.assertEqual(commands,['whitelist reload'])
-                self.assertEqual(json.loads((root/'plugins/FamilyNames/names.json').read_text()),{'0b8959cd-9329-40d3-bc0e-1cc93d641a13':'Carter'})
+                self.assertEqual(json.loads((root/'plugins/FamilyNames/names.json').read_text()),{'0b8959cd-9329-40d3-bc0e-1cc93d641a13':{'name':'Carter','color':None}})
                 self.assertEqual([e['name'] for e in json.loads((root/'whitelist.json').read_text())],['sevnak','Wolfgang12'])
                 worker.sync()
                 self.assertEqual(commands,['whitelist reload'],'an unchanged whitelist is not reloaded again')

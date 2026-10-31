@@ -93,5 +93,6 @@ access; Jaime manages maintenance. Minecraft cards are shared by signed-in famil
 members.
 Members link their Minecraft accounts on `/mc/`: the Java username, Xbox gamertag and
 verified UUIDs live on `family_users`, the server whitelist follows those rows, and the
-FamilyNames plugin shows each player by their directory first name. See `deploy/family-hub/README.md` for database constraints, installation,
+FamilyNames plugin shows each player by their directory first name, in the tab list in
+the Discord role color of the member's `discord_user_id`. See `deploy/family-hub/README.md` for database constraints, installation,
 map activity collection, verification and rollback.
