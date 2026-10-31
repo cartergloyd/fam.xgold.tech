@@ -39,6 +39,7 @@ RCON_COMMANDS = ('whitelist reload', 'whitelist list')
 SYNC_INTERVAL = 60
 LOOKUP_RETRY = 600
 COLOR_TTL = 300
+COLOR_RETRY = 60
 LAST_SYNC = 0.0
 _lookup_backoff = {}
 _discord = {'guild': None, 'colors': {}, 'fetched': 0.0, 'failed': False}
@@ -192,7 +193,8 @@ def member_colors(roles,members):
     return colors
 
 def discord_colors(fetch=discord_json):
-    """Cached for five minutes. Failures keep the last known colors so names still sync."""
+    """Cached for five minutes. Failures keep the last known colors so names still sync, and are
+    retried after a minute (or after Discord's own retry-after on a rate limit)."""
     now=time.time()
     if now-_discord['fetched']<COLOR_TTL:return _discord['colors']
     _discord['fetched']=now
@@ -213,6 +215,11 @@ def discord_colors(fetch=discord_json):
         if _discord['failed']:print('Discord colors are available again.',flush=True)
         _discord['failed']=False
     except Exception as e:
+        retry=COLOR_RETRY
+        if isinstance(e,urllib.error.HTTPError) and e.code==429:
+            try:retry=max(5.0,float(e.headers.get('Retry-After') or json.loads(e.read().decode() or '{}').get('retry_after',retry)))
+            except (ValueError,TypeError,OSError):pass
+        _discord['fetched']=now-COLOR_TTL+retry
         if not _discord['failed']:print(f'Discord colors unavailable; keeping the last known ones. ({type(e).__name__})',flush=True)
         _discord['failed']=True
     return _discord['colors']

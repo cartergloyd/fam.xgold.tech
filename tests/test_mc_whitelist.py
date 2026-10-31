@@ -4,7 +4,9 @@ import pathlib
 import struct
 import subprocess
 import tempfile
+import time
 import unittest
+import urllib.error
 from unittest import mock
 
 spec=importlib.util.spec_from_file_location('worker',pathlib.Path(__file__).parents[1]/'deploy/family-hub/whitelist-worker.py')
@@ -72,6 +74,11 @@ class WhitelistTests(unittest.TestCase):
         def failing(path,token):raise OSError('down')
         with mock.patch.object(worker,'secret',return_value='token'),mock.patch.dict(worker._discord,{'guild':'g','colors':{'x':'#000001'},'fetched':0.0,'failed':False}):
             self.assertEqual(worker.discord_colors(failing),{'x':'#000001'},'a failure keeps the last known colors')
+            self.assertLess(worker._discord['fetched'],time.time()-worker.COLOR_TTL+worker.COLOR_RETRY+1,'and retries after a minute, not five')
+        def limited(path,token):raise urllib.error.HTTPError(path,429,'Too Many Requests',{'Retry-After':'7'},None)
+        with mock.patch.object(worker,'secret',return_value='token'),mock.patch.dict(worker._discord,{'guild':'g','colors':{},'fetched':0.0,'failed':False}):
+            worker.discord_colors(limited)
+            self.assertAlmostEqual(worker._discord['fetched'],time.time()-worker.COLOR_TTL+7,delta=1,msg='a rate limit waits for Discord\'s retry-after')
     def test_sync_writes_files_reloads_once_and_reports_uuids(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=pathlib.Path(tmp)
