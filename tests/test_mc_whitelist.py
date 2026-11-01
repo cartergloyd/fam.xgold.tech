@@ -53,10 +53,12 @@ class WhitelistTests(unittest.TestCase):
               {'id':'u2','name':'Alex','first_name':None,'status':'invited','mc_java_username':'Pending1','mc_java_uuid':None,'mc_bedrock_username':None,'mc_bedrock_uuid':None},
               {'id':'u3','name':'Sam','first_name':'Sam','status':'disabled','mc_java_username':'Gone','mc_java_uuid':'3b7a2a82-fb39-43b1-8f88-2d41f8a025ee','mc_bedrock_username':None,'mc_bedrock_uuid':None}]
         self.assertEqual(worker.desired_entries(rows),[{'uuid':'0b8959cd-9329-40d3-bc0e-1cc93d641a13','name':'Wolfgang12'},{'uuid':'00000000-0000-0000-0009-01fdfa563835','name':'.Player_One'}])
-        self.assertEqual(worker.names_payload(rows),{'00000000-0000-0000-0009-01fdfa563835':{'name':'Carter','color':None},'0b8959cd-9329-40d3-bc0e-1cc93d641a13':{'name':'Carter','color':None}})
+        self.assertEqual(worker.names_payload(rows),{'00000000-0000-0000-0009-01fdfa563835':{'name':'Carter','color':None,'photo':None},'0b8959cd-9329-40d3-bc0e-1cc93d641a13':{'name':'Carter','color':None,'photo':None}})
         rows[0]['discord_user_id']='212015321664585728'
+        rows[0]['photo']='5f0c2b9e-1d2a-4c55-9a43-7b0e6f1c2d3e'
         colored=worker.names_payload(rows,{'212015321664585728':'#663399'})
-        self.assertEqual(colored['0b8959cd-9329-40d3-bc0e-1cc93d641a13'],{'name':'Carter','color':'#663399'})
+        self.assertEqual(colored['0b8959cd-9329-40d3-bc0e-1cc93d641a13'],{'name':'Carter','color':'#663399','photo':'https://fam-api.xgold.tech/family/photos/u1?v=5f0c2b9e-1d2a-4c55-9a43-7b0e6f1c2d3e'})
+        self.assertEqual(colored['00000000-0000-0000-0009-01fdfa563835']['photo'],colored['0b8959cd-9329-40d3-bc0e-1cc93d641a13']['photo'],'both editions get the member\'s photo')
     def test_discord_role_color_is_the_highest_colored_role(self):
         roles=[{'id':'r1','name':'Carter','color':0x663399,'position':18},{'id':'r2','name':'Server Admin','color':0,'position':11},{'id':'r3','name':'Bridgeton Fire','color':0xe90d2a,'position':10}]
         members=[{'user':{'id':'212015321664585728'},'roles':['r3','r1','r2']},{'user':{'id':'490015743774162944'},'roles':[]},{'user':{'id':'1','bot':True},'roles':['missing']}]
@@ -89,7 +91,7 @@ class WhitelistTests(unittest.TestCase):
                 uuids=worker.sync()
                 self.assertEqual(uuids,{'3b7a2a82-fb39-43b1-8f88-2d41f8a025ee','0b8959cd-9329-40d3-bc0e-1cc93d641a13'})
                 self.assertEqual(commands,['whitelist reload'])
-                self.assertEqual(json.loads((root/'plugins/FamilyNames/names.json').read_text()),{'0b8959cd-9329-40d3-bc0e-1cc93d641a13':{'name':'Carter','color':None}})
+                self.assertEqual(json.loads((root/'plugins/FamilyNames/names.json').read_text()),{'0b8959cd-9329-40d3-bc0e-1cc93d641a13':{'name':'Carter','color':None,'photo':None}})
                 self.assertEqual([e['name'] for e in json.loads((root/'whitelist.json').read_text())],['sevnak','Wolfgang12'])
                 worker.sync()
                 self.assertEqual(commands,['whitelist reload'],'an unchanged whitelist is not reloaded again')

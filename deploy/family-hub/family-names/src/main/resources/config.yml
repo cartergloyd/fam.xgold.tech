@@ -12,3 +12,9 @@ rename-bedrock-profiles: true
 resolve-first-names-in-commands: true
 # Show each first name in the tab list in the member's Discord role color.
 color-tab-list: true
+# Post the Discord join and leave messages here instead of DiscordSRV (turn DiscordSRV's three
+# MinecraftPlayer*Message embeds off in its messages.yml), with the member's family-directory photo
+# as the icon; players without one keep DiscordSRV's skin avatar.
+discord-join-leave: true
+# A leave is held this long. Back in time, and neither the leave nor the rejoin is posted.
+rejoin-grace-seconds: 12

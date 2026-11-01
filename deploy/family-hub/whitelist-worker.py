@@ -7,9 +7,10 @@ endpoint stores it on their family_users row and queues a request. This worker t
     for Bedrock) and stores the account UUID on the member's family_users row;
  2. keeps whitelist.json in step with family_users, adding or renaming entries by UUID and
     never removing one, then asks the server to re-read it over LAN-only RCON; and
- 3. writes plugins/FamilyNames/names.json (account UUID -> first name and the member's
-    Discord role color) for the FamilyNames plugin, which shows family members by first
-    name in chat, the tab list and name tags.
+ 3. writes plugins/FamilyNames/names.json (account UUID -> first name, the member's
+    Discord role color and their directory photo URL) for the FamilyNames plugin, which shows
+    family members by first name in chat, the tab list and name tags, and uses the photo as
+    the icon on Discord join and leave messages.
 Only the fixed commands 'whitelist reload' and 'whitelist list' are ever sent over RCON.
 Player-typed names never become commands or shell arguments. The Discord bot token is read
 from the owner's secrets file for read-only guild lookups and never written anywhere.
@@ -35,6 +36,8 @@ WHITELIST = SERVER_DIR / 'whitelist.json'
 NAMES = SERVER_DIR / 'plugins' / 'FamilyNames' / 'names.json'
 SECRETS = pathlib.Path('/home/gold/secrets.env')
 DISCORD_API = 'https://discord.com/api/v10'
+# The directory extension's public photo route (publicUser's photo_url); ?v= changes with the photo.
+PHOTO_URL = 'https://fam-api.xgold.tech/family/photos/{id}?v={photo}'
 RCON_COMMANDS = ('whitelist reload', 'whitelist list')
 SYNC_INTERVAL = 60
 LOOKUP_RETRY = 600
@@ -163,7 +166,7 @@ def merge_whitelist(entries,desired):
     return result,changed
 
 def directory():
-    raw=sql("SELECT coalesce(json_agg(row_to_json(u)),'[]') FROM (SELECT id,name,first_name,status,discord_user_id,mc_java_username,mc_java_uuid,mc_bedrock_username,mc_bedrock_uuid FROM family_users WHERE mc_java_username IS NOT NULL OR mc_bedrock_username IS NOT NULL OR mc_java_uuid IS NOT NULL OR mc_bedrock_uuid IS NOT NULL ORDER BY name) u;")
+    raw=sql("SELECT coalesce(json_agg(row_to_json(u)),'[]') FROM (SELECT id,name,first_name,status,photo,discord_user_id,mc_java_username,mc_java_uuid,mc_bedrock_username,mc_bedrock_uuid FROM family_users WHERE mc_java_username IS NOT NULL OR mc_bedrock_username IS NOT NULL OR mc_java_uuid IS NOT NULL OR mc_bedrock_uuid IS NOT NULL ORDER BY name) u;")
     return json.loads(raw or '[]')
 
 def desired_entries(rows):
@@ -225,7 +228,7 @@ def discord_colors(fetch=discord_json):
     return _discord['colors']
 
 def names_payload(rows,colors=None):
-    """Account UUID -> {name, color} for every linked account of a member who is not disabled."""
+    """Account UUID -> {name, color, photo} for every linked account of a member who is not disabled."""
     colors=colors or {}
     names={}
     for row in rows:
@@ -233,8 +236,9 @@ def names_payload(rows,colors=None):
         first=(row.get('first_name') or str(row.get('name') or '').split(' ')[0]).strip()
         if not first:continue
         color=colors.get(str(row.get('discord_user_id') or ''))
+        photo=PHOTO_URL.format(id=row['id'],photo=urllib.parse.quote(str(row['photo']),safe='')) if row.get('photo') and row.get('id') else None
         for key in ('mc_java_uuid','mc_bedrock_uuid'):
-            if row.get(key):names[str(row[key]).lower()]={'name':first,'color':color}
+            if row.get(key):names[str(row[key]).lower()]={'name':first,'color':color,'photo':photo}
     return dict(sorted(names.items()))
 
 def store_account(user_id,edition,profile,typed):

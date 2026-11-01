@@ -36,9 +36,9 @@ import java.util.logging.Level;
 /**
  * Shows each family member by the first name stored in the family directory.
  *
- * names.json (account UUID -> {name, color}) is written by the family website's whitelist
- * worker; the color is the member's Discord role color. Chat uses the first name through the
- * display name, the tab list shows it in that color, and the player's profile is renamed, which
+ * names.json (account UUID -> {name, color, photo}) is written by the family website's whitelist
+ * worker; the color is the member's Discord role color, the photo their directory picture.
+ * Chat uses the first name through the display name, the tab list shows it in that color, and the player's profile is renamed, which
  * changes the name tag above their head, the server-list player sample and leave and death
  * messages. The join line is built by the server before any plugin runs, so it is rebuilt here.
  *
@@ -47,9 +47,12 @@ import java.util.logging.Level;
  * console, RCON and Discord's console relay, while the Minecraft name keeps working too. If that
  * table cannot be reached on a future server version, typed commands are rewritten instead.
  * Nothing touches permissions, ops or the whitelist, which are keyed by UUID.
+ *
+ * Discord: with DiscordSRV installed, the join and leave embeds are posted from here (see
+ * DiscordAnnouncer) so they can show the member's family-directory photo and skip quick rejoins.
  */
 public final class FamilyNames extends JavaPlugin implements Listener {
-    record Entry(String name, TextColor color) {}
+    record Entry(String name, TextColor color, String photo) {}
 
     private static final long CHECK_TICKS = 20L * 30;
     /** Commands whose text after the first argument is free text, which must not be rewritten. */
@@ -61,6 +64,7 @@ public final class FamilyNames extends JavaPlugin implements Listener {
     private boolean lookupWarned;
     private FileTime loaded;
     private Path file;
+    private DiscordAnnouncer discord;
 
     @Override
     public void onEnable() {
@@ -71,10 +75,20 @@ public final class FamilyNames extends JavaPlugin implements Listener {
             playersByName = lookupTable();
             if (playersByName == null) getLogger().info("First names in commands will be rewritten to Minecraft names.");
         }
+        if (getConfig().getBoolean("discord-join-leave", true) && getServer().getPluginManager().isPluginEnabled("DiscordSRV")) {
+            long grace = Math.max(0, getConfig().getLong("rejoin-grace-seconds", 12));
+            discord = new DiscordAnnouncer(this, grace * 20L);
+            getLogger().info("Posting Discord join and leave messages, with a " + grace + " s rejoin grace.");
+        }
         getServer().getPluginManager().registerEvents(this, this);
         getServer().getScheduler().runTaskTimer(this, () -> {
             if (reload()) getServer().getOnlinePlayers().forEach(this::apply);
         }, CHECK_TICKS, CHECK_TICKS);
+    }
+
+    @Override
+    public void onDisable() {
+        if (discord != null) discord.flush();
     }
 
     /** LOW priority so plugins that read the display name later in the same event (DiscordSRV) see the first name. */
@@ -99,6 +113,22 @@ public final class FamilyNames extends JavaPlugin implements Listener {
         }
         unalias(player);
         originals.remove(player.getUniqueId());
+    }
+
+    /** MONITOR, so the first name is already the display name and other plugins have had their say. */
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void announceJoin(PlayerJoinEvent event) {
+        if (discord != null) discord.joined(event.getPlayer(), photo(event.getPlayer()));
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void announceQuit(PlayerQuitEvent event) {
+        if (discord != null) discord.left(event.getPlayer(), photo(event.getPlayer()));
+    }
+
+    private String photo(Player player) {
+        Entry entry = names.get(player.getUniqueId());
+        return entry == null ? null : entry.photo();
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -185,18 +215,20 @@ public final class FamilyNames extends JavaPlugin implements Listener {
         }
     }
 
-    /** Accepts "First" or {"name": "First", "color": "#rrggbb"}. */
+    /** Accepts "First" or {"name": "First", "color": "#rrggbb", "photo": "https://..."}. */
     static Entry parse(JsonElement value) {
         if (value == null) return null;
-        String name = null, color = null;
+        String name = null, color = null, photo = null;
         if (value.isJsonPrimitive()) name = value.getAsString();
         else if (value.isJsonObject()) {
             JsonObject object = value.getAsJsonObject();
             if (object.has("name") && object.get("name").isJsonPrimitive()) name = object.get("name").getAsString();
             if (object.has("color") && object.get("color").isJsonPrimitive()) color = object.get("color").getAsString();
+            if (object.has("photo") && object.get("photo").isJsonPrimitive()) photo = object.get("photo").getAsString();
         }
         name = displayable(name);
-        return name == null ? null : new Entry(name, color == null ? null : TextColor.fromHexString(color));
+        if (photo != null && !photo.startsWith("https://")) photo = null;
+        return name == null ? null : new Entry(name, color == null ? null : TextColor.fromHexString(color), photo);
     }
 
     /** Profile names are 1-16 letters, digits or underscores, so the first name is trimmed to that. */
