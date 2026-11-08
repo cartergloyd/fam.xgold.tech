@@ -71,24 +71,24 @@
  bar.addEventListener('click',e=>{if(dragged||e.target.closest('[data-no-grab]'))return;goBelow();});
  // Places come from the Dynmap marker files, so a sign marker or anything else put on the map shows up here.
  // Signed in, they are first on the page and on the grab bar; signed out, they sit under the join instructions.
- const joinSection=$('join-server'),places=$('places'),peek=$('join-peek'),shelf=$('places-shelf'),grab=$('join-grab');
- const title=p=>p.world==='world'?p.name:p.name+' · '+WORLDS[p.world];
+ const joinSection=$('join-server'),places=$('places'),peek=$('join-peek'),barTitle=$('places-bar-title'),grab=$('join-grab');
+ const STAR='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>';
  // Going to a place pauses following, and brings the map back into view if the page was scrolled down.
  function goTo(pin){pinTarget={mode:'pin',...pin};following=false;followButton();lastTarget='';showMap();if(scrollY>40)scrollTo({top:0,behavior:behavior()});}
  function layoutPlaces(){
   signed?joinSection.before(places):joinSection.after(places);
-  const onBar=signed&&pins.length>0;peek.hidden=onBar;shelf.hidden=!onBar;
-  bar.setAttribute('aria-label',onBar?'Places':'Join the server');grab.setAttribute('aria-label',onBar?'Show all places':'Show the full join instructions');
+  // Signed in, the bar is just the list's title; tapping or pulling it opens the list below the map.
+  peek.hidden=signed;barTitle.hidden=!signed;
+  bar.setAttribute('aria-label',signed?'Named Locations':'Join the server');grab.setAttribute('aria-label',signed?'Show named locations':'Show the full join instructions');
  }
  function renderPlaces(){
-  const list=$('places-list');list.replaceChildren();shelf.replaceChildren();
-  if(!pins.length)list.append(H.node('p','No places yet.','empty'));
+  const list=$('places-list');list.replaceChildren();
+  if(!pins.length)list.append(H.node('p','No locations yet.','empty'));
   for(const p of pins){
    const wrap=H.node('div',undefined,'place-row'),row=H.node('button',undefined,'place'),on=starred.has(p.id);row.type='button';row.append(H.node('span',p.name,'place-name'),H.node('span',`${WORLDS[p.world]} · ${p.x}, ${p.y}, ${p.z}`,'place-where'));row.addEventListener('click',()=>goTo(p));wrap.append(row);
-   // Stars only show when the server can save them; without it Places still works.
-   if(starsOn){const star=H.node('button',on?'Starred':'Star','star');star.type='button';star.dataset.pin=p.id;star.setAttribute('aria-label','Star '+p.name);star.setAttribute('aria-pressed',String(on));star.addEventListener('click',()=>toggleStar(p,star));wrap.append(star);}
+   // The star only shows when the server can save it; without that the list still works.
+   if(starsOn){const star=H.node('button',undefined,'star');star.type='button';star.innerHTML=STAR;star.dataset.pin=p.id;star.setAttribute('aria-label','Star '+p.name);star.setAttribute('aria-pressed',String(on));star.addEventListener('click',()=>toggleStar(p,star));wrap.append(star);}
    list.append(wrap);
-   const chip=H.node('button',(on?'★ ':'')+title(p),'place');chip.type='button';if(on)chip.setAttribute('aria-label',title(p)+', starred');chip.addEventListener('click',()=>goTo(p));shelf.append(chip);
   }
   layoutPlaces();
  }

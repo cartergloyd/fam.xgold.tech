@@ -37,6 +37,7 @@ const atJoin=async page=>{const b=await page.locator('#join-server').boundingBox
 // A wheel or smooth scroll can still be settling, so keep returning to the top until the page stays there.
 async function toTop(page){for(let i=0,still=0;i<50&&still<3;i++){await page.evaluate(()=>scrollTo({top:0,behavior:'instant'}));await new Promise(r=>setTimeout(r,60));still=await scrollY(page)===0?still+1:0;}assert.equal(await scrollY(page),0,'the top of the page');}
 const barTop=async page=>(await page.locator('#join-bar').boundingBox()).y;
+const barHeight=async page=>(await page.locator('#join-bar').boundingBox()).height;
 test('the map is live and the grab bar is the way down',async()=>{
  const s=await server(),browser=await chromium.launch({args:['--no-sandbox']}),origin=`http://127.0.0.1:${s.address().port}`;
  try{
@@ -95,7 +96,10 @@ test('places: signed out they sit under the join instructions, and a tap takes t
   await page.goto(origin+'/mc/');await until(async()=>await page.locator('#places-list .place').count()===3,'the places to load');
   assert.deepEqual(await page.locator('#places-list .place-name').allTextContents(),['Base','Portal','Spawn']);
   assert.equal(await page.evaluate(()=>document.getElementById('join-server').nextElementSibling.id),'places');
-  assert.equal(await page.locator('#places-shelf').isVisible(),false);assert.equal(await page.locator('#join-peek').isVisible(),true);
+  assert.equal(await page.locator('#places-bar-title').isVisible(),false);assert.equal(await page.locator('#join-peek').isVisible(),true);
+  assert.equal(await page.locator('#places-title').textContent(),'Named Locations.');
+  // The how-to link opens the in-game steps.
+  assert.equal(await page.locator('.how-to li').first().isVisible(),false);await page.getByText('How to name a location!').click();assert.equal(await page.locator('.how-to li').first().isVisible(),true);assert.match(await page.locator('.how-to').textContent(),/\[dynmap\]/);
   // A place takes the map there, pauses following, says so, and brings the map back into view.
   await page.locator('#places-list .place',{hasText:'Base'}).click();
   await until(async()=>(await page.locator('#live-map').getAttribute('src')).includes('x=100'),'the map to move');
@@ -112,23 +116,24 @@ test('places: signed in they come first, ride on the grab bar, and the map follo
  const s=await server(),browser=await chromium.launch({args:['--no-sandbox']}),origin=`http://127.0.0.1:${s.address().port}`;
  try{
   const context=await browser.newContext({viewport:{width:1280,height:800}});await mock(context,{signed:true,online:players});const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(origin+'/mc/');await until(()=>page.locator('#places-shelf').isVisible(),'the places on the grab bar');
+  await page.goto(origin+'/mc/');await until(()=>page.locator('#places-bar-title').isVisible(),'the title on the grab bar');assert.equal(await page.locator('#places-bar-title').textContent(),'Named Locations.');
   assert.equal(await page.evaluate(()=>document.getElementById('places').nextElementSibling.id),'join-server');assert.equal(await page.locator('#join-peek').isVisible(),false);
   // A server without stars or last-seen still gets a working page, just without those extras.
   assert.equal(await page.locator('#places-list .star').count(),0);
   // The server would pick Alex (first alphabetically); a signed-in Carter gets his own player.
   await until(async()=>(await page.locator('#live-map').getAttribute('src')||'').includes('playername=Carter'),'the map to follow Carter');assert.match(await page.locator('#map-status').textContent(),/Following Carter/);
-  // A place on the bar takes the map there; the bar itself leads to the list, not the join instructions.
-  await page.locator('#places-shelf .place',{hasText:'Base'}).click();await until(async()=>(await page.locator('#live-map').getAttribute('src')).includes('x=100'),'the map to move');assert.match(await page.locator('#map-status').textContent(),/Showing Base/);
-  assert.equal(await scrollY(page),0);await page.mouse.click(640,await barTop(page)+10);
-  await until(async()=>{const b=await page.locator('#places').boundingBox();return b.y>=0&&b.y<=60;},'the places list');
+  // The bar is only the title: tapping it opens the list, not the join instructions. A location there takes the map up and over.
+  assert(await barHeight(page)<=80,'a small title bar');await page.mouse.click(640,await barTop(page)+10);
+  await until(async()=>{const b=await page.locator('#places').boundingBox();return b.y>=0&&b.y<=60;},'the list');
+  await page.locator('#places-list .place',{hasText:'Base'}).click();await until(async()=>(await page.locator('#live-map').getAttribute('src')).includes('x=100'),'the map to move');assert.match(await page.locator('#map-status').textContent(),/Showing Base/);
+  await until(async()=>await scrollY(page)===0,'the map to come back into view');
   // Following again goes back to my player.
   await toTop(page);await page.locator('#map-follow').click();await until(async()=>(await page.locator('#live-map').getAttribute('src')).includes('playername=Carter'),'the map to follow Carter again');
   assert.deepEqual(errors,[]);await context.close();
  }finally{await browser.close();await new Promise(r=>s.close(r));}
 });
 // Stars are per account and live on the server; they put a place first on the page and on the grab bar.
-test('stars: starring puts a place first, on the bar too, and it is remembered',async()=>{
+test('stars: starring puts a location first, in gold, and it is remembered',async()=>{
  const s=await server(),browser=await chromium.launch({args:['--no-sandbox']}),origin=`http://127.0.0.1:${s.address().port}`;
  try{
   const stars=new Set(),context=await browser.newContext({viewport:{width:1280,height:800}});await mock(context,{signed:true,online:players,stars});const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
@@ -137,8 +142,10 @@ test('stars: starring puts a place first, on the bar too, and it is remembered',
   assert.deepEqual(await names(),['Base','Portal','Spawn']);
   await page.getByRole('button',{name:'Star Spawn'}).click();
   await until(async()=>(await names())[0]==='Spawn','Spawn to move first');assert.deepEqual([...stars],['world:markers:_spawn_world']);
-  assert.equal(await page.getByRole('button',{name:'Star Spawn'}).getAttribute('aria-pressed'),'true');assert.equal(await page.getByRole('button',{name:'Star Spawn'}).textContent(),'Starred');
-  assert.equal((await page.locator('#places-shelf .place').first().textContent()),'★ Spawn');
+  assert.equal(await page.getByRole('button',{name:'Star Spawn'}).getAttribute('aria-pressed'),'true');
+  // Gold when starred, a gray outline when not.
+  const fill=name=>page.getByRole('button',{name}).locator('svg').evaluate(e=>getComputedStyle(e).fill);
+  assert.equal(await fill('Star Spawn'),'rgb(255, 196, 0)');assert.equal(await fill('Star Base'),'none');
   assert.equal(await page.evaluate(()=>document.activeElement.dataset.pin),'world:markers:_spawn_world','focus stays on the star after it moves');
   await page.reload();await until(async()=>(await names())[0]==='Spawn','the star to be remembered');
   await page.getByRole('button',{name:'Star Spawn'}).click();await until(async()=>(await names())[0]==='Base','the star to come off');assert.equal(stars.size,0);

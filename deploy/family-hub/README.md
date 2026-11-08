@@ -195,8 +195,8 @@ The /mc page lists every Dynmap marker (signs, `/dmarker`, anything on the map) 
 `/family/mc-map/tiles/_markers_/marker_<world>.json`. That needs no server change. Two extras are per member
 and need this install; the page hides them if the server does not have them yet.
 
-- **Stars** (`family_mc_pin_stars`, `GET/POST /hub/mc-stars`): a member stars places; starred ones come first
-  on the page and on the grab bar. A pin id is `world:set:marker`. Capped at 200 per member.
+- **Stars** (`family_mc_pin_stars`, `GET/POST /hub/mc-stars`): a member stars locations; starred ones come first
+  in the Named Locations list. A pin id is `world:set:marker`. Capped at 200 per member.
 - **Last seen** (`family_mc_last_seen`, `GET /hub/mc-last-seen`): `collect-activity.py` also keeps one row per
   Minecraft account key (lowercase name, no leading dot, no spaces or underscores; no UUID) with the spot it was
   last seen online, refreshed every minute. The endpoint looks up only the signed-in member's own linked
@@ -212,4 +212,5 @@ If the table is missing the collector still records activity and prints a hint. 
 backup install-backend.py prints and restart family Directus; the two tables can stay.
 
 Only ops can place `[dynmap]` sign markers by default (`dynmap.marker.sign: default: op`). Letting everyone
-needs a `permissions.yml` override and a Minecraft restart.
+needs a `permissions.yml` override and a Minecraft restart. The how-to under Named Locations in
+`mc/index.html` says only operators can place signs; delete that line once the permission is granted.

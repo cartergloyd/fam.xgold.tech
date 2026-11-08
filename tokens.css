@@ -36,6 +36,8 @@
   --away-tint: rgba(255, 159, 10, 0.22);
   --nav-bg: rgba(255, 255, 255, 0.8);
   --focus-ring: var(--accent);
+  --star: #ffc400;               /* starred named locations: fill and its darker edge */
+  --star-edge: #a86a00;
 
   /* ---- Typography ----------------------------------------------------- */
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
@@ -123,6 +125,8 @@
     --lake-tint: rgba(48, 209, 88, 0.26);
     --away-tint: rgba(255, 159, 10, 0.24);
     --nav-bg: rgba(0, 0, 0, 0.72);
+    --star: #ffd60a;
+    --star-edge: #ffd60a;
   }
 }
 
