@@ -1,24 +1,13 @@
 (() => {
  const H=window.familyHub,{$,api,notice}=H,BASE='https://fam-api.xgold.tech/family';
  let following=!matchMedia('(prefers-reduced-motion: reduce)').matches,latest,lastTarget='',checking=false,frameTimer;
- const frame=$('live-map'),mapWrap=frame.parentElement,exploreButton=$('map-explore'),activateMap=$('map-activate');
- // The map fills the first screen, so it stays inert (the wheel and touch scroll the page) until it is clicked or tapped.
- let exploring=false;
- function setExploring(on){
-  const live=!!frame.getAttribute('src');exploring=on&&live;
-  mapWrap.toggleAttribute('data-exploring',exploring);exploreButton.hidden=!live;activateMap.hidden=!live||exploring;
-  exploreButton.textContent=exploring?'Done':'Zoom and pan';exploreButton.setAttribute('aria-label',exploring?'Done, go back to scrolling the page':'Zoom and pan the map');
- }
- activateMap.addEventListener('click',()=>{setExploring(true);frame.focus();});
- exploreButton.addEventListener('click',()=>setExploring(!exploring));
- // Scrolling the map out of view (the Join link, the scrollbar, the keyboard) hands scrolling back to the page.
- new IntersectionObserver(([entry])=>{if(entry.intersectionRatio<.5)setExploring(false);},{threshold:.5}).observe(mapWrap.closest('.map-hero'));
+ const frame=$('live-map');
  function showMap(){
   if(!latest?.online)return;const f=latest.focus;
   const target=following&&f.mode==='player'?'player:'+f.account:'area:'+f.world+':'+Math.round(f.x)+':'+Math.round(f.z);
   const params=new URLSearchParams({worldname:f.world||'world',mapname:f.world==='world'?'surface':'flat',x:Math.round(f.x||0),y:Math.round(f.y||64),z:Math.round(f.z||0),zoom:'5',nogui:'false',nopanel:'true',nocompass:'true'});
   if(following&&f.mode==='player')params.set('playername',f.account);
-  if(target!==lastTarget){frame.src=BASE+'/mc-map/?'+params;lastTarget=target;setExploring(exploring);$('map-placeholder').hidden=false;$('map-message').textContent='Opening the live map…';clearTimeout(frameTimer);frameTimer=setTimeout(()=>{$('map-message').textContent='The map is taking a little longer. Use “Open map” to try it directly.';},20000);}
+  if(target!==lastTarget){frame.src=BASE+'/mc-map/?'+params;lastTarget=target;$('map-placeholder').hidden=false;$('map-message').textContent='Opening the live map…';clearTimeout(frameTimer);frameTimer=setTimeout(()=>{$('map-message').textContent='The map is taking a little longer. Use “Open map” to try it directly.';},20000);}
   $('open-map').href=BASE+'/mc-map/?'+new URLSearchParams({...Object.fromEntries(params),nogui:'false',nopanel:'false'});
  }
  function followButton(){$('map-follow').textContent=following?'Pause following':'Follow players';$('map-follow').setAttribute('aria-pressed',String(following));}
@@ -36,14 +25,38 @@
 
  const instructions=$('platform-instructions'),platform=$('join-platform'),whitelistForm=$('whitelist-form');
  let accounts=[],whitelistPoll;
- const featured='Mineville, Lifeboat, Enchanted, Galaxite, or The Hive';
+ const featured='Mineville, Lifeboat, Enchanted, Galaxite, or The Hive',JAVA='185.172.53.60:25565',BEDROCK='185.172.53.60',FRIEND='GoldServer2951',PS_DNS='45.55.68.52';
  function paragraph(text,cls){const p=H.node('p',text,cls);instructions.append(p);return p;}
  function steps(items,parent=instructions){const list=H.node('ol');for(const text of items)list.append(H.node('li',text));parent.append(list);}
- function address(bedrock=false){const p=H.node('p');p.append(H.node('code',bedrock?'185.172.53.60':'185.172.53.60:25565'));if(bedrock)p.append(document.createElement('br'),H.node('span','Port: 19133'));instructions.append(p);const b=H.node('button',bedrock?'Copy Bedrock address':'Copy Java address','quiet');b.type='button';b.addEventListener('click',async()=>{const text=bedrock?'185.172.53.60':'185.172.53.60:25565';try{await navigator.clipboard.writeText(text);b.textContent='Copied';setTimeout(()=>b.textContent=bedrock?'Copy Bedrock address':'Copy Java address',2500);}catch{b.textContent=text;}});instructions.append(b);}
+ function address(bedrock=false){const p=H.node('p');p.append(H.node('code',bedrock?BEDROCK:JAVA));if(bedrock)p.append(document.createElement('br'),H.node('span','Port: 19133'));instructions.append(p);const b=H.node('button',bedrock?'Copy Bedrock address':'Copy Java address','quiet');b.type='button';b.addEventListener('click',async()=>{const text=bedrock?BEDROCK:JAVA;try{await navigator.clipboard.writeText(text);b.textContent='Copied';setTimeout(()=>b.textContent=bedrock?'Copy Bedrock address':'Copy Java address',2500);}catch{b.textContent=text;}});instructions.append(b);}
  function dns(kind,parent=instructions){
-  const primary=kind==='playstation'?'45.55.68.52':'104.238.130.180';
+  const primary=kind==='playstation'?PS_DNS:'104.238.130.180';
   steps([kind==='switch'?'System Settings → Internet → Internet Settings → your network → Change Settings → DNS Settings → Manual.':'Open your console’s Internet Settings and choose manual DNS.',`Set primary DNS to ${primary} and secondary DNS to 8.8.8.8.`,`Save and reconnect. In Minecraft’s Servers tab, join ${featured}.`,'In BedrockConnect, enter 185.172.53.60, port 19133.'],parent);
  }
+ // The join grab bar sits on the bottom of the live map, so the map itself can be dragged freely.
+ // Tapping the bar, or pulling it up, scrolls to the full instructions below.
+ const peeks={java:[JAVA,'Multiplayer → Add Server'],bedrock:[BEDROCK,'Port 19133 · Servers → Add Server'],xbox:[FRIEND,'Add as an Xbox friend'],switch:[FRIEND,'Add as a Microsoft / Xbox friend'],playstation:[PS_DNS,'Primary DNS · secondary 8.8.8.8']};
+ const bar=$('join-bar'),peekSelect=$('join-peek-platform'),peekLine=$('join-line'),peekCopy=$('join-copy');let peekValue='',peekTimer;
+ peekSelect.append(...[...platform.options].map(o=>o.cloneNode(true)));
+ function renderPeek(kind){const [value,hint]=peeks[kind];peekValue=value;peekSelect.value=kind;peekLine.replaceChildren(H.node('code',value),H.node('span',hint,'hint'));clearTimeout(peekTimer);peekCopy.textContent='Copy';peekCopy.setAttribute('aria-label','Copy '+value);bar.hidden=false;}
+ peekSelect.addEventListener('change',()=>{platform.value=peekSelect.value;renderPlatform();});
+ peekCopy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(peekValue);peekCopy.textContent='Copied';}catch{peekCopy.textContent='Could not copy';}clearTimeout(peekTimer);peekTimer=setTimeout(()=>peekCopy.textContent='Copy',2500);});
+ const reduced=matchMedia('(prefers-reduced-motion: reduce)'),behavior=()=>reduced.matches?'auto':'smooth',goJoin=()=>$('join-server').scrollIntoView({behavior:behavior(),block:'start'});
+ let drag=null,dragged=false;
+ bar.addEventListener('pointerdown',e=>{if(e.button||e.target.closest('[data-no-grab]'))return;drag={y:e.clientY,top:scrollY,id:e.pointerId,at:e.timeStamp,moved:false};bar.setPointerCapture(e.pointerId);});
+ bar.addEventListener('pointermove',e=>{
+  if(!drag||e.pointerId!==drag.id)return;const dy=drag.y-e.clientY;
+  if(!drag.moved){if(Math.abs(dy)<6)return;drag.moved=dragged=true;bar.setAttribute('data-dragging','');}
+  scrollTo({top:Math.max(0,drag.top+dy),behavior:'instant'});
+ });
+ // The bar stays under the pointer while the page follows it. On release the page settles on the map or on the instructions.
+ function release(e){
+  if(!drag||e.pointerId!==drag.id)return;const d=drag,dy=d.y-e.clientY;drag=null;bar.removeAttribute('data-dragging');
+  if(!d.moved)return;setTimeout(()=>dragged=false,50);
+  if(e.type==='pointerup'&&(dy>90||(dy>24&&dy/Math.max(1,e.timeStamp-d.at)>.6)))goJoin();else scrollTo({top:0,behavior:behavior()});
+ }
+ bar.addEventListener('pointerup',release);bar.addEventListener('pointercancel',release);
+ bar.addEventListener('click',e=>{if(dragged||e.target.closest('[data-no-grab]'))return;goJoin();});
  function renderPlatform(){
   instructions.replaceChildren();const selected=platform.value;
   if(selected==='java'){paragraph('In Minecraft, choose Multiplayer → Add Server.');address();}
@@ -57,6 +70,7 @@
   }
   else dns(selected);
   if(!['java','bedrock'].includes(selected))paragraph('If custom DNS stops working, restore automatic DNS and try again later.','caption');
+  renderPeek(selected);
   const edition=selected==='java'?'java':'bedrock';if(whitelistForm.elements.edition.value!==edition)whitelistForm.elements.username.value='';whitelistForm.elements.edition.value=edition;editionHint();renderAccounts();
  }
  function editionHint(){const bedrock=whitelistForm.elements.edition.value==='bedrock';$('whitelist-name-label').firstChild.textContent=bedrock?'Xbox gamertag':'Minecraft username';$('whitelist-hint').textContent=bedrock?'Enter your Xbox gamertag exactly, including spaces. Leave off the server’s dot prefix.':'Use your Java username, not your email.';}

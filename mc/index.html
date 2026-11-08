@@ -2,13 +2,16 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#161617">
 <title>Minecraft · Gold Family</title><meta name="description" content="The family Minecraft world, live map, join instructions, and shared builds.">
-<link rel="stylesheet" href="/family-hub.css?v=1"><link rel="stylesheet" href="/mc/page.css?v=3"><link rel="stylesheet" href="/ribbon.css?v=6"><link rel="stylesheet" href="/family-account.css?v=3">
+<link rel="stylesheet" href="/family-hub.css?v=1"><link rel="stylesheet" href="/mc/page.css?v=4"><link rel="stylesheet" href="/ribbon.css?v=6"><link rel="stylesheet" href="/family-account.css?v=3">
 <script src="/family-directory.js?v=2"></script><script src="/profile-match.js?v=1"></script><script src="/family-account.js?v=2"></script><script src="/ribbon.js?v=6" defer></script>
-<script src="/family-hub.js?v=1" defer></script><script src="/mc/page.js?v=4" defer></script></head><body data-hub="mc"><family-ribbon></family-ribbon><main class="mc-main">
+<script src="/family-hub.js?v=1" defer></script><script src="/mc/page.js?v=5" defer></script></head><body data-hub="mc"><family-ribbon></family-ribbon><main class="mc-main">
 <section class="map-hero" aria-labelledby="map-title">
 <h1 id="map-title" class="sr-only">Minecraft live map</h1>
-<div class="map-wrap"><iframe id="live-map" title="Live map of the Family Forever Minecraft server" loading="eager" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin"></iframe><div id="map-placeholder" class="map-placeholder"><p id="map-message" role="status">Finding the world…</p></div><div id="map-activate" class="map-activate" title="Click to zoom and pan the map" aria-hidden="true" hidden></div></div>
-<div class="map-tools"><div class="map-caption"><p id="map-status" role="status" aria-live="polite">Checking live map.</p><button type="button" id="map-explore" aria-label="Zoom and pan the map" hidden>Zoom and pan</button><a href="#join-server">Join ↓</a></div><div class="row"><button id="map-follow" aria-pressed="true">Pause following</button><a id="open-map" class="button" href="https://fam-api.xgold.tech/family/mc-map/" target="_blank" rel="noopener">Open map ↗</a></div></div>
+<div class="map-wrap"><iframe id="live-map" title="Live map of the Family Forever Minecraft server" loading="eager" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin"></iframe><div id="map-placeholder" class="map-placeholder"><p id="map-message" role="status">Finding the world…</p></div></div>
+<div class="map-dock">
+<div class="map-tools"><div class="map-caption"><p id="map-status" role="status" aria-live="polite">Checking live map.</p></div><div class="row"><button id="map-follow" aria-pressed="true">Pause following</button><a id="open-map" class="button" href="https://fam-api.xgold.tech/family/mc-map/" target="_blank" rel="noopener">Open map ↗</a></div></div>
+<section id="join-bar" class="join-bar" aria-label="Join the server" hidden><button type="button" id="join-grab" class="join-grab" aria-controls="join-server" aria-label="Show the full join instructions"><span class="join-handle" aria-hidden="true"></span></button><div class="join-peek"><select id="join-peek-platform" aria-label="Your platform" data-no-grab></select><p id="join-line" class="join-line"></p><button type="button" id="join-copy" class="quiet" data-no-grab>Copy</button></div></section>
+</div>
 </section>
 <div class="mc-content">
 <section id="join-server" class="join-widget panel" aria-labelledby="join-title">
