@@ -214,3 +214,12 @@ backup install-backend.py prints and restart family Directus; the two tables can
 Only ops can place `[dynmap]` sign markers by default (`dynmap.marker.sign: default: op`). Letting everyone
 needs a `permissions.yml` override and a Minecraft restart. The how-to under Named Locations in
 `mc/index.html` says only operators can place signs; delete that line once the permission is granted.
+
+## Map bubbles
+
+`map-bubbles.js` and `map-bubbles.css` make Dynmap draw named locations as Find My style emoji pins and players as rings around their
+family photo. They run inside the proxied Dynmap page: `minecraft.js` adds `<link href="family-map.css">` and `<script src="family-map.js">`
+to the map's index.html and serves both files itself, and only when `hub-map-bubbles.js` and `hub-map-bubbles.css` sit beside
+`hub-minecraft.js`. Without them the map is plain Dynmap, so install order does not matter. `install-backend.py` copies them; restart
+family Directus afterwards. The emoji and color tables in `map-bubbles.js` mirror `mc/page.js`; change both together.
+Tests: `tests/mc-map-assets.mjs` (proxy) and `tests/mc-map-bubbles.mjs` (the script in a page shaped like Dynmap's).

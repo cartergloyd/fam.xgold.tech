@@ -34,7 +34,8 @@ const inMap=page=>page.frame({url:/mc-map/}).evaluate(()=>({wheels:window.wheels
 async function until(check,what){for(let i=0;i<50;i++){if(await check())return;await new Promise(r=>setTimeout(r,100));}assert.fail('Timed out waiting for '+what);}
 const scrollY=page=>page.evaluate(()=>window.scrollY);
 const tab=(page,name)=>page.locator(`.tab[data-tab=${name}]`);
-const sheetOpen=page=>page.locator('#sheet').isVisible();
+// Open is the dock's state; the sheet fades in and out, so its own visibility lags it by a moment.
+const sheetOpen=page=>page.locator('#dock').evaluate(e=>e.hasAttribute('data-open'));
 const src=async page=>await page.locator('#live-map').getAttribute('src')||'';
 async function launch(){const s=await server(),browser=await chromium.launch({args:['--no-sandbox']});return {s,browser,origin:`http://127.0.0.1:${s.address().port}`,done:async()=>{await browser.close();await new Promise(r=>s.close(r));}};}
 const names=(page,section)=>page.locator(`#people-list .row-item:${section}`).locator('.row-name').allTextContents();
@@ -52,13 +53,22 @@ test('the map fills the screen and is live; the island opens and closes the shee
   const seen=await inMap(page);assert(seen.downs>0&&seen.drags>0,'the map to get the drag');
   await page.mouse.wheel(0,500);await until(async()=>(await inMap(page)).wheels>0,'the map to get the wheel');assert.equal(await scrollY(page),0);
   // The island: three tabs, centered at the bottom, each at least 44px tall, over glass.
-  const island=await page.locator('#island').boundingBox();assert(Math.abs(island.x+island.width/2-640)<=1&&island.y+island.height<=800&&island.y+island.height>=770,JSON.stringify(island));
+  const pill=await page.locator('#dock').boundingBox();assert(Math.abs(pill.width-300)<=1&&Math.abs(pill.x+pill.width/2-640)<=1&&Math.abs(800-(pill.y+pill.height)-48)<=1,`a centered pill 48px from the bottom, got ${JSON.stringify(pill)}`);
   assert.deepEqual(await page.locator('.tab span').allTextContents(),['Locations','Construction','Join']);
   for(const t of await page.locator('.tab').all())assert((await t.boundingBox()).height>=44);
-  assert((await page.locator('#island').evaluate(e=>getComputedStyle(e).backdropFilter||'')).includes('blur'),'glass blur on the island');
+  assert((await page.locator('#dock').evaluate(e=>getComputedStyle(e).backdropFilter||'')).includes('blur'),'glass blur on the dock');
   // A tab opens its sheet, titled for it; the same tab, Escape or the close button closes it.
   assert.equal(await sheetOpen(page),false);assert.match(await page.locator('#map-status').textContent(),/No one online/);assert.equal(await page.locator('#map-status').isVisible(),true);
-  await tab(page,'people').click();assert.equal(await sheetOpen(page),true);assert.equal(await page.locator('#sheet-title').textContent(),'People & Locations');assert.equal(await tab(page,'people').getAttribute('aria-pressed'),'true');assert.equal(await page.locator('#map-status').isVisible(),false);
+  await tab(page,'people').click();assert.equal(await sheetOpen(page),true);assert.equal(await page.locator('#sheet-title').textContent(),'People & Locations');
+  // The pill itself expands into the sheet (same element, tabs still at its bottom) to the width of the fantasy football page's widgets:
+  // the 1100px column minus a 48px gutter each side. It stays short, and the map's center moves halfway between the site banner and the sheet.
+  await page.waitForTimeout(800);assert.equal(await page.locator('#sheet').isVisible(),true);const open=await page.locator('#dock').boundingBox(),ribbon=await page.locator('.family-ribbon').boundingBox(),tabsBox=await page.locator('#island').boundingBox();
+  assert(Math.abs(open.width-1004)<=1&&Math.abs(open.x-138)<=1&&Math.abs(800-(open.y+open.height)-48)<=1,`the expanded dock, got ${JSON.stringify(open)}`);
+  assert(open.height<=800*.44+70+2,`a short sheet, got ${open.height}px`);assert(Math.abs(tabsBox.y+tabsBox.height-(open.y+open.height))<=8,'the tabs stay at the bottom of the dock');
+  const moved=await page.locator('#live-map').boundingBox();assert(Math.abs(moved.y+moved.height/2-(ribbon.y+ribbon.height+open.y)/2)<=2,`the map centered between the banner and the sheet, got ${JSON.stringify(moved)}`);
+  assert(await page.evaluate(()=>{const b=document.querySelector('#sheet .sheet-body');return b.scrollHeight>=b.clientHeight;}));
+  await tab(page,'people').click();await page.waitForTimeout(800);assert.deepEqual(Object.values(await page.locator('#live-map').boundingBox()),[0,0,1280,800],'the map goes back to full screen');
+  await tab(page,'people').click();assert.equal(await tab(page,'people').getAttribute('aria-pressed'),'true');assert.equal(await page.locator('#map-status').isVisible(),false);
   await tab(page,'people').click();assert.equal(await sheetOpen(page),false);assert.equal(await page.locator('#map-status').isVisible(),true);
   await tab(page,'people').click();await page.keyboard.press('Escape');assert.equal(await sheetOpen(page),false);
   await tab(page,'people').click();await page.locator('#sheet-close').click();assert.equal(await sheetOpen(page),false);
@@ -83,12 +93,12 @@ test('on a phone the island and sheet fit, the map takes touch, and a tapped pla
   const phone=await browser.newContext({viewport:{width:375,height:700},hasTouch:true,isMobile:true});await mock(phone,{online:players});const m=await phone.newPage();
   await m.goto(origin+'/mc/');await m.locator('#island').waitFor({state:'visible'});await until(()=>m.frame({url:/mc-map/}),'the map frame on the phone');
   assert(await m.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
-  const island=await m.locator('#island').boundingBox();assert(island.x>=0&&island.x+island.width<=375&&island.y+island.height<=700,JSON.stringify(island));
+  const pill=await m.locator('#dock').boundingBox();assert(Math.abs(pill.x-22)<=1&&Math.abs(pill.width-331)<=1&&Math.abs(700-(pill.y+pill.height)-22)<=1,`a pill 22px from the sides and bottom, got ${JSON.stringify(pill)}`);
   const cdp=await phone.newCDPSession(m),touch=(type,y,x=190)=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints:type==='touchEnd'?[]:[{x,y}]});
   await touch('touchStart',250);for(let y=250;y<=310;y+=10)await touch('touchMove',y);await touch('touchEnd',0);
   const touched=await inMap(m);assert(touched.downs>0&&touched.drags>0,'the map to get the touch drag');assert.equal(await scrollY(m),0);
-  await tab(m,'people').tap();await until(()=>sheetOpen(m),'the sheet');await m.waitForTimeout(700);// let the rise animation finish before measuring
-  const sheet=await m.locator('#sheet').boundingBox();assert(sheet.x>=0&&sheet.x+sheet.width<=375&&sheet.y>=95&&sheet.y+sheet.height<=island.y,`a sheet that fits between the ribbon and the island, got ${JSON.stringify(sheet)}`);
+  await tab(m,'people').tap();await until(()=>sheetOpen(m),'the sheet');await m.waitForTimeout(800);// let the expansion finish before measuring
+  const open=await m.locator('#dock').boundingBox();assert(Math.abs(open.x-8)<=1&&Math.abs(open.width-359)<=1&&Math.abs(700-(open.y+open.height)-8)<=1&&open.y>=95,`a sheet 8px from the sides and bottom, below the banner, got ${JSON.stringify(open)}`);assert(open.height<=700*.44+70+2,`a short sheet, got ${open.height}px`);
   assert(await m.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   await m.locator('#people-list .row-main',{hasText:'Base'}).tap();await until(async()=>(await src(m)).includes('x=100'),'the map to move');assert.equal(await sheetOpen(m),false,'the sheet closes so the map shows');
   await phone.close();

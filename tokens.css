@@ -89,6 +89,8 @@
   --container-wide: 1440px;
   --gutter: 22px;
   --nav-height: 48px;
+  --page-gutter: clamp(16px, 5vw, 48px);  /* side margin of the fantasy football page's widgets */
+  --page-max: 1100px;                     /* and the width of the column they sit in */
 
   /* ---- Spacing -------------------------------------------------------- */
   --space-1: 4px;

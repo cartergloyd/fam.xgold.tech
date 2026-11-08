@@ -1,4 +1,13 @@
+import {readFileSync} from 'node:fs';
 const BASE='http://192.168.1.148:8123';
+// The bubble script and stylesheet sit beside this file once installed (hub-map-bubbles.js/.css). Without them the map is plain Dynmap.
+const assets={};
+function asset(kind,options){
+ if(options.assets&&kind in options.assets)return options.assets[kind];
+ if(!(kind in assets)){try{assets[kind]=readFileSync(new URL('./hub-map-bubbles.'+kind,import.meta.url),'utf8');}catch{assets[kind]=null;}}
+ return assets[kind];
+}
+export const injectBubbles=html=>html.replace('</head>','<link rel="stylesheet" href="family-map.css"></head>').replace('</body>','<script src="family-map.js"></script></body>');
 export function chooseFocus(players,hotspot,spawn={world:'world',x:0,y:64,z:0}){
  const online=players.filter(p=>!p.ishidden&&typeof p.account==='string'&&Number.isFinite(p.x)&&Number.isFinite(p.z)).sort((a,b)=>a.account.localeCompare(b.account));
  return online.length?{mode:'player',...online[0]}:hotspot?{mode:hotspot.source==='players'?'activity':'chunks',...hotspot,y:64}:{mode:'spawn',...spawn};
@@ -21,7 +30,8 @@ export default function minecraft(router,{database},options={}){
  router.get('/mc-status',async(_req,res)=>{res.set('Cache-Control','no-store');try{res.json(await state());}catch{res.status(503).json({online:false,error:'The live map is temporarily unavailable. Join instructions and builds are still here.'});}});
  router.use('/mc-map',async(req,res)=>{
   if(req.method!=='GET')return res.sendStatus(405);
-  const raw=req.url.split('?')[0];
+  const raw=req.url.split('?')[0],own=raw.match(/^\/family-map\.(js|css)$/);
+  if(own){const body=asset(own[1],options);if(body==null)return res.sendStatus(404);res.set('Content-Type',own[1]==='js'?'text/javascript':'text/css');res.set('Cache-Control','public, max-age=60');return res.send(body);}
   // Fixed upstream, read-only resources; no Dynmap chat, login, or admin actions.
   if(raw.includes('..')||raw.includes('%')||!/^\/(?:$|index\.html$|(?:js|css|images|tiles)\/[\w./@+-]+$|standalone\/(?:config\.js|dynmap_[\w.-]+\.json)$|version\.js$|up\/configuration$|up\/world\/[\w-]+\/\d+$)/.test(raw))return res.sendStatus(404);
   try{
@@ -29,7 +39,10 @@ export default function minecraft(router,{database},options={}){
    res.status(r.status);res.set('Content-Type',r.headers.get('Content-Type')||'application/octet-stream');
    res.set('Cache-Control',/\.(png|jpg|webp|css|js)(\?|$)/.test(req.url)?'public, max-age=60':'no-store');
    res.removeHeader('X-Frame-Options');res.set('Content-Security-Policy',"frame-ancestors https://fam.xgold.tech http://127.0.0.1:* http://localhost:*");
-   res.send(Buffer.from(await r.arrayBuffer()));
+   let body=Buffer.from(await r.arrayBuffer());
+   // The map page itself gets the bubble stylesheet and script, only when both are installed.
+   if(r.ok&&(raw==='/'||raw==='/index.html')&&asset('js',options)!=null&&asset('css',options)!=null)body=Buffer.from(injectBubbles(body.toString('utf8')));
+   res.send(body);
   }catch{res.status(503).send('Live map temporarily unavailable.');}
  });
 }

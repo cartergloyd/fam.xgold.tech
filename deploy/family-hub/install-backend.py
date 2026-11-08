@@ -34,7 +34,7 @@ for root in roots:
 for index,(root,body) in enumerate(prepared):
     dest=backup/str(index)
     shutil.copytree(root,dest)
-    for name,target in [('endpoint.js','family-hub.js'),('hub-session.js','hub-session.js'),('minecraft.js','hub-minecraft.js'),('whitelist.js','hub-whitelist.js'),('places.js','hub-places.js')]:
+    for name,target in [('endpoint.js','family-hub.js'),('hub-session.js','hub-session.js'),('minecraft.js','hub-minecraft.js'),('whitelist.js','hub-whitelist.js'),('places.js','hub-places.js'),('map-bubbles.js','hub-map-bubbles.js'),('map-bubbles.css','hub-map-bubbles.css')]:
         shutil.copy2(source/name,root/target)
     (root/'index.js').write_text(body)
 compose=Path('/home/gold/server-platform/public-apps/compose.yml')

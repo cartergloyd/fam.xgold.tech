@@ -41,24 +41,35 @@
  // Pausing, or resuming, always drops a tapped player or location and goes back to the usual choice.
  $('map-follow').addEventListener('click',()=>{following=!following;pinTarget=null;picked=null;lastTarget='';followButton();showMap();});followButton();
 
- // The island and its sheet. One sheet at a time; the tab that opened it closes it. Tapping a player or location on a narrow screen
- // closes it too, so the map is what you see.
- const sheet=$('sheet'),tabs=[...document.querySelectorAll('.tab')],views=[...document.querySelectorAll('.sheet-view')],narrow=matchMedia('(max-width:760px)');
+ // The island expands into its sheet: one glass container grows from a pill into a card with the tabs staying at the bottom. One view
+ // at a time; the tab that opened it closes it. Tapping a player or location on a narrow screen closes it too, so the map is what you see.
+ const dock=$('dock'),sheet=$('sheet'),island=$('island'),tabs=[...document.querySelectorAll('.tab')],views=[...document.querySelectorAll('.sheet-view')],narrow=matchMedia('(max-width:760px)'),wrap=document.querySelector('.map-wrap'),probe=$('dock-probe');
  const TITLES={people:'People & Locations',build:'Construction',join:'Join the server'};let lastTab=null;
+ const isOpen=()=>dock.hasAttribute('data-open');
+ // Sheets stay short: the header plus the content, capped at 44% of the screen (or 420px), and the body scrolls past that.
+ // The map is moved so its center sits halfway between the bottom of the site banner and the top of the sheet.
+ function fit(){
+  if(!isOpen())return;
+  const head=sheet.querySelector('.sheet-head').offsetHeight,panel=Math.round(Math.min(head+sheet.querySelector('.sheet-body').scrollHeight,innerHeight*.44,420));
+  dock.style.setProperty('--panel-h',panel+'px');
+  const banner=document.querySelector('.family-ribbon')?.getBoundingClientRect().bottom||0,top=probe.getBoundingClientRect().bottom-panel-island.offsetHeight;
+  wrap.style.top=(banner+top-innerHeight)+'px';
+ }
  function openSheet(name){
-  sheet.dataset.view=name;$('sheet-title').textContent=TITLES[name];
+  dock.dataset.view=name;$('sheet-title').textContent=TITLES[name];
   for(const v of views)v.hidden=v.dataset.for!==name;
   for(const t of tabs){t.setAttribute('aria-pressed',String(t.dataset.tab===name));if(t.dataset.tab===name)lastTab=t;}
-  sheet.hidden=false;document.body.setAttribute('data-sheet','');$('sheet-title').focus({preventScroll:true});
+  sheet.querySelector('.sheet-body').scrollTop=0;dock.setAttribute('data-open','');document.body.setAttribute('data-sheet','');fit();$('sheet-title').focus({preventScroll:true});
  }
  function closeSheet(){
-  if(sheet.hidden)return;sheet.hidden=true;document.body.removeAttribute('data-sheet');
+  if(!isOpen())return;dock.removeAttribute('data-open');document.body.removeAttribute('data-sheet');wrap.style.top='';
   for(const t of tabs)t.setAttribute('aria-pressed','false');
   lastTab?.focus({preventScroll:true});
  }
- for(const t of tabs)t.addEventListener('click',()=>!sheet.hidden&&sheet.dataset.view===t.dataset.tab?closeSheet():openSheet(t.dataset.tab));
+ for(const t of tabs)t.addEventListener('click',()=>isOpen()&&dock.dataset.view===t.dataset.tab?closeSheet():openSheet(t.dataset.tab));
  $('sheet-close').addEventListener('click',closeSheet);$('sheet-grab').addEventListener('click',closeSheet);
- document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!sheet.hidden&&!document.querySelector('dialog[open]'))closeSheet();});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&isOpen()&&!document.querySelector('dialog[open]'))closeSheet();});
+ const refit=new ResizeObserver(fit);for(const v of views)refit.observe(v);addEventListener('resize',fit);
  // Swiping the header down dismisses the sheet.
  const head=sheet.querySelector('.sheet-head');let swipe=null;
  head.addEventListener('pointerdown',e=>{if(e.target.closest('.sheet-close'))return;swipe={y:e.clientY,id:e.pointerId};head.setPointerCapture(e.pointerId);});

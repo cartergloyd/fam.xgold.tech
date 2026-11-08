@@ -1,10 +1,14 @@
 /* The map is the whole screen. Everything else floats over it as glass: map buttons, a status chip, a sheet, and the island of tabs.
    Glass is only for these floating controls; the lists and forms inside a sheet are ordinary content. Tokens live in tokens.css. */
-:root { --ribbon-h:95px; --island-h:68px; --edge:16px; }
+:root { --ribbon-h:95px; --island-h:70px; --edge:16px;
+ /* The dock is one glass container: a pill when closed, a card when open. Phones follow Find My (pill 22px from the edges, open sheet 8px);
+    wider screens follow the fantasy football page's widgets (its gutter and 1100px column). */
+ --closed-w:300px; --closed-bottom:var(--page-gutter);
+ --open-w:min(100vw - 2 * var(--page-gutter), var(--page-max) - 2 * var(--page-gutter)); --open-bottom:var(--page-gutter); }
 body[data-hub="mc"] { overflow:hidden; }
 body[data-hub="mc"] > family-ribbon { height:0; }
 main.mc-main { max-width:none; margin:0; padding:0; }
-.map-wrap { position:fixed; inset:0; height:100%; margin:0; border-radius:0; background:#151515; }
+.map-wrap { position:fixed; inset:0; height:auto; margin:0; border-radius:0; background:#151515; }
 .map-wrap .map-placeholder { background:#151515; color:#f5f5f7; }
 .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 
@@ -18,25 +22,26 @@ main.mc-main { max-width:none; margin:0; padding:0; }
 .map-controls #map-follow[aria-pressed=true] svg { fill:currentColor; }
 
 /* What the map is showing, just above the island. Hidden while a sheet is open. */
-.status-chip { position:fixed; z-index:10; left:50%; transform:translateX(-50%); bottom:calc(var(--edge) + var(--island-h) + 8px + env(safe-area-inset-bottom,0px)); margin:0; max-width:calc(100% - 2 * var(--edge)); min-height:36px; padding:6px 16px; display:flex; align-items:center; text-align:center; border-radius:var(--radius-pill); font-size:13px; line-height:1.3; }
+.status-chip { position:fixed; z-index:10; left:50%; transform:translateX(-50%); bottom:calc(var(--closed-bottom) + var(--island-h) + 8px + env(safe-area-inset-bottom,0px)); margin:0; width:max-content; max-width:calc(100% - 2 * var(--edge)); min-height:36px; padding:6px 16px; display:flex; align-items:center; text-align:center; border-radius:var(--radius-pill); font-size:13px; line-height:1.3; }
 body[data-sheet] .status-chip { display:none; }
 
-/* The island: three tabs in a floating glass pill, bottom middle. */
-.island { position:fixed; z-index:10; left:50%; transform:translateX(-50%); bottom:calc(var(--edge) + env(safe-area-inset-bottom,0px)); display:flex; gap:4px; padding:6px; border-radius:var(--radius-pill); }
+/* The dock: the island of tabs, and the sheet that grows out of it. One container, so opening a tab expands the pill instead of
+   raising a second window. Its size is animated with explicit values; the sheet inside keeps its open width so the text never reflows mid-move. */
+.dock { position:fixed; z-index:10; left:50%; transform:translateX(-50%); bottom:calc(var(--closed-bottom) + env(safe-area-inset-bottom,0px)); width:var(--closed-w); height:var(--island-h); display:flex; flex-direction:column; align-items:center; overflow:hidden; border-radius:calc(var(--island-h) / 2); transition:width var(--duration) var(--ease), height var(--duration) var(--ease), bottom var(--duration) var(--ease), border-radius var(--duration) var(--ease), background-color var(--duration) var(--ease); }
+.dock[data-open] { width:var(--open-w); height:calc(var(--panel-h,0px) + var(--island-h)); bottom:calc(var(--open-bottom) + env(safe-area-inset-bottom,0px)); border-radius:var(--radius-card); background:var(--glass-bg-strong); }
+.dock-probe { position:fixed; left:0; width:0; height:0; bottom:calc(var(--open-bottom) + env(safe-area-inset-bottom,0px)); visibility:hidden; pointer-events:none; }
+.island { flex:none; width:100%; display:flex; justify-content:center; gap:4px; padding:6px; }
 .tab { flex:none; min-width:92px; min-height:56px; padding:6px 12px; border-radius:var(--radius-pill); background:none; color:var(--text); flex-direction:column; gap:2px; font-size:12px; font-weight:var(--weight-semibold); }
 .tab[aria-pressed=true] { background:var(--glass-select); color:var(--accent); }
-
-/* The sheet rises above the island. One at a time; the tab that opened it closes it. */
-.sheet { position:fixed; z-index:10; left:50%; transform:translateX(-50%); bottom:calc(var(--edge) + var(--island-h) + 12px + env(safe-area-inset-bottom,0px)); width:min(560px,calc(100% - 2 * var(--edge))); max-height:min(680px,calc(100dvh - var(--ribbon-h) - var(--island-h) - 2 * var(--edge) - 24px - env(safe-area-inset-bottom,0px))); display:flex; flex-direction:column; border-radius:var(--radius-card); overflow:hidden; background:var(--glass-bg-strong); animation:sheet-rise var(--duration) var(--ease); }
-.sheet[data-view=build] { width:min(980px,calc(100% - 2 * var(--edge))); }
-@keyframes sheet-rise { from { opacity:0; translate:0 14px; } to { opacity:1; translate:0 0; } }
+.sheet { flex:1; min-height:0; width:calc(var(--open-w) - 2px); display:flex; flex-direction:column; opacity:0; visibility:hidden; transition:opacity .25s var(--ease), visibility 0s linear .25s; }
+.dock[data-open] .sheet { opacity:1; visibility:visible; transition:opacity var(--duration) var(--ease) .1s, visibility 0s; }
 .sheet-head { position:relative; flex:none; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:26px 20px 12px 24px; touch-action:none; }
 .grabber { position:absolute; top:0; left:50%; transform:translateX(-50%); width:96px; min-height:0; height:24px; padding:0; background:none; border-radius:var(--radius-pill); display:flex; align-items:center; justify-content:center; }
 .grabber span { width:36px; height:5px; border-radius:var(--radius-pill); background:var(--text-secondary); opacity:.55; }
 .sheet-head h2 { margin:0; font-size:28px; letter-spacing:var(--ls-tight); }
 .sheet-head h2:focus { outline:none; }
-.sheet-close { flex:none; width:44px; height:44px; min-height:44px; padding:0; border-radius:50%; color:var(--text); box-shadow:none; }
-.sheet-body { flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; padding:0 20px 20px; }
+.sheet-close { flex:none; width:44px; height:44px; min-height:44px; padding:0; border-radius:50%; background:var(--glass-select); color:var(--text); }
+.sheet-body { flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; padding:0 24px 20px; }
 
 /* People and Named Locations: one list, online players first. Photo or emoji bubble on the left, star on the right. */
 .rows { display:grid; gap:2px; }
@@ -81,8 +86,9 @@ body[data-sheet] .status-chip { display:none; }
 .footer-note { margin-top:28px; }
 #page-message { margin:8px 0; min-height:0; }
 @media(max-width:760px) {
- :root { --edge:12px; }
- .tab { min-width:84px; padding:6px 8px; }
+ :root { --closed-w:calc(100vw - 44px); --closed-bottom:22px; --open-w:calc(100vw - 16px); --open-bottom:8px; }
+ .tab { flex:1; min-width:0; padding:6px 8px; }
+ .sheet-body { padding:0 20px 20px; }
  .sheet-head h2 { font-size:24px; }
  #whitelist-form .fields { grid-template-columns:1fr; }
 }
