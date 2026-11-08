@@ -116,6 +116,8 @@
   --duration-fast: 0.2s;
   --duration: 0.5s;
   --duration-slow: 0.8s;
+  --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);  /* the long ease-out of an iOS sheet */
+  --duration-sheet: 0.45s;
 }
 
 @media (min-width: 834px) {

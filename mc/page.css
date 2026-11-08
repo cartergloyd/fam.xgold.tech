@@ -1,6 +1,6 @@
 /* The map is the whole screen. Everything else floats over it as glass: map buttons, a status chip, a sheet, and the island of tabs.
    Glass is only for these floating controls; the lists and forms inside a sheet are ordinary content. Tokens live in tokens.css. */
-:root { --ribbon-h:95px; --island-h:70px; --edge:16px;
+:root { --ribbon-h:95px; --island-h:70px; --edge:16px; --map-ext:260px;
  /* The dock is one glass container: a pill when closed, a card when open. Phones follow Find My (pill 22px from the edges, open sheet 8px);
     wider screens follow the fantasy football page's widgets (its gutter and 1100px column). */
  --closed-w:300px; --closed-bottom:var(--page-gutter);
@@ -8,7 +8,10 @@
 body[data-hub="mc"] { overflow:hidden; }
 body[data-hub="mc"] > family-ribbon { height:0; }
 main.mc-main { max-width:none; margin:0; padding:0; }
-.map-wrap { position:fixed; inset:0; height:auto; margin:0; border-radius:0; background:#151515; }
+.map-wrap { position:fixed; inset:0; height:auto; margin:0; border-radius:0; background:#151515; transform:translateY(var(--map-shift,0px)); transition:transform var(--duration-sheet) var(--ease-sheet); }
+/* While a sheet is open the map box is stretched equally above and below (its center does not move, so nothing jumps) and then slid up
+   with a transform, so re-centering is a smooth compositor animation and never a resize mid-motion. */
+.map-wrap.is-shifted { top:calc(-1 * var(--map-ext)); bottom:calc(-1 * var(--map-ext)); }
 .map-wrap .map-placeholder { background:#151515; color:#f5f5f7; }
 .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 
@@ -23,18 +26,21 @@ main.mc-main { max-width:none; margin:0; padding:0; }
 
 /* What the map is showing, just above the island. Hidden while a sheet is open. */
 .status-chip { position:fixed; z-index:10; left:50%; transform:translateX(-50%); bottom:calc(var(--closed-bottom) + var(--island-h) + 8px + env(safe-area-inset-bottom,0px)); margin:0; width:max-content; max-width:calc(100% - 2 * var(--edge)); min-height:36px; padding:6px 16px; display:flex; align-items:center; text-align:center; border-radius:var(--radius-pill); font-size:13px; line-height:1.3; }
-body[data-sheet] .status-chip { display:none; }
+.status-chip { transition:opacity .2s var(--ease-sheet), visibility 0s; }
+body[data-sheet] .status-chip { opacity:0; visibility:hidden; transition:opacity .15s linear, visibility 0s linear .15s; }
 
 /* The dock: the island of tabs, and the sheet that grows out of it. One container, so opening a tab expands the pill instead of
    raising a second window. Its size is animated with explicit values; the sheet inside keeps its open width so the text never reflows mid-move. */
-.dock { position:fixed; z-index:10; left:50%; transform:translateX(-50%); bottom:calc(var(--closed-bottom) + env(safe-area-inset-bottom,0px)); width:var(--closed-w); height:var(--island-h); display:flex; flex-direction:column; align-items:center; overflow:hidden; border-radius:calc(var(--island-h) / 2); transition:width var(--duration) var(--ease), height var(--duration) var(--ease), bottom var(--duration) var(--ease), border-radius var(--duration) var(--ease), background-color var(--duration) var(--ease); }
+.dock { position:fixed; z-index:10; left:50%; transform:translateX(-50%); bottom:calc(var(--closed-bottom) + env(safe-area-inset-bottom,0px)); width:var(--closed-w); height:var(--island-h); display:flex; flex-direction:column; align-items:center; overflow:hidden; border-radius:calc(var(--island-h) / 2); transition:width var(--duration-sheet) var(--ease-sheet), height var(--duration-sheet) var(--ease-sheet), bottom var(--duration-sheet) var(--ease-sheet), border-radius var(--duration-sheet) var(--ease-sheet), background-color var(--duration-sheet) var(--ease-sheet); will-change:width,height; }
 .dock[data-open] { width:var(--open-w); height:calc(var(--panel-h,0px) + var(--island-h)); bottom:calc(var(--open-bottom) + env(safe-area-inset-bottom,0px)); border-radius:var(--radius-card); background:var(--glass-bg-strong); }
 .dock-probe { position:fixed; left:0; width:0; height:0; bottom:calc(var(--open-bottom) + env(safe-area-inset-bottom,0px)); visibility:hidden; pointer-events:none; }
 .island { flex:none; width:100%; display:flex; justify-content:center; gap:4px; padding:6px; }
 .tab { flex:none; min-width:92px; min-height:56px; padding:6px 12px; border-radius:var(--radius-pill); background:none; color:var(--text); flex-direction:column; gap:2px; font-size:12px; font-weight:var(--weight-semibold); }
 .tab[aria-pressed=true] { background:var(--glass-select); color:var(--accent); }
-.sheet { flex:1; min-height:0; width:calc(var(--open-w) - 2px); display:flex; flex-direction:column; opacity:0; visibility:hidden; transition:opacity .25s var(--ease), visibility 0s linear .25s; }
-.dock[data-open] .sheet { opacity:1; visibility:visible; transition:opacity var(--duration) var(--ease) .1s, visibility 0s; }
+.tab svg { stroke-width:1.9; }
+.tab[aria-pressed=true] svg .solid { fill:currentColor; }
+.sheet { flex:1; min-height:0; width:calc(var(--open-w) - 2px); display:flex; flex-direction:column; opacity:0; visibility:hidden; transition:opacity .12s linear, visibility 0s linear .12s; }
+.dock[data-open] .sheet { opacity:1; visibility:visible; transition:opacity .3s var(--ease-sheet) .14s, visibility 0s; }
 .sheet-head { position:relative; flex:none; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:26px 20px 12px 24px; touch-action:none; }
 .grabber { position:absolute; top:0; left:50%; transform:translateX(-50%); width:96px; min-height:0; height:24px; padding:0; background:none; border-radius:var(--radius-pill); display:flex; align-items:center; justify-content:center; }
 .grabber span { width:36px; height:5px; border-radius:var(--radius-pill); background:var(--text-secondary); opacity:.55; }
@@ -66,6 +72,30 @@ body[data-sheet] .status-chip { display:none; }
 .how-to[open] summary::after { display:inline-block; transform:rotate(90deg); }
 .how-to ol { margin:4px 0 0; padding-left:24px; line-height:1.6; }
 .how-to li { margin-bottom:6px; }
+
+/* Building: a Reminders style list. A circle to check things off, the idea in 17px, its notes in gray, no lines between. */
+.build-intro { align-items:center; gap:12px; }
+.build-intro .muted { margin:0; }
+.todo-list { list-style:none; margin:0; padding:0; display:grid; }
+.todo { display:flex; align-items:flex-start; gap:2px; }
+.check { flex:none; width:44px; height:44px; min-height:44px; padding:0; border-radius:50%; background:none; color:var(--text-secondary); }
+.check svg { width:28px; height:28px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.check .tick { stroke:var(--text-on-dark); opacity:0; }
+.check[aria-pressed=true] svg circle { fill:var(--accent); stroke:var(--accent); }
+.check[aria-pressed=true] .tick { opacity:1; }
+.todo-body { flex:1; min-width:0; padding:9px 0 14px; display:grid; gap:3px; justify-items:start; }
+.todo-edit { width:100%; min-height:0; padding:0; border-radius:0; background:none; color:var(--text); display:grid; gap:2px; justify-content:start; justify-items:start; align-items:start; text-align:left; font-size:var(--fs-body); }
+.todo-title { font-size:var(--fs-body); line-height:1.3; }
+.todo-notes { font-size:15px; line-height:1.4; color:var(--text-secondary); white-space:pre-wrap; overflow-wrap:anywhere; }
+.todo-meta { font-size:13px; color:var(--text-secondary); }
+.todo-where { min-height:44px; padding:0; margin-top:-6px; background:none; border-radius:0; color:var(--accent); font-size:13px; justify-content:flex-start; }
+.todo-done { margin-top:8px; }
+.todo-done summary { cursor:pointer; min-height:44px; display:flex; align-items:center; color:var(--accent); list-style:none; }
+.todo-done summary::-webkit-details-marker { display:none; }
+.todo-done summary::after { content:'›'; margin-left:6px; }
+.todo-done[open] summary::after { display:inline-block; transform:rotate(90deg); }
+.todo-done .todo-title { color:var(--text-secondary); text-decoration:line-through; }
+#signed-content .empty { margin:8px 4px; }
 
 /* Join: the platform picker, the steps, and the whitelist form. */
 .join-platform { margin-bottom:20px; }

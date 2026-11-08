@@ -2,9 +2,9 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#161617">
 <title>Minecraft · Gold Family</title><meta name="description" content="The family Minecraft world, live map, join instructions, and shared builds.">
-<link rel="stylesheet" href="/family-hub.css?v=1"><link rel="stylesheet" href="/mc/page.css?v=9"><link rel="stylesheet" href="/ribbon.css?v=6"><link rel="stylesheet" href="/family-account.css?v=3">
+<link rel="stylesheet" href="/family-hub.css?v=1"><link rel="stylesheet" href="/mc/page.css?v=10"><link rel="stylesheet" href="/ribbon.css?v=6"><link rel="stylesheet" href="/family-account.css?v=3">
 <script src="/family-directory.js?v=2"></script><script src="/profile-match.js?v=1"></script><script src="/family-account.js?v=2"></script><script src="/ribbon.js?v=6" defer></script>
-<script src="/family-hub.js?v=1" defer></script><script src="/mc/page.js?v=10" defer></script></head><body data-hub="mc"><family-ribbon></family-ribbon><main class="mc-main">
+<script src="/family-hub.js?v=1" defer></script><script src="/mc/page.js?v=11" defer></script></head><body data-hub="mc"><family-ribbon></family-ribbon><main class="mc-main">
 <h1 id="map-title" class="sr-only">Minecraft live map</h1>
 <div class="map-wrap"><iframe id="live-map" title="Live map of the Family Forever Minecraft server" loading="eager" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin"></iframe><div id="map-placeholder" class="map-placeholder"><p id="map-message" role="status">Finding the world…</p></div></div>
 
@@ -26,10 +26,10 @@
 </div>
 
 <div class="sheet-view" data-for="build" hidden>
-<div class="row between"><p class="muted">Big ideas. Useful infrastructure. One shared world.</p><button type="button" id="add-build" hidden>Add a build</button></div>
+<div class="row between build-intro"><p class="muted">Big ideas. Useful infrastructure. One shared world.</p><button type="button" id="add-build" class="quiet" hidden>New idea</button></div>
 <p id="page-message" class="notice" role="status" aria-live="polite"></p>
-<div id="auth-panel" class="panel"><h3>A place for family.</h3><p class="muted">Sign in with your family email and PIN to add builds, save coordinates, and move cards.</p><button type="button" data-signin>Sign in</button></div>
-<div id="signed-content" hidden><div id="build-board" class="board"></div></div>
+<div id="auth-panel" class="panel"><h3>A place for family.</h3><p class="muted">Sign in with your family email and PIN to add ideas, save coordinates, and check things off.</p><button type="button" data-signin>Sign in</button></div>
+<div id="signed-content" hidden><ul id="build-list" class="todo-list"></ul><p id="build-empty" class="empty" hidden>Room for your next idea.</p><details id="build-done" class="todo-done" hidden><summary>Completed · <span id="build-done-count">0</span></summary><ul id="build-done-list" class="todo-list"></ul></details></div>
 </div>
 
 <div class="sheet-view" data-for="join" hidden>
@@ -47,9 +47,9 @@
 </section>
 
 <nav id="island" class="island" aria-label="Map sections">
-<button type="button" class="tab" data-tab="people" aria-pressed="false" aria-controls="sheet"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg><span>Locations</span></button>
-<button type="button" class="tab" data-tab="build" aria-pressed="false" aria-controls="sheet"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 4.5l5 5-2 2-5-5z"/><path d="M12.5 8l-8 8a1.4 1.4 0 0 0 2 2l8-8"/></svg><span>Construction</span></button>
-<button type="button" class="tab" data-tab="join" aria-pressed="false" aria-controls="sheet"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 20a6.5 6.5 0 0 1 13 0M19 8v6M16 11h6"/></svg><span>Join</span></button>
+<button type="button" class="tab" data-tab="people" aria-pressed="false" aria-controls="sheet"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="solid" fill-rule="evenodd" d="M12 21.2s-6.7-5.7-6.7-11.2a6.7 6.7 0 0 1 13.4 0c0 5.5-6.7 11.2-6.7 11.2zM12 7.7a2.3 2.3 0 1 0 0 4.6 2.3 2.3 0 0 0 0-4.6z"/></svg><span>Locations</span></button>
+<button type="button" class="tab" data-tab="build" aria-pressed="false" aria-controls="sheet"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="solid" d="M13.6 3.2l7.2 7.2-3 3-7.2-7.2z"/><path d="M11.4 9.6L4.8 16.2" stroke-width="3"/></svg><span>Building</span></button>
+<button type="button" class="tab" data-tab="join" aria-pressed="false" aria-controls="sheet"><svg viewBox="0 0 24 24" aria-hidden="true"><circle class="solid" cx="9.5" cy="8" r="3.6"/><path class="solid" d="M3.2 20.2a6.3 6.3 0 0 1 12.6 0z"/><path d="M19.2 7.4v6.2M16.1 10.5h6.2"/></svg><span>Join</span></button>
 </nav>
 </div>
 <div id="dock-probe" class="dock-probe" aria-hidden="true"></div>

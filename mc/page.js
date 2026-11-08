@@ -44,25 +44,27 @@
  // The island expands into its sheet: one glass container grows from a pill into a card with the tabs staying at the bottom. One view
  // at a time; the tab that opened it closes it. Tapping a player or location on a narrow screen closes it too, so the map is what you see.
  const dock=$('dock'),sheet=$('sheet'),island=$('island'),tabs=[...document.querySelectorAll('.tab')],views=[...document.querySelectorAll('.sheet-view')],narrow=matchMedia('(max-width:760px)'),wrap=document.querySelector('.map-wrap'),probe=$('dock-probe');
- const TITLES={people:'People & Locations',build:'Construction',join:'Join the server'};let lastTab=null;
+ const TITLES={people:'People & Locations',build:'Building',join:'Join the server'};let lastTab=null,unshift;
  const isOpen=()=>dock.hasAttribute('data-open');
  // Sheets stay short: the header plus the content, capped at 44% of the screen (or 420px), and the body scrolls past that.
- // The map is moved so its center sits halfway between the bottom of the site banner and the top of the sheet.
+ // The map slides (a transform, so it animates smoothly) until its center sits halfway between the bottom of the site banner and the top of the sheet.
  function fit(){
   if(!isOpen())return;
   const head=sheet.querySelector('.sheet-head').offsetHeight,panel=Math.round(Math.min(head+sheet.querySelector('.sheet-body').scrollHeight,innerHeight*.44,420));
   dock.style.setProperty('--panel-h',panel+'px');
   const banner=document.querySelector('.family-ribbon')?.getBoundingClientRect().bottom||0,top=probe.getBoundingClientRect().bottom-panel-island.offsetHeight;
-  wrap.style.top=(banner+top-innerHeight)+'px';
+  wrap.style.setProperty('--map-shift',(banner+top-innerHeight)/2+'px');
  }
  function openSheet(name){
   dock.dataset.view=name;$('sheet-title').textContent=TITLES[name];
   for(const v of views)v.hidden=v.dataset.for!==name;
   for(const t of tabs){t.setAttribute('aria-pressed',String(t.dataset.tab===name));if(t.dataset.tab===name)lastTab=t;}
-  sheet.querySelector('.sheet-body').scrollTop=0;dock.setAttribute('data-open','');document.body.setAttribute('data-sheet','');fit();$('sheet-title').focus({preventScroll:true});
+  sheet.querySelector('.sheet-body').scrollTop=0;clearTimeout(unshift);wrap.classList.add('is-shifted');dock.setAttribute('data-open','');document.body.setAttribute('data-sheet','');fit();$('sheet-title').focus({preventScroll:true});
  }
  function closeSheet(){
-  if(!isOpen())return;dock.removeAttribute('data-open');document.body.removeAttribute('data-sheet');wrap.style.top='';
+  if(!isOpen())return;dock.removeAttribute('data-open');document.body.removeAttribute('data-sheet');wrap.style.setProperty('--map-shift','0px');
+  // Once the map has slid back, the stretched box shrinks again (equally above and below, so nothing moves).
+  clearTimeout(unshift);unshift=setTimeout(()=>{if(!isOpen())wrap.classList.remove('is-shifted');},520);
   for(const t of tabs)t.setAttribute('aria-pressed','false');
   lastTab?.focus({preventScroll:true});
  }
@@ -141,6 +143,24 @@
   pins=found.flatMap(r=>r.status==='fulfilled'?r.value:[]).filter(p=>[p.x,p.y,p.z].every(Number.isFinite));sortPins();renderPeople();
  }
 
+ // Building: a Reminders style list of ideas. The circle checks one off, the row opens it for editing, and a pin takes the map to its spot.
+ const CHECK='<svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="11.5"/><path class="tick" d="M8.6 14.4l3.7 3.7 7.1-7.8"/></svg>';
+ function todo(task){
+  const li=H.node('li',undefined,'todo'),done=task.status==='done',box=H.node('button',undefined,'check'),body=H.node('div',undefined,'todo-body'),edit=H.node('button',undefined,'todo-edit');
+  box.type='button';box.innerHTML=CHECK;box.setAttribute('aria-pressed',String(done));box.setAttribute('aria-label',(done?'Mark not done: ':'Mark done: ')+task.title);box.addEventListener('click',()=>toggleTask(task,box));
+  edit.type='button';edit.append(H.node('span',task.title,'todo-title'));if(task.description)edit.append(H.node('span',task.description,'todo-notes'));edit.addEventListener('click',()=>H.openTask('build',task));body.append(edit);
+  body.append(H.node('span',`Added by ${task.name}${task.status==='doing'?' · In progress':''}`,'todo-meta'));
+  if(task.x!==null&&task.x!==undefined){const where=H.node('button',`${WORLDS[task.world]} · ${task.x}, ${task.y}, ${task.z}`,'todo-where');where.type='button';where.addEventListener('click',()=>goTo({name:task.title,world:task.world,x:task.x,y:task.y,z:task.z}));body.append(where);}
+  li.append(box,body);return li;
+ }
+ function renderBuilds(tasks){
+  const open=tasks.filter(t=>t.status!=='done'),done=tasks.filter(t=>t.status==='done');
+  $('build-list').replaceChildren(...open.map(todo));$('build-empty').hidden=open.length>0;
+  $('build-done-list').replaceChildren(...done.map(todo));$('build-done').hidden=!done.length;$('build-done-count').textContent=done.length;
+ }
+ async function refreshBuilds(){const data=await api('/hub/builds');H.user=data.user;renderBuilds(data.tasks);}
+ async function toggleTask(task,button){button.disabled=true;try{await api('/hub/tasks/'+task.id,{method:'PATCH',body:{...task,status:task.status==='done'?'todo':'done'}});await refreshBuilds();}catch(e){notice('page-message',e.message,true);button.disabled=false;}}
+
  const instructions=$('platform-instructions'),platform=$('join-platform'),whitelistForm=$('whitelist-form');
  let accounts=[],whitelistPoll;
  const featured='Mineville, Lifeboat, Enchanted, Galaxite, or The Hive',JAVA='185.172.53.60:25565',BEDROCK='185.172.53.60',PS_DNS='45.55.68.52';
@@ -180,7 +200,7 @@
  whitelistForm.addEventListener('submit',async e=>{e.preventDefault();const button=whitelistForm.querySelector('button');button.disabled=true;notice('whitelist-message','Verifying your account and adding it to the server…');try{await api('/hub/mc-whitelist',{method:'POST',body:{edition:whitelistForm.elements.edition.value,username:whitelistForm.elements.username.value.trim()}});await loadWhitelist();notice('whitelist-message','Your request is being processed. You can join as soon as your account says “Whitelisted”.');}catch(error){notice('whitelist-message',error.message,true);button.disabled=false;}});
  window.addEventListener('family-account-change',()=>{if(!window.familyAccount.current)syncWhitelistAuth();});renderPlatform();
  $('add-build').addEventListener('click',()=>H.openTask('build'));
- H.init(async()=>{const data=await api('/hub/builds');H.user=data.user;H.board('build-board',data.tasks,'build',data.user);await loadWhitelist();});
+ H.init(async()=>{await refreshBuilds();await loadWhitelist();});
  // Family photos arrive with the directory, so draw the list again once it is ready.
  window.familyAccount.ready.then(renderPeople,()=>{});renderPeople();
  loadPins();setInterval(()=>{if(!document.hidden)loadPins();},60000);

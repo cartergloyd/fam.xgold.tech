@@ -9,12 +9,16 @@ const root=new URL('../',import.meta.url).pathname;
 async function server(){const s=createServer(async(req,res)=>{try{let p=new URL(req.url,'http://local').pathname;if(p.endsWith('/'))p+='index.html';const f=resolve(root,'.'+p);if(!f.startsWith(root))throw Error();const b=await readFile(f);res.setHeader('Content-Type',f.endsWith('.js')?'text/javascript':f.endsWith('.css')?'text/css':f.endsWith('.png')?'image/png':'text/html');res.end(b);}catch{res.writeHead(404);res.end();}});await new Promise(r=>s.listen(0,'127.0.0.1',r));return s;}
 // Dynmap's marker files, one per world: signs and anything else marked on the map.
 const MARKERS={world:{_spawn_world:{label:'Spawn',x:0,y:64,z:0},sign_1:{label:'Base',x:100,y:70,z:-200}},world_nether:{portal:{label:'Portal',x:10,y:80,z:20}},world_the_end:{}};
+const buildTasks=()=>[
+ {id:'t1',kind:'build',title:'Main Nether-hub, centered on 0, 0.',description:'Include book about best practices, technical how-tos, etc',status:'todo',name:'Carter',world:'world_nether',x:null,y:null,z:null,revision:1},
+ {id:'t2',kind:'build',title:'Wheat farm upgrade',description:'',status:'doing',name:'Alex',world:'world',x:410,y:68,z:220,revision:1},
+ {id:'t3',kind:'build',title:'Village walls',description:'Done last week',status:'done',name:'Carter',world:'world',x:null,y:null,z:null,revision:1}];
 const players=[{account:'Alex',name:'Alex',world:'world',x:50,y:70,z:60},{account:'Carter',name:'Carter',world:'world',x:300,y:70,z:400}];
 const PNG=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==','base64');
 // The stub map is cross-origin like the real one. Like Leaflet it consumes the wheel and touch (otherwise they would chain up),
 // and it counts the wheel events, presses and drags that reach it.
 // stars (a Set) and lastSeen (a spot, or null) switch on the two per-member endpoints; left out they answer 404 like a server without them.
-async function mock(context,{mapUp=true,signed=false,online=[],stars,lastSeen}={}){
+async function mock(context,{mapUp=true,signed=false,online=[],stars,lastSeen,tasks=[]}={}){
  if(signed)await context.addInitScript(()=>{localStorage.setItem('destin-who',JSON.stringify({name:'Carter',email:'test@example.com'}));localStorage.setItem('family-session',JSON.stringify({name:'Carter',token:'test-token'}));});
  await context.route('https://fam-api.xgold.tech/**',route=>{
   const p=new URL(route.request().url()).pathname.replace('/family','');
@@ -25,7 +29,8 @@ async function mock(context,{mapUp=true,signed=false,online=[],stars,lastSeen}={
   if(p==='/users')return route.fulfill({json:{users:[{id:'carter',name:'Carter',registered:true,photo_url:'https://fam-api.xgold.tech/family/photos/carter'}]}});
   if(p==='/hub/mc-stars'&&stars){if(route.request().method()==='POST'){const b=route.request().postDataJSON();b.starred?stars.add(b.pin):stars.delete(b.pin);return route.fulfill({json:{starred:b.starred}});}return route.fulfill({json:{stars:[...stars]}});}
   if(p==='/hub/mc-last-seen'&&lastSeen!==undefined)return route.fulfill({json:{spot:lastSeen}});
-  if(p==='/hub/builds')return route.fulfill({json:{user:{id:'carter',name:'Carter'},tasks:[]}});
+  if(p==='/hub/builds')return route.fulfill({json:{user:{id:'carter',name:'Carter'},tasks}});
+  if(p.startsWith('/hub/tasks/')&&route.request().method()==='PATCH'){const t=tasks.find(x=>x.id===p.split('/').pop());Object.assign(t,route.request().postDataJSON(),{revision:t.revision+1});return route.fulfill({json:{task:t}});}
   if(p==='/hub/mc-whitelist')return route.fulfill({json:{accounts:[{edition:'java',username:'Carter',status:'added'}]}});
   return route.fulfill({status:404,json:{error:'Not mocked'}});
  });
@@ -54,7 +59,7 @@ test('the map fills the screen and is live; the island opens and closes the shee
   await page.mouse.wheel(0,500);await until(async()=>(await inMap(page)).wheels>0,'the map to get the wheel');assert.equal(await scrollY(page),0);
   // The island: three tabs, centered at the bottom, each at least 44px tall, over glass.
   const pill=await page.locator('#dock').boundingBox();assert(Math.abs(pill.width-300)<=1&&Math.abs(pill.x+pill.width/2-640)<=1&&Math.abs(800-(pill.y+pill.height)-48)<=1,`a centered pill 48px from the bottom, got ${JSON.stringify(pill)}`);
-  assert.deepEqual(await page.locator('.tab span').allTextContents(),['Locations','Construction','Join']);
+  assert.deepEqual(await page.locator('.tab span').allTextContents(),['Locations','Building','Join']);
   for(const t of await page.locator('.tab').all())assert((await t.boundingBox()).height>=44);
   assert((await page.locator('#dock').evaluate(e=>getComputedStyle(e).backdropFilter||'')).includes('blur'),'glass blur on the dock');
   // A tab opens its sheet, titled for it; the same tab, Escape or the close button closes it.
@@ -68,18 +73,18 @@ test('the map fills the screen and is live; the island opens and closes the shee
   const moved=await page.locator('#live-map').boundingBox();assert(Math.abs(moved.y+moved.height/2-(ribbon.y+ribbon.height+open.y)/2)<=2,`the map centered between the banner and the sheet, got ${JSON.stringify(moved)}`);
   assert(await page.evaluate(()=>{const b=document.querySelector('#sheet .sheet-body');return b.scrollHeight>=b.clientHeight;}));
   await tab(page,'people').click();await page.waitForTimeout(800);assert.deepEqual(Object.values(await page.locator('#live-map').boundingBox()),[0,0,1280,800],'the map goes back to full screen');
-  await tab(page,'people').click();assert.equal(await tab(page,'people').getAttribute('aria-pressed'),'true');assert.equal(await page.locator('#map-status').isVisible(),false);
+  await tab(page,'people').click();assert.equal(await tab(page,'people').getAttribute('aria-pressed'),'true');await until(async()=>!(await page.locator('#map-status').isVisible()),'the status chip to fade out');
   await tab(page,'people').click();assert.equal(await sheetOpen(page),false);assert.equal(await page.locator('#map-status').isVisible(),true);
   await tab(page,'people').click();await page.keyboard.press('Escape');assert.equal(await sheetOpen(page),false);
   await tab(page,'people').click();await page.locator('#sheet-close').click();assert.equal(await sheetOpen(page),false);
   // Pulling the header down dismisses it too.
-  await tab(page,'people').click();const title=await page.locator('#sheet-title').boundingBox();await page.mouse.move(title.x+title.width+40,title.y+10);await page.mouse.down();await page.mouse.move(title.x+title.width+40,title.y+120,{steps:8});await page.mouse.up();assert.equal(await sheetOpen(page),false);
+  await tab(page,'people').click();await page.waitForTimeout(700);const title=await page.locator('#sheet-title').boundingBox();await page.mouse.move(title.x+title.width+40,title.y+10);await page.mouse.down();await page.mouse.move(title.x+title.width+40,title.y+120,{steps:8});await page.mouse.up();assert.equal(await sheetOpen(page),false);
   // Join: the platform picker, the address and Copy.
   await tab(page,'join').click();assert.equal(await page.locator('#sheet-title').textContent(),'Join the server');assert.equal(await page.locator('#join-platform').isVisible(),true);assert.match(await page.locator('#platform-instructions').textContent(),/185\.172\.53\.60:25565/);
   await page.getByRole('button',{name:'Copy Java address'}).click();await until(async()=>await page.evaluate(()=>navigator.clipboard.readText())==='185.172.53.60:25565','the address on the clipboard');
   await page.selectOption('#join-platform','bedrock');assert.match(await page.locator('#platform-instructions').textContent(),/Port: 19133/);
   // Switching tabs swaps the sheet instead of stacking another.
-  await tab(page,'build').click();assert.equal(await page.locator('#sheet-title').textContent(),'Construction');assert.equal(await page.locator('.sheet-view:visible').count(),1);assert.equal(await page.locator('#auth-panel').isVisible(),true,'signed out, the board asks for a sign-in');
+  await tab(page,'build').click();assert.equal(await page.locator('#sheet-title').textContent(),'Building');assert.equal(await page.locator('.sheet-view:visible').count(),1);assert.equal(await page.locator('#auth-panel').isVisible(),true,'signed out, the board asks for a sign-in');
   assert.equal(await tab(page,'join').getAttribute('aria-pressed'),'false');
   assert.deepEqual(errors,[]);await context.close();
   // No map, no problem: the island and its sheets still work.
@@ -138,13 +143,24 @@ test('people and locations: online players first, photo or initial or emoji bubb
 test('signed in: the map follows my player, and a server without stars still works',async()=>{
  const {browser,origin,done}=await launch();
  try{
-  const context=await browser.newContext({viewport:{width:1280,height:800}});await mock(context,{signed:true,online:players});const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  const context=await browser.newContext({viewport:{width:1280,height:800}});await mock(context,{signed:true,online:players,tasks:buildTasks()});const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto(origin+'/mc/');
   // The server would pick Alex (first alphabetically); a signed-in Carter gets his own player.
   await until(async()=>(await src(page)).includes('playername=Carter'),'the map to follow Carter');
   await tab(page,'people').click();assert.match(await page.locator('#map-status').textContent(),/Following Carter/);assert.equal(await page.locator('#people-list .star').count(),0,'no star buttons when the server cannot save them');
   assert.equal(await page.locator('#people-list .row-item').count(),5);
-  await tab(page,'build').click();await until(()=>page.locator('#signed-content').isVisible(),'the board when signed in');assert.equal(await page.locator('#auth-panel').isVisible(),false);
+  // Building is a Reminders style list: a circle to check things off, the idea, its notes in gray, a pin for ideas with a place.
+  await tab(page,'build').click();await until(()=>page.locator('#signed-content').isVisible(),'the list when signed in');assert.equal(await page.locator('#auth-panel').isVisible(),false);
+  assert.deepEqual(await page.locator('#build-list .todo-title').allTextContents(),['Main Nether-hub, centered on 0, 0.','Wheat farm upgrade']);
+  assert.equal(await page.locator('#build-list .todo-notes').first().textContent(),'Include book about best practices, technical how-tos, etc');
+  assert.match(await page.locator('#build-list .todo').nth(1).locator('.todo-meta').textContent(),/Added by Alex · In progress/);
+  assert.equal(await page.locator('#build-done-count').textContent(),'1');assert.equal(await page.locator('#build-done').isVisible(),true);
+  const ring=await page.locator('#build-list .check').first().locator('circle').evaluate(e=>getComputedStyle(e).fill);assert.equal(ring,'none');
+  await page.getByRole('button',{name:'Mark done: Main Nether-hub, centered on 0, 0.'}).click();
+  await until(async()=>(await page.locator('#build-list .todo-title').allTextContents()).length===1,'the item to move to Completed');assert.equal(await page.locator('#build-done-count').textContent(),'2');
+  await page.locator('#build-done summary').click();assert.equal(await page.getByRole('button',{name:'Mark not done: Main Nether-hub, centered on 0, 0.'}).getAttribute('aria-pressed'),'true');
+  await page.getByRole('button',{name:'Mark not done: Main Nether-hub, centered on 0, 0.'}).click();await until(async()=>(await page.locator('#build-list .todo-title').allTextContents()).length===2,'the item to come back');
+  await page.locator('#build-list .todo-where').click();await until(async()=>(await src(page)).includes('x=410'),'the map to go to the idea');assert((await src(page)).includes('z=220'));
   assert.deepEqual(errors,[]);await context.close();
  }finally{await done();}
 });
