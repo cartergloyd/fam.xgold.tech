@@ -10,12 +10,19 @@ const root=new URL('../',import.meta.url).pathname;
 async function server(){const s=createServer(async(req,res)=>{try{let p=new URL(req.url,'http://local').pathname;if(p.endsWith('/'))p+='index.html';const f=resolve(root,'.'+p);if(!f.startsWith(root))throw Error();const b=await readFile(f);res.setHeader('Content-Type',f.endsWith('.js')?'text/javascript':f.endsWith('.css')?'text/css':f.endsWith('.png')?'image/png':'text/html');res.end(b);}catch{res.writeHead(404);res.end();}});await new Promise(r=>s.listen(0,'127.0.0.1',r));return s;}
 // The stub map is cross-origin like the real one. Like Leaflet it consumes the wheel and touch (otherwise they would chain up
 // and scroll the page), and it counts the wheel events, presses and drags that reach it.
-async function mock(context,{mapUp=true}={}){
+// Dynmap's marker files, one per world: signs and anything else marked on the map.
+const MARKERS={world:{_spawn_world:{label:'Spawn',x:0,y:64,z:0},sign_1:{label:'Base',x:100,y:70,z:-200}},world_nether:{portal:{label:'Portal',x:10,y:80,z:20}},world_the_end:{}};
+const players=[{account:'Alex',name:'Alex',world:'world',x:50,y:70,z:60},{account:'Carter',name:'Carter',world:'world',x:300,y:70,z:400}];
+async function mock(context,{mapUp=true,signed=false,online=[]}={}){
+ if(signed)await context.addInitScript(()=>{localStorage.setItem('destin-who',JSON.stringify({name:'Carter',email:'test@example.com'}));localStorage.setItem('family-session',JSON.stringify({name:'Carter',token:'test-token'}));});
  await context.route('https://fam-api.xgold.tech/**',route=>{
   const p=new URL(route.request().url()).pathname.replace('/family','');
-  if(p==='/mc-status')return mapUp?route.fulfill({json:{online:true,players:[],focus:{mode:'spawn',world:'world',x:0,y:64,z:0}}}):route.fulfill({status:503,json:{online:false,error:'The live map is temporarily unavailable.'}});
+  if(p==='/mc-status')return mapUp?route.fulfill({json:{online:true,players:online,focus:online.length?{mode:'player',...online[0]}:{mode:'spawn',world:'world',x:0,y:64,z:0}}}):route.fulfill({status:503,json:{online:false,error:'The live map is temporarily unavailable.'}});
+  const marker=p.match(/^\/mc-map\/tiles\/_markers_\/marker_(\w+)\.json$/);if(marker)return route.fulfill({json:{sets:{markers:{markers:MARKERS[marker[1]]||{}}},timestamp:1}});
   if(p.startsWith('/mc-map/'))return route.fulfill({contentType:'text/html',body:'<!doctype html><title>Map</title><style>html,body{margin:0;height:100%;background:#222;touch-action:none}</style><script>window.wheels=window.downs=window.drags=0;addEventListener("wheel",e=>{e.preventDefault();window.wheels++},{passive:false});addEventListener("pointerdown",()=>window.downs++);addEventListener("pointermove",e=>{if(e.buttons)window.drags++})</script>'});
-  if(p==='/users')return route.fulfill({json:{users:[]}});
+  if(p==='/users')return route.fulfill({json:{users:[{id:'carter',name:'Carter',registered:true}]}});
+  if(p==='/hub/builds')return route.fulfill({json:{user:{id:'carter',name:'Carter'},tasks:[]}});
+  if(p==='/hub/mc-whitelist')return route.fulfill({json:{accounts:[{edition:'java',username:'Carter',status:'added'}]}});
   return route.fulfill({status:404,json:{error:'Not mocked'}});
  });
 }
@@ -75,5 +82,43 @@ test('the map is live and the grab bar is the way down',async()=>{
   const down=await browser.newContext({viewport:{width:1280,height:800}});await mock(down,{mapUp:false});const d=await down.newPage();
   await d.goto(origin+'/mc/');await d.getByText('The live map is temporarily unavailable.').waitFor();assert.equal(await d.locator('#join-bar').isVisible(),true);assert.match(await d.locator('#join-line').textContent(),/185\.172\.53\.60:25565/);
   await d.mouse.click(640,await barTop(d)+10);await until(()=>atJoin(d),'the instructions with no map');await down.close();
+ }finally{await browser.close();await new Promise(r=>s.close(r));}
+});
+// Places are the Dynmap markers. Signed out they sit under the join instructions; signed in they come first and ride on the grab bar.
+test('places: signed out they sit under the join instructions, and a tap takes the map there',async()=>{
+ const s=await server(),browser=await chromium.launch({args:['--no-sandbox']}),origin=`http://127.0.0.1:${s.address().port}`;
+ try{
+  const context=await browser.newContext({viewport:{width:1280,height:800}});await mock(context);const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(origin+'/mc/');await until(async()=>await page.locator('#places-list .place').count()===3,'the places to load');
+  assert.deepEqual(await page.locator('#places-list .place-name').allTextContents(),['Base','Portal','Spawn']);
+  assert.equal(await page.evaluate(()=>document.getElementById('join-server').nextElementSibling.id),'places');
+  assert.equal(await page.locator('#places-shelf').isVisible(),false);assert.equal(await page.locator('#join-peek').isVisible(),true);
+  // A place takes the map there, pauses following, says so, and brings the map back into view.
+  await page.locator('#places-list .place',{hasText:'Base'}).click();
+  await until(async()=>(await page.locator('#live-map').getAttribute('src')).includes('x=100'),'the map to move');
+  const src=await page.locator('#live-map').getAttribute('src');assert(src.includes('z=-200')&&src.includes('worldname=world&'),src);
+  assert.equal(await page.locator('#map-follow').textContent(),'Follow players');assert.match(await page.locator('#map-status').textContent(),/Showing Base/);
+  await until(async()=>await scrollY(page)===0,'the map to come back into view');
+  // The Nether is its own map.
+  await page.locator('#places-list .place',{hasText:'Portal'}).click();
+  await until(async()=>(await page.locator('#live-map').getAttribute('src')).includes('worldname=world_nether'),'the Nether map');assert((await page.locator('#live-map').getAttribute('src')).includes('mapname=flat'));
+  assert.deepEqual(errors,[]);await context.close();
+ }finally{await browser.close();await new Promise(r=>s.close(r));}
+});
+test('places: signed in they come first, ride on the grab bar, and the map follows my player',async()=>{
+ const s=await server(),browser=await chromium.launch({args:['--no-sandbox']}),origin=`http://127.0.0.1:${s.address().port}`;
+ try{
+  const context=await browser.newContext({viewport:{width:1280,height:800}});await mock(context,{signed:true,online:players});const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(origin+'/mc/');await until(()=>page.locator('#places-shelf').isVisible(),'the places on the grab bar');
+  assert.equal(await page.evaluate(()=>document.getElementById('places').nextElementSibling.id),'join-server');assert.equal(await page.locator('#join-peek').isVisible(),false);
+  // The server would pick Alex (first alphabetically); a signed-in Carter gets his own player.
+  await until(async()=>(await page.locator('#live-map').getAttribute('src')||'').includes('playername=Carter'),'the map to follow Carter');assert.match(await page.locator('#map-status').textContent(),/Following Carter/);
+  // A place on the bar takes the map there; the bar itself leads to the list, not the join instructions.
+  await page.locator('#places-shelf .place',{hasText:'Base'}).click();await until(async()=>(await page.locator('#live-map').getAttribute('src')).includes('x=100'),'the map to move');assert.match(await page.locator('#map-status').textContent(),/Showing Base/);
+  assert.equal(await scrollY(page),0);await page.mouse.click(640,await barTop(page)+10);
+  await until(async()=>{const b=await page.locator('#places').boundingBox();return b.y>=0&&b.y<=60;},'the places list');
+  // Following again goes back to my player.
+  await toTop(page);await page.locator('#map-follow').click();await until(async()=>(await page.locator('#live-map').getAttribute('src')).includes('playername=Carter'),'the map to follow Carter again');
+  assert.deepEqual(errors,[]);await context.close();
  }finally{await browser.close();await new Promise(r=>s.close(r));}
 });

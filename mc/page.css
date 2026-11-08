@@ -10,7 +10,8 @@ main.mc-main { max-width:none; margin:0; padding:0; }
 .map-tools .row { pointer-events:auto; gap:8px; }
 .map-tools button,.map-tools .button { background:rgba(0,0,0,.72); color:#fff; backdrop-filter:blur(12px); }
 .mc-content { max-width:1160px; margin:auto; padding:64px 24px 100px; }
-.join-widget { max-width:760px; margin:auto; padding:32px; }
+.join-widget,.places-widget { max-width:760px; margin:0 auto; padding:32px; }
+.join-widget + .places-widget,.places-widget + .join-widget { margin-top:36px; }
 .join-widget h2 { margin:0; }
 .join-widget > .row { align-items:center; gap:24px; margin-bottom:28px; }
 .join-widget > .row label { min-width:240px; }
@@ -57,4 +58,12 @@ main.mc-main { max-width:none; margin:0; padding:0; }
 .join-line { flex:1; margin:0; font-size:15px; line-height:1.4; pointer-events:none; }
 .join-line code { font-weight:var(--weight-semibold); }
 .join-line .hint { margin-left:10px; color:var(--text-secondary); }
+/* Places: a list in the page, and a row of pills on the grab bar when signed in. Same pill and card shapes as the rest of the page. */
+.places-widget h2 { margin:0; }
+.places-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:8px; margin:20px 0; }
+.places-list .place { flex-direction:column; align-items:flex-start; justify-content:center; gap:2px; padding:12px 16px; border-radius:var(--radius-card-sm); background:var(--bg); color:var(--text); text-align:left; }
+.place-where { color:var(--text-secondary); font-size:13px; }
+.places-shelf { position:relative; display:flex; gap:8px; max-width:var(--container-max); margin:0 auto; overflow-x:auto; scrollbar-width:none; touch-action:pan-x; pointer-events:auto; }
+.places-shelf::-webkit-scrollbar { display:none; }
+.places-shelf .place { flex:none; background:var(--bg-alt); color:var(--text); font-size:15px; }
 @media(max-width:760px) { .join-peek { flex-wrap:wrap; gap:8px 12px; } .join-peek select { flex:1; } .join-line { order:3; flex-basis:100%; } .join-line .hint { display:block; margin-left:0; } }

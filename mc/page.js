@@ -1,27 +1,36 @@
 (() => {
  const H=window.familyHub,{$,api,notice}=H,BASE='https://fam-api.xgold.tech/family';
  let following=!matchMedia('(prefers-reduced-motion: reduce)').matches,latest,lastTarget='',checking=false,frameTimer;
- const frame=$('live-map');
+ const frame=$('live-map'),WORLDS={world:'Overworld',world_nether:'Nether',world_the_end:'The End'};
+ let pins=[],pinTarget=null,myNames=new Set(),signed=false;
+ // Dynmap shows Bedrock players as ".Name" with underscores for spaces; the whitelist keeps the gamertag as typed.
+ const norm=s=>String(s||'').toLowerCase().replace(/^\./,'').replace(/[\s_]/g,'');
+ const mine=()=>myNames.size?latest?.players?.find(p=>myNames.has(norm(p.account))):undefined;
+ // A pin wins, then the signed-in player's own account, then whoever the server picked.
+ const focus=()=>pinTarget||(following&&mine()&&{mode:'player',...mine()})||latest.focus;
  function showMap(){
-  if(!latest?.online)return;const f=latest.focus;
-  const target=following&&f.mode==='player'?'player:'+f.account:'area:'+f.world+':'+Math.round(f.x)+':'+Math.round(f.z);
+  if(!latest?.online)return;showStatus();const f=focus(),follow=!pinTarget&&following&&f.mode==='player';
+  const target=follow?'player:'+f.account:'area:'+f.world+':'+Math.round(f.x)+':'+Math.round(f.z);
   const params=new URLSearchParams({worldname:f.world||'world',mapname:f.world==='world'?'surface':'flat',x:Math.round(f.x||0),y:Math.round(f.y||64),z:Math.round(f.z||0),zoom:'5',nogui:'false',nopanel:'true',nocompass:'true'});
-  if(following&&f.mode==='player')params.set('playername',f.account);
+  if(follow)params.set('playername',f.account);
   if(target!==lastTarget){frame.src=BASE+'/mc-map/?'+params;lastTarget=target;$('map-placeholder').hidden=false;$('map-message').textContent='Opening the live map…';clearTimeout(frameTimer);frameTimer=setTimeout(()=>{$('map-message').textContent='The map is taking a little longer. Use “Open map” to try it directly.';},20000);}
   $('open-map').href=BASE+'/mc-map/?'+new URLSearchParams({...Object.fromEntries(params),nogui:'false',nopanel:'false'});
  }
  function followButton(){$('map-follow').textContent=following?'Pause following':'Follow players';$('map-follow').setAttribute('aria-pressed',String(following));}
+ function showStatus(){
+  const n=latest.players.length,f=focus();
+  $('map-status').textContent=(n?`${n} player${n===1?'':'s'} online · `:'No one online · ')+(f.mode==='player'?(following?'Following ':'Near ')+(f.name||f.account):f.mode==='pin'?'Showing '+f.name:f.mode==='activity'?'Most active area · past 3 weeks':f.mode==='chunks'?'Recently saved chunks · activity history is building':'World spawn · activity history is building');
+ }
  async function mapStatus(){
   if(checking||document.hidden)return;checking=true;
   try{const r=await fetch(BASE+'/mc-status',{cache:'no-store',signal:AbortSignal.timeout(12000)});latest=await r.json();if(!r.ok||!latest.online)throw Error(latest.error||'The live map is temporarily unavailable.');
-   const n=latest.players.length,f=latest.focus;
-   $('map-status').textContent=(n?`${n} player${n===1?'':'s'} online · `:'No one online · ')+(f.mode==='player'?(following?'Following ':'Near ')+(f.name||f.account):f.mode==='activity'?'Most active area · past 3 weeks':f.mode==='chunks'?'Recently saved chunks · activity history is building':'World spawn · activity history is building');
+   showStatus();
    if(following||!lastTarget)showMap();
   }catch(e){$('map-status').textContent=e.message;if(!lastTarget){$('map-placeholder').hidden=false;$('map-message').textContent='Live map unavailable. Join instructions and the build board are ready below.';}}
   finally{checking=false;}
  }
  frame.addEventListener('load',()=>{if(frame.getAttribute('src')){clearTimeout(frameTimer);$('map-placeholder').hidden=true;}});
- $('map-follow').addEventListener('click',()=>{following=!following;lastTarget='';followButton();showMap();});followButton();
+ $('map-follow').addEventListener('click',()=>{following=!following;pinTarget=null;lastTarget='';followButton();showMap();});followButton();
 
  const instructions=$('platform-instructions'),platform=$('join-platform'),whitelistForm=$('whitelist-form');
  let accounts=[],whitelistPoll;
@@ -41,7 +50,7 @@
  function renderPeek(kind){const [value,hint]=peeks[kind];peekValue=value;peekSelect.value=kind;peekLine.replaceChildren(H.node('code',value),H.node('span',hint,'hint'));clearTimeout(peekTimer);peekCopy.textContent='Copy';peekCopy.setAttribute('aria-label','Copy '+value);bar.hidden=false;}
  peekSelect.addEventListener('change',()=>{platform.value=peekSelect.value;renderPlatform();});
  peekCopy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(peekValue);peekCopy.textContent='Copied';}catch{peekCopy.textContent='Could not copy';}clearTimeout(peekTimer);peekTimer=setTimeout(()=>peekCopy.textContent='Copy',2500);});
- const reduced=matchMedia('(prefers-reduced-motion: reduce)'),behavior=()=>reduced.matches?'auto':'smooth',goJoin=()=>$('join-server').scrollIntoView({behavior:behavior(),block:'start'});
+ const reduced=matchMedia('(prefers-reduced-motion: reduce)'),behavior=()=>reduced.matches?'auto':'smooth',goBelow=()=>(signed?places:joinSection).scrollIntoView({behavior:behavior(),block:'start'});
  let drag=null,dragged=false;
  bar.addEventListener('pointerdown',e=>{if(e.button||e.target.closest('[data-no-grab]'))return;drag={y:e.clientY,top:scrollY,id:e.pointerId,at:e.timeStamp,moved:false};bar.setPointerCapture(e.pointerId);});
  bar.addEventListener('pointermove',e=>{
@@ -53,10 +62,39 @@
  function release(e){
   if(!drag||e.pointerId!==drag.id)return;const d=drag,dy=d.y-e.clientY;drag=null;bar.removeAttribute('data-dragging');
   if(!d.moved)return;setTimeout(()=>dragged=false,50);
-  if(e.type==='pointerup'&&(dy>90||(dy>24&&dy/Math.max(1,e.timeStamp-d.at)>.6)))goJoin();else scrollTo({top:0,behavior:behavior()});
+  if(e.type==='pointerup'&&(dy>90||(dy>24&&dy/Math.max(1,e.timeStamp-d.at)>.6)))goBelow();else scrollTo({top:0,behavior:behavior()});
  }
  bar.addEventListener('pointerup',release);bar.addEventListener('pointercancel',release);
- bar.addEventListener('click',e=>{if(dragged||e.target.closest('[data-no-grab]'))return;goJoin();});
+ bar.addEventListener('click',e=>{if(dragged||e.target.closest('[data-no-grab]'))return;goBelow();});
+ // Places come from the Dynmap marker files, so a sign marker or anything else put on the map shows up here.
+ // Signed in, they are first on the page and on the grab bar; signed out, they sit under the join instructions.
+ const joinSection=$('join-server'),places=$('places'),peek=$('join-peek'),shelf=$('places-shelf'),grab=$('join-grab');
+ const title=p=>p.world==='world'?p.name:p.name+' · '+WORLDS[p.world];
+ // Going to a place pauses following, and brings the map back into view if the page was scrolled down.
+ function goTo(pin){pinTarget={mode:'pin',...pin};following=false;followButton();lastTarget='';showMap();if(scrollY>40)scrollTo({top:0,behavior:behavior()});}
+ function layoutPlaces(){
+  signed?joinSection.before(places):joinSection.after(places);
+  const onBar=signed&&pins.length>0;peek.hidden=onBar;shelf.hidden=!onBar;
+  bar.setAttribute('aria-label',onBar?'Places':'Join the server');grab.setAttribute('aria-label',onBar?'Show all places':'Show the full join instructions');
+ }
+ function renderPlaces(){
+  const list=$('places-list');list.replaceChildren();shelf.replaceChildren();
+  if(!pins.length)list.append(H.node('p','No places yet.','empty'));
+  for(const p of pins){
+   const row=H.node('button',undefined,'place');row.type='button';row.append(H.node('span',p.name,'place-name'),H.node('span',`${WORLDS[p.world]} · ${p.x}, ${p.y}, ${p.z}`,'place-where'));row.addEventListener('click',()=>goTo(p));list.append(row);
+   const chip=H.node('button',title(p),'place');chip.type='button';chip.addEventListener('click',()=>goTo(p));shelf.append(chip);
+  }
+  layoutPlaces();
+ }
+ async function loadPins(){
+  const found=await Promise.allSettled(Object.keys(WORLDS).map(async world=>{
+   const r=await fetch(BASE+'/mc-map/tiles/_markers_/marker_'+world+'.json',{cache:'no-store',signal:AbortSignal.timeout(8000)});if(!r.ok)throw Error('No markers');
+   const data=await r.json();return Object.values(data.sets||{}).flatMap(set=>Object.entries(set.markers||{}).map(([key,m])=>({name:String(m.label||key).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim()||key,world,x:Math.round(m.x),y:Math.round(m.y),z:Math.round(m.z)})));
+  }));
+  // Keep what is showing if the markers cannot be read.
+  if(!found.some(r=>r.status==='fulfilled'))return;
+  pins=found.flatMap(r=>r.status==='fulfilled'?r.value:[]).filter(p=>[p.x,p.y,p.z].every(Number.isFinite)).sort((a,b)=>a.name.localeCompare(b.name)||a.world.localeCompare(b.world));renderPlaces();
+ }
  function renderPlatform(){
   instructions.replaceChildren();const selected=platform.value;
   if(selected==='java'){paragraph('In Minecraft, choose Multiplayer → Add Server.');address();}
@@ -78,9 +116,9 @@
   const existing=accounts.find(r=>r.edition===whitelistForm.elements.edition.value&&['pending','processing','added'].includes(r.status));
   whitelistForm.querySelector('button').disabled=!!existing;whitelistForm.elements.username.disabled=!!existing;if(existing)whitelistForm.elements.username.value=existing.username;
  }
- function syncWhitelistAuth(){const ok=!!H.user&&!!window.familyAccount.current;$('whitelist-auth').hidden=ok;whitelistForm.hidden=!ok;if(!ok){accounts=[];$('whitelist-accounts').replaceChildren();clearTimeout(whitelistPoll);}}
+ function syncWhitelistAuth(){const ok=!!H.user&&!!window.familyAccount.current;$('whitelist-auth').hidden=ok;whitelistForm.hidden=!ok;if(!ok){accounts=[];myNames.clear();$('whitelist-accounts').replaceChildren();clearTimeout(whitelistPoll);}signed=ok;layoutPlaces();if(following)showMap();}
  async function loadWhitelist(){
-  try{const data=await api('/hub/mc-whitelist');accounts=data.accounts;syncWhitelistAuth();renderAccounts();clearTimeout(whitelistPoll);if(accounts.some(r=>['pending','processing'].includes(r.status)))whitelistPoll=setTimeout(loadWhitelist,2500);}
+  try{const data=await api('/hub/mc-whitelist');accounts=data.accounts;myNames=new Set(accounts.map(r=>norm(r.username)));syncWhitelistAuth();renderAccounts();clearTimeout(whitelistPoll);if(accounts.some(r=>['pending','processing'].includes(r.status)))whitelistPoll=setTimeout(loadWhitelist,2500);}
   catch(e){notice('whitelist-message',e.message,true);}
  }
  platform.addEventListener('change',renderPlatform);whitelistForm.elements.edition.addEventListener('change',()=>{whitelistForm.elements.username.value='';editionHint();renderAccounts();});
@@ -88,5 +126,6 @@
  window.addEventListener('family-account-change',()=>{if(!window.familyAccount.current)syncWhitelistAuth();});renderPlatform();
  $('add-build').addEventListener('click',()=>H.openTask('build'));
  H.init(async()=>{const data=await api('/hub/builds');H.user=data.user;H.board('build-board',data.tasks,'build',data.user);await loadWhitelist();});
+ loadPins();setInterval(()=>{if(!document.hidden)loadPins();},60000);
  mapStatus();setInterval(mapStatus,15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)mapStatus();});
 })();
