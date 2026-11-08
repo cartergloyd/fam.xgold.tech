@@ -1,13 +1,24 @@
 (() => {
  const H=window.familyHub,{$,api,notice}=H,BASE='https://fam-api.xgold.tech/family';
  let following=!matchMedia('(prefers-reduced-motion: reduce)').matches,latest,lastTarget='',checking=false,frameTimer;
- const frame=$('live-map');
+ const frame=$('live-map'),mapWrap=frame.parentElement,exploreButton=$('map-explore'),activateMap=$('map-activate');
+ // The map fills the first screen, so it stays inert (the wheel and touch scroll the page) until it is clicked or tapped.
+ let exploring=false;
+ function setExploring(on){
+  const live=!!frame.getAttribute('src');exploring=on&&live;
+  mapWrap.toggleAttribute('data-exploring',exploring);exploreButton.hidden=!live;activateMap.hidden=!live||exploring;
+  exploreButton.textContent=exploring?'Done':'Zoom and pan';exploreButton.setAttribute('aria-label',exploring?'Done, go back to scrolling the page':'Zoom and pan the map');
+ }
+ activateMap.addEventListener('click',()=>{setExploring(true);frame.focus();});
+ exploreButton.addEventListener('click',()=>setExploring(!exploring));
+ // Scrolling the map out of view (the Join link, the scrollbar, the keyboard) hands scrolling back to the page.
+ new IntersectionObserver(([entry])=>{if(entry.intersectionRatio<.5)setExploring(false);},{threshold:.5}).observe(mapWrap.closest('.map-hero'));
  function showMap(){
   if(!latest?.online)return;const f=latest.focus;
   const target=following&&f.mode==='player'?'player:'+f.account:'area:'+f.world+':'+Math.round(f.x)+':'+Math.round(f.z);
   const params=new URLSearchParams({worldname:f.world||'world',mapname:f.world==='world'?'surface':'flat',x:Math.round(f.x||0),y:Math.round(f.y||64),z:Math.round(f.z||0),zoom:'5',nogui:'false',nopanel:'true',nocompass:'true'});
   if(following&&f.mode==='player')params.set('playername',f.account);
-  if(target!==lastTarget){frame.src=BASE+'/mc-map/?'+params;lastTarget=target;$('map-placeholder').hidden=false;$('map-message').textContent='Opening the live map…';clearTimeout(frameTimer);frameTimer=setTimeout(()=>{$('map-message').textContent='The map is taking a little longer. Use “Open map” to try it directly.';},20000);}
+  if(target!==lastTarget){frame.src=BASE+'/mc-map/?'+params;lastTarget=target;setExploring(exploring);$('map-placeholder').hidden=false;$('map-message').textContent='Opening the live map…';clearTimeout(frameTimer);frameTimer=setTimeout(()=>{$('map-message').textContent='The map is taking a little longer. Use “Open map” to try it directly.';},20000);}
   $('open-map').href=BASE+'/mc-map/?'+new URLSearchParams({...Object.fromEntries(params),nogui:'false',nopanel:'false'});
  }
  function followButton(){$('map-follow').textContent=following?'Pause following':'Follow players';$('map-follow').setAttribute('aria-pressed',String(following));}
