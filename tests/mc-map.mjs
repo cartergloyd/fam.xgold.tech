@@ -203,3 +203,27 @@ test('last seen: offline the map shows where I was, online it follows me, and it
   assert.deepEqual(errors,[]);await context.close();
  }finally{await done();}
 });
+// Some iPhones report a Home Screen app's viewport shorter than the screen, which left a white strip under the map.
+test('a Home Screen app with a short viewport still gets a map that reaches the bottom of the screen',async()=>{
+ const {browser,origin,done}=await launch();
+ try{
+  // A 390x844 screen whose viewport is only 791px tall, as in the screenshot from the phone with the strip.
+  const phone=await browser.newContext({viewport:{width:390,height:791},hasTouch:true,isMobile:true});
+  await phone.addInitScript(()=>{Object.defineProperty(navigator,'standalone',{value:true});Object.defineProperty(screen,'height',{get:()=>844});});
+  await mock(phone);const m=await phone.newPage();const errors=[];m.on('pageerror',e=>errors.push(e.message));
+  await m.goto(origin+'/mc/');await m.locator('#dock').waitFor({state:'visible'});
+  assert.equal(await m.evaluate(()=>document.documentElement.style.getPropertyValue('--gap')),'53px');
+  const map=await m.locator('#live-map').boundingBox(),dock=await m.locator('#dock').boundingBox();
+  assert(Math.abs(map.y+map.height-844)<=1,`the map reaches the screen bottom, got ${JSON.stringify(map)}`);assert(Math.abs(791-(dock.y+dock.height)-10)<=1,'the dock stays just above where the viewport ends');
+  assert.equal(await m.evaluate(()=>getComputedStyle(document.documentElement).backgroundColor),'rgb(21, 21, 21)','any strip left over is dark, not white');
+  // Opening a sheet still centers the map between the banner and the sheet.
+  await tab(m,'people').tap();await m.waitForTimeout(900);
+  const open=await m.locator('#dock').boundingBox(),ribbon=await m.locator('.family-ribbon').boundingBox(),moved=await m.locator('#live-map').boundingBox();
+  assert(Math.abs(moved.y+moved.height/2-(ribbon.y+ribbon.height+open.y)/2)<=2,`centered between the banner and the sheet, got ${JSON.stringify(moved)}`);
+  await tab(m,'people').tap();await m.waitForTimeout(900);const back=await m.locator('#live-map').boundingBox();assert(Math.abs(back.y+back.height-844)<=1&&back.y===0,`back to the full screen, got ${JSON.stringify(back)}`);
+  assert.deepEqual(errors,[]);await phone.close();
+  // On a normal phone there is no gap and nothing changes.
+  const normal=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true});await mock(normal);const n=await normal.newPage();await n.goto(origin+'/mc/');await n.locator('#dock').waitFor({state:'visible'});
+  assert.equal(await n.evaluate(()=>document.documentElement.style.getPropertyValue('--gap')),'0px');assert.deepEqual(Object.values(await n.locator('#live-map').boundingBox()),[0,0,390,844]);
+ }finally{await done();}
+});

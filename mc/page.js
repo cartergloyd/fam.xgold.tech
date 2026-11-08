@@ -1,5 +1,13 @@
 (() => {
  const H=window.familyHub,{$,api,notice}=H,BASE='https://fam-api.xgold.tech/family';
+ // Some iPhones report a Home Screen app's viewport shorter than the screen, which left a strip under the map. The map is painted into
+ // that gap (--gap), and the dock stays where it is, just above where the viewport ends.
+ let gap=0;
+ function measureGap(){
+  const standalone=navigator.standalone||matchMedia('(display-mode: standalone)').matches,g=standalone?Math.round(screen.height-innerHeight):0;
+  gap=g>20&&g<120?g:0;document.documentElement.style.setProperty('--gap',gap+'px');
+ }
+ measureGap();addEventListener('resize',measureGap);
  let following=!matchMedia('(prefers-reduced-motion: reduce)').matches,latest,lastTarget='',checking=false,frameTimer;
  const frame=$('live-map'),WORLDS={world:'Overworld',world_nether:'Nether',world_the_end:'The End'};
  let pins=[],pinTarget=null,picked=null,myNames=new Set(),signed=false,starred=new Set(),starsOn=false,lastSpot=null,wasOnline=false;
@@ -55,7 +63,7 @@
   const head=sheet.querySelector('.sheet-head').offsetHeight,panel=Math.round(Math.min(head+sheet.querySelector('.sheet-body').scrollHeight,innerHeight*.44,420));
   dock.style.setProperty('--panel-h',panel+'px');
   const banner=document.querySelector('.family-ribbon')?.getBoundingClientRect().bottom||0,top=probe.getBoundingClientRect().bottom-panel-island.offsetHeight;
-  wrap.style.setProperty('--map-shift',(banner+top-innerHeight)/2+'px');
+  wrap.style.setProperty('--map-shift',(banner+top-innerHeight-gap)/2+'px');
  }
  function openSheet(name){
   dock.dataset.view=name;$('sheet-title').textContent=TITLES[name];
