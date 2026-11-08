@@ -1,10 +1,11 @@
 /* The map is the whole screen. Everything else floats over it as glass: map buttons, a status chip, a sheet, and the island of tabs.
    Glass is only for these floating controls; the lists and forms inside a sheet are ordinary content. Tokens live in tokens.css. */
-:root { --ribbon-h:95px; --island-h:70px; --edge:16px; --map-ext:260px;
+:root { /* the dock sits low, like Find My's tab bar: 10px up, or a home-indicator inset less 20px where there is one */
+ --dock-bottom:max(10px, calc(env(safe-area-inset-bottom, 0px) - 20px)); --ribbon-h:95px; --island-h:70px; --edge:16px; --map-ext:260px;
  /* The dock is one glass container: a pill when closed, a card when open. Phones follow Find My (pill 22px from the edges, open sheet 8px);
     wider screens follow the fantasy football page's widgets (its gutter and 1100px column). */
- --closed-w:300px; --closed-bottom:var(--page-gutter);
- --open-w:min(100vw - 2 * var(--page-gutter), var(--page-max) - 2 * var(--page-gutter)); --open-bottom:var(--page-gutter); }
+ --closed-w:300px; --closed-bottom:var(--dock-bottom);
+ --open-w:min(100vw - 2 * var(--page-gutter), var(--page-max) - 2 * var(--page-gutter)); --open-bottom:var(--dock-bottom); }
 body[data-hub="mc"] { overflow:hidden; }
 body[data-hub="mc"] > family-ribbon { height:0; }
 main.mc-main { max-width:none; margin:0; padding:0; }
@@ -24,20 +25,17 @@ main.mc-main { max-width:none; margin:0; padding:0; }
 .map-controls #map-follow[aria-pressed=true] { color:var(--accent); }
 .map-controls #map-follow[aria-pressed=true] svg { fill:currentColor; }
 
-/* What the map is showing, just above the island. Hidden while a sheet is open. */
-.status-chip { position:fixed; z-index:10; left:50%; transform:translateX(-50%); bottom:calc(var(--closed-bottom) + var(--island-h) + 8px + env(safe-area-inset-bottom,0px)); margin:0; width:max-content; max-width:calc(100% - 2 * var(--edge)); min-height:36px; padding:6px 16px; display:flex; align-items:center; text-align:center; border-radius:var(--radius-pill); font-size:13px; line-height:1.3; }
-.status-chip { transition:opacity .2s var(--ease-sheet), visibility 0s; }
-body[data-sheet] .status-chip { opacity:0; visibility:hidden; transition:opacity .15s linear, visibility 0s linear .15s; }
 
 /* The dock: the island of tabs, and the sheet that grows out of it. One container, so opening a tab expands the pill instead of
    raising a second window. Its size is animated with explicit values; the sheet inside keeps its open width so the text never reflows mid-move. */
-.dock { position:fixed; z-index:10; left:50%; transform:translateX(-50%); bottom:calc(var(--closed-bottom) + env(safe-area-inset-bottom,0px)); width:var(--closed-w); height:var(--island-h); display:flex; flex-direction:column; align-items:center; overflow:hidden; border-radius:calc(var(--island-h) / 2); transition:width var(--duration-sheet) var(--ease-sheet), height var(--duration-sheet) var(--ease-sheet), bottom var(--duration-sheet) var(--ease-sheet), border-radius var(--duration-sheet) var(--ease-sheet), background-color var(--duration-sheet) var(--ease-sheet); will-change:width,height; }
-.dock[data-open] { width:var(--open-w); height:calc(var(--panel-h,0px) + var(--island-h)); bottom:calc(var(--open-bottom) + env(safe-area-inset-bottom,0px)); border-radius:var(--radius-card); background:var(--glass-bg-strong); }
-.dock-probe { position:fixed; left:0; width:0; height:0; bottom:calc(var(--open-bottom) + env(safe-area-inset-bottom,0px)); visibility:hidden; pointer-events:none; }
+.dock { position:fixed; z-index:10; left:50%; transform:translateX(-50%); bottom:var(--closed-bottom); width:var(--closed-w); height:var(--island-h); display:flex; flex-direction:column; align-items:center; overflow:hidden; border-radius:calc(var(--island-h) / 2); transition:width var(--duration-sheet) var(--ease-sheet), height var(--duration-sheet) var(--ease-sheet), bottom var(--duration-sheet) var(--ease-sheet), border-radius var(--duration-sheet) var(--ease-sheet), background-color var(--duration-sheet) var(--ease-sheet); will-change:width,height; }
+.dock[data-open] { width:var(--open-w); height:calc(var(--panel-h,0px) + var(--island-h)); bottom:var(--open-bottom); border-radius:var(--radius-card); background:var(--glass-bg-strong); }
+.dock-probe { position:fixed; left:0; width:0; height:0; bottom:var(--open-bottom); visibility:hidden; pointer-events:none; }
 .island { flex:none; width:100%; display:flex; justify-content:center; gap:4px; padding:6px; }
 .tab { flex:none; min-width:92px; min-height:56px; padding:6px 12px; border-radius:var(--radius-pill); background:none; color:var(--text); flex-direction:column; gap:2px; font-size:12px; font-weight:var(--weight-semibold); }
 .tab[aria-pressed=true] { background:var(--glass-select); color:var(--accent); }
 .tab svg { stroke-width:1.9; }
+.tab[aria-pressed=true] svg .tick { stroke:var(--text-on-dark); }
 .tab[aria-pressed=true] svg .solid { fill:currentColor; }
 .sheet { flex:1; min-height:0; width:calc(var(--open-w) - 2px); display:flex; flex-direction:column; opacity:0; visibility:hidden; transition:opacity .12s linear, visibility 0s linear .12s; }
 .dock[data-open] .sheet { opacity:1; visibility:visible; transition:opacity .3s var(--ease-sheet) .14s, visibility 0s; }
@@ -116,7 +114,7 @@ body[data-sheet] .status-chip { opacity:0; visibility:hidden; transition:opacity
 .footer-note { margin-top:28px; }
 #page-message { margin:8px 0; min-height:0; }
 @media(max-width:760px) {
- :root { --closed-w:calc(100vw - 44px); --closed-bottom:22px; --open-w:calc(100vw - 16px); --open-bottom:8px; }
+ :root { --closed-w:calc(100vw - 44px); --open-w:calc(100vw - 16px); }
  .tab { flex:1; min-width:0; padding:6px 8px; }
  .sheet-body { padding:0 20px 20px; }
  .sheet-head h2 { font-size:24px; }

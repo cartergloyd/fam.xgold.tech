@@ -8,7 +8,7 @@ import {chromium} from 'playwright';
 const root=new URL('../',import.meta.url).pathname;
 async function server(){const s=createServer(async(req,res)=>{try{let p=new URL(req.url,'http://local').pathname;if(p.endsWith('/'))p+='index.html';const f=resolve(root,'.'+p);if(!f.startsWith(root))throw Error();const b=await readFile(f);res.setHeader('Content-Type',f.endsWith('.js')?'text/javascript':f.endsWith('.css')?'text/css':f.endsWith('.png')?'image/png':'text/html');res.end(b);}catch{res.writeHead(404);res.end();}});await new Promise(r=>s.listen(0,'127.0.0.1',r));return s;}
 // Dynmap's marker files, one per world: signs and anything else marked on the map.
-const MARKERS={world:{_spawn_world:{label:'Spawn',x:0,y:64,z:0},sign_1:{label:'Base',x:100,y:70,z:-200}},world_nether:{portal:{label:'Portal',x:10,y:80,z:20}},world_the_end:{}};
+const MARKERS={world:{_spawn_world:{label:'Spawn',x:0,y:64,z:0},sign_1:{label:'Base',x:100,y:70,z:-200}},world_nether:{_spawn_world_nether:{label:'Spawn',x:5440,y:75,z:-6992},portal:{label:'Portal',x:10,y:80,z:20}},world_the_end:{_spawn_world_the_end:{label:'Spawn',x:5440,y:75,z:-6992}}};
 const buildTasks=()=>[
  {id:'t1',kind:'build',title:'Main Nether-hub, centered on 0, 0.',description:'Include book about best practices, technical how-tos, etc',status:'todo',name:'Carter',world:'world_nether',x:null,y:null,z:null,revision:1},
  {id:'t2',kind:'build',title:'Wheat farm upgrade',description:'',status:'doing',name:'Alex',world:'world',x:410,y:68,z:220,revision:1},
@@ -58,23 +58,26 @@ test('the map fills the screen and is live; the island opens and closes the shee
   const seen=await inMap(page);assert(seen.downs>0&&seen.drags>0,'the map to get the drag');
   await page.mouse.wheel(0,500);await until(async()=>(await inMap(page)).wheels>0,'the map to get the wheel');assert.equal(await scrollY(page),0);
   // The island: three tabs, centered at the bottom, each at least 44px tall, over glass.
-  const pill=await page.locator('#dock').boundingBox();assert(Math.abs(pill.width-300)<=1&&Math.abs(pill.x+pill.width/2-640)<=1&&Math.abs(800-(pill.y+pill.height)-48)<=1,`a centered pill 48px from the bottom, got ${JSON.stringify(pill)}`);
+  const pill=await page.locator('#dock').boundingBox();assert(Math.abs(pill.width-300)<=1&&Math.abs(pill.x+pill.width/2-640)<=1&&Math.abs(800-(pill.y+pill.height)-10)<=1,`a centered pill 10px from the bottom, got ${JSON.stringify(pill)}`);
   assert.deepEqual(await page.locator('.tab span').allTextContents(),['Locations','Building','Join']);
+  // The Building icon is a checked circle: an outline ring and check, then a filled circle with a light check once selected.
+  const circle=()=>page.locator('.tab[data-tab=build] circle').evaluate(e=>[getComputedStyle(e).fill,getComputedStyle(e.nextElementSibling).stroke]);
+  assert.deepEqual((await circle())[0],'none');await tab(page,'build').click();await page.waitForTimeout(300);const lit=await circle();assert.notEqual(lit[0],'none');assert.equal(lit[1],'rgb(245, 245, 247)');await tab(page,'build').click();await page.waitForTimeout(600);
   for(const t of await page.locator('.tab').all())assert((await t.boundingBox()).height>=44);
   assert((await page.locator('#dock').evaluate(e=>getComputedStyle(e).backdropFilter||'')).includes('blur'),'glass blur on the dock');
   // A tab opens its sheet, titled for it; the same tab, Escape or the close button closes it.
-  assert.equal(await sheetOpen(page),false);assert.match(await page.locator('#map-status').textContent(),/No one online/);assert.equal(await page.locator('#map-status').isVisible(),true);
+  assert.equal(await sheetOpen(page),false);assert.match(await page.locator('#map-status').textContent(),/No one online/);assert.equal(await page.locator('.status-chip').count(),0,'no status bubble on the map');assert.equal(await page.locator('#map-status').evaluate(e=>e.className),'sr-only','the status is for screen readers only');
   await tab(page,'people').click();assert.equal(await sheetOpen(page),true);assert.equal(await page.locator('#sheet-title').textContent(),'People & Locations');
   // The pill itself expands into the sheet (same element, tabs still at its bottom) to the width of the fantasy football page's widgets:
   // the 1100px column minus a 48px gutter each side. It stays short, and the map's center moves halfway between the site banner and the sheet.
   await page.waitForTimeout(800);assert.equal(await page.locator('#sheet').isVisible(),true);const open=await page.locator('#dock').boundingBox(),ribbon=await page.locator('.family-ribbon').boundingBox(),tabsBox=await page.locator('#island').boundingBox();
-  assert(Math.abs(open.width-1004)<=1&&Math.abs(open.x-138)<=1&&Math.abs(800-(open.y+open.height)-48)<=1,`the expanded dock, got ${JSON.stringify(open)}`);
+  assert(Math.abs(open.width-1004)<=1&&Math.abs(open.x-138)<=1&&Math.abs(800-(open.y+open.height)-10)<=1,`the expanded dock, got ${JSON.stringify(open)}`);
   assert(open.height<=800*.44+70+2,`a short sheet, got ${open.height}px`);assert(Math.abs(tabsBox.y+tabsBox.height-(open.y+open.height))<=8,'the tabs stay at the bottom of the dock');
   const moved=await page.locator('#live-map').boundingBox();assert(Math.abs(moved.y+moved.height/2-(ribbon.y+ribbon.height+open.y)/2)<=2,`the map centered between the banner and the sheet, got ${JSON.stringify(moved)}`);
   assert(await page.evaluate(()=>{const b=document.querySelector('#sheet .sheet-body');return b.scrollHeight>=b.clientHeight;}));
   await tab(page,'people').click();await page.waitForTimeout(800);assert.deepEqual(Object.values(await page.locator('#live-map').boundingBox()),[0,0,1280,800],'the map goes back to full screen');
-  await tab(page,'people').click();assert.equal(await tab(page,'people').getAttribute('aria-pressed'),'true');await until(async()=>!(await page.locator('#map-status').isVisible()),'the status chip to fade out');
-  await tab(page,'people').click();assert.equal(await sheetOpen(page),false);assert.equal(await page.locator('#map-status').isVisible(),true);
+  await tab(page,'people').click();assert.equal(await tab(page,'people').getAttribute('aria-pressed'),'true');
+  await tab(page,'people').click();assert.equal(await sheetOpen(page),false);
   await tab(page,'people').click();await page.keyboard.press('Escape');assert.equal(await sheetOpen(page),false);
   await tab(page,'people').click();await page.locator('#sheet-close').click();assert.equal(await sheetOpen(page),false);
   // Pulling the header down dismisses it too.
@@ -98,12 +101,12 @@ test('on a phone the island and sheet fit, the map takes touch, and a tapped pla
   const phone=await browser.newContext({viewport:{width:375,height:700},hasTouch:true,isMobile:true});await mock(phone,{online:players});const m=await phone.newPage();
   await m.goto(origin+'/mc/');await m.locator('#island').waitFor({state:'visible'});await until(()=>m.frame({url:/mc-map/}),'the map frame on the phone');
   assert(await m.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
-  const pill=await m.locator('#dock').boundingBox();assert(Math.abs(pill.x-22)<=1&&Math.abs(pill.width-331)<=1&&Math.abs(700-(pill.y+pill.height)-22)<=1,`a pill 22px from the sides and bottom, got ${JSON.stringify(pill)}`);
+  const pill=await m.locator('#dock').boundingBox();assert(Math.abs(pill.x-22)<=1&&Math.abs(pill.width-331)<=1&&Math.abs(700-(pill.y+pill.height)-10)<=1,`a pill 22px from the sides and 10px from the bottom, got ${JSON.stringify(pill)}`);
   const cdp=await phone.newCDPSession(m),touch=(type,y,x=190)=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints:type==='touchEnd'?[]:[{x,y}]});
   await touch('touchStart',250);for(let y=250;y<=310;y+=10)await touch('touchMove',y);await touch('touchEnd',0);
   const touched=await inMap(m);assert(touched.downs>0&&touched.drags>0,'the map to get the touch drag');assert.equal(await scrollY(m),0);
   await tab(m,'people').tap();await until(()=>sheetOpen(m),'the sheet');await m.waitForTimeout(800);// let the expansion finish before measuring
-  const open=await m.locator('#dock').boundingBox();assert(Math.abs(open.x-8)<=1&&Math.abs(open.width-359)<=1&&Math.abs(700-(open.y+open.height)-8)<=1&&open.y>=95,`a sheet 8px from the sides and bottom, below the banner, got ${JSON.stringify(open)}`);assert(open.height<=700*.44+70+2,`a short sheet, got ${open.height}px`);
+  const open=await m.locator('#dock').boundingBox();assert(Math.abs(open.x-8)<=1&&Math.abs(open.width-359)<=1&&Math.abs(700-(open.y+open.height)-10)<=1&&open.y>=95,`a sheet 8px from the sides and 10px from the bottom, below the banner, got ${JSON.stringify(open)}`);assert(open.height<=700*.44+70+2,`a short sheet, got ${open.height}px`);
   assert(await m.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   await m.locator('#people-list .row-main',{hasText:'Base'}).tap();await until(async()=>(await src(m)).includes('x=100'),'the map to move');assert.equal(await sheetOpen(m),false,'the sheet closes so the map shows');
   await phone.close();
@@ -123,8 +126,9 @@ test('people and locations: online players first, photo or initial or emoji bubb
   assert.equal(await bubble('Alex').textContent(),'A');assert.equal(await bubble('Alex').locator('img').count(),0);
   assert.deepEqual([await bubble('Base').textContent(),await bubble('Portal').textContent(),await bubble('Spawn').textContent()],['🏠','🌀','🌍']);
   assert.equal((await bubble('Alex').evaluate(e=>e.style.getPropertyValue('--bubble'))).startsWith('var(--bubble-'),true);
-  assert.match(await page.locator('#people-list .row-item',{hasText:'Base'}).locator('.row-sub').textContent(),/Overworld · 100, 70, -200/);
-  assert.match(await page.locator('#people-list .row-item',{hasText:'Carter'}).locator('.row-sub').textContent(),/Overworld · 300, 70, 400/);
+  assert.match(await page.locator('#people-list .row-item',{hasText:'Base'}).locator('.row-sub').textContent(),/^100, 70, -200$/);
+  assert.match(await page.locator('#people-list .row-item',{hasText:'Portal'}).locator('.row-sub').textContent(),/^Nether · 10, 80, 20$/);
+  assert.match(await page.locator('#people-list .row-item',{hasText:'Carter'}).locator('.row-sub').textContent(),/^300, 70, 400$/);
   // A place takes the map there and pauses following; the sheet stays open on a wide screen.
   await page.locator('#people-list .row-main',{hasText:'Base'}).click();await until(async()=>(await src(page)).includes('x=100'),'the map to move');
   assert((await src(page)).includes('z=-200')&&(await src(page)).includes('worldname=world&'));

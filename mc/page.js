@@ -5,6 +5,8 @@
  let pins=[],pinTarget=null,picked=null,myNames=new Set(),signed=false,starred=new Set(),starsOn=false,lastSpot=null,wasOnline=false;
  // Dynmap shows Bedrock players as ".Name" with underscores for spaces; the whitelist keeps the gamertag as typed.
  const norm=s=>String(s||'').toLowerCase().replace(/^\./,'').replace(/[\s_]/g,'');
+ // Coordinates, with the world named only when it is not the Overworld.
+ const at=(world,x,y,z)=>`${world==='world'?'':(WORLDS[world]||world)+' · '}${x}, ${y}, ${z}`;
  const online=key=>latest?.players?.find(p=>norm(p.account)===key);
  const mine=()=>latest?.players?.find(p=>myNames.has(norm(p.account)));
  // A pin wins, then the player someone tapped, then the signed-in player (live if online, else the spot they were last seen), then whoever the server picked.
@@ -103,10 +105,10 @@
   const players=(latest?.players||[]).map(p=>({...p,id:'player:'+norm(p.account)})).sort((a,b)=>byStar(a,b)||(a.name||a.account).localeCompare(b.name||b.account));
   list.append(H.node('p','Online now','rows-title'));
   if(!players.length)list.append(H.node('p','No one is online right now.','empty'));
-  for(const p of players)list.append(row({id:p.id,bubble:playerBubble(p),name:p.name||p.account,sub:`${WORLDS[p.world]||p.world} · ${Math.round(p.x)}, ${Math.round(p.y)}, ${Math.round(p.z)}`,go:()=>goPlayer(p)}));
+  for(const p of players)list.append(row({id:p.id,bubble:playerBubble(p),name:p.name||p.account,sub:at(p.world,Math.round(p.x),Math.round(p.y),Math.round(p.z)),go:()=>goPlayer(p)}));
   list.append(H.node('p','Named Locations','rows-title'));
   if(!pins.length)list.append(H.node('p','No locations yet.','empty'));
-  for(const p of pins)list.append(row({id:p.id,bubble:placeBubble(p),name:p.name,sub:`${WORLDS[p.world]} · ${p.x}, ${p.y}, ${p.z}`,go:()=>goTo(p)}));
+  for(const p of pins)list.append(row({id:p.id,bubble:placeBubble(p),name:p.name,sub:at(p.world,p.x,p.y,p.z),go:()=>goTo(p)}));
   if(keep)list.querySelector(`[data-pin="${CSS.escape(keep)}"]`)?.focus();
  }
  // Going to a player follows them live; going to a location pauses following and shows that spot.
@@ -138,9 +140,10 @@
    const r=await fetch(BASE+'/mc-map/tiles/_markers_/marker_'+world+'.json',{cache:'no-store',signal:AbortSignal.timeout(8000)});if(!r.ok)throw Error('No markers');
    const data=await r.json();return Object.entries(data.sets||{}).flatMap(([setKey,set])=>Object.entries(set.markers||{}).map(([key,m])=>({id:`${world}:${setKey}:${key}`,name:String(m.label||key).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim()||key,world,x:Math.round(m.x),y:Math.round(m.y),z:Math.round(m.z)})));
   }));
+  // Dynmap's automatic Nether and End spawn markers are left out; the Overworld spawn and anything a player named stay.
   // Keep what is showing if the markers cannot be read.
   if(!found.some(r=>r.status==='fulfilled'))return;
-  pins=found.flatMap(r=>r.status==='fulfilled'?r.value:[]).filter(p=>[p.x,p.y,p.z].every(Number.isFinite));sortPins();renderPeople();
+  pins=found.flatMap(r=>r.status==='fulfilled'?r.value:[]).filter(p=>[p.x,p.y,p.z].every(Number.isFinite)&&!(p.world!=='world'&&(p.id.split(':')[2]||'').startsWith('_spawn_')));sortPins();renderPeople();
  }
 
  // Building: a Reminders style list of ideas. The circle checks one off, the row opens it for editing, and a pin takes the map to its spot.
@@ -150,7 +153,7 @@
   box.type='button';box.innerHTML=CHECK;box.setAttribute('aria-pressed',String(done));box.setAttribute('aria-label',(done?'Mark not done: ':'Mark done: ')+task.title);box.addEventListener('click',()=>toggleTask(task,box));
   edit.type='button';edit.append(H.node('span',task.title,'todo-title'));if(task.description)edit.append(H.node('span',task.description,'todo-notes'));edit.addEventListener('click',()=>H.openTask('build',task));body.append(edit);
   body.append(H.node('span',`Added by ${task.name}${task.status==='doing'?' · In progress':''}`,'todo-meta'));
-  if(task.x!==null&&task.x!==undefined){const where=H.node('button',`${WORLDS[task.world]} · ${task.x}, ${task.y}, ${task.z}`,'todo-where');where.type='button';where.addEventListener('click',()=>goTo({name:task.title,world:task.world,x:task.x,y:task.y,z:task.z}));body.append(where);}
+  if(task.x!==null&&task.x!==undefined){const where=H.node('button',at(task.world,task.x,task.y,task.z),'todo-where');where.type='button';where.addEventListener('click',()=>goTo({name:task.title,world:task.world,x:task.x,y:task.y,z:task.z}));body.append(where);}
   li.append(box,body);return li;
  }
  function renderBuilds(tasks){
