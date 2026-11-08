@@ -195,8 +195,8 @@ The /mc page lists every Dynmap marker (signs, `/dmarker`, anything on the map) 
 `/family/mc-map/tiles/_markers_/marker_<world>.json`. That needs no server change. Two extras are per member
 and need this install; the page hides them if the server does not have them yet.
 
-- **Stars** (`family_mc_pin_stars`, `GET/POST /hub/mc-stars`): a member stars locations; starred ones come first
-  in the Named Locations list. A pin id is `world:set:marker`. Capped at 200 per member.
+- **Stars** (`family_mc_pin_stars`, `GET/POST /hub/mc-stars`): a member stars players and locations; starred ones come first
+  in their group of the People & Locations sheet. A location id is `world:set:marker`, a player id is `player:<account key>`. Capped at 200 per member.
 - **Last seen** (`family_mc_last_seen`, `GET /hub/mc-last-seen`): `collect-activity.py` also keeps one row per
   Minecraft account key (lowercase name, no leading dot, no spaces or underscores; no UUID) with the spot it was
   last seen online, refreshed every minute. The endpoint looks up only the signed-in member's own linked

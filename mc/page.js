@@ -2,22 +2,27 @@
  const H=window.familyHub,{$,api,notice}=H,BASE='https://fam-api.xgold.tech/family';
  let following=!matchMedia('(prefers-reduced-motion: reduce)').matches,latest,lastTarget='',checking=false,frameTimer;
  const frame=$('live-map'),WORLDS={world:'Overworld',world_nether:'Nether',world_the_end:'The End'};
- let pins=[],pinTarget=null,myNames=new Set(),signed=false,starred=new Set(),starsOn=false,lastSpot=null,wasOnline=false;
+ let pins=[],pinTarget=null,picked=null,myNames=new Set(),signed=false,starred=new Set(),starsOn=false,lastSpot=null,wasOnline=false;
  // Dynmap shows Bedrock players as ".Name" with underscores for spaces; the whitelist keeps the gamertag as typed.
  const norm=s=>String(s||'').toLowerCase().replace(/^\./,'').replace(/[\s_]/g,'');
- const mine=()=>myNames.size?latest?.players?.find(p=>myNames.has(norm(p.account))):undefined;
- // A pin wins, then the signed-in player (live if online, else the spot they were last seen), then whoever the server picked.
- const focus=()=>pinTarget||(following&&(mine()?{mode:'player',...mine()}:lastSpot&&{mode:'last',name:H.user?.name,...lastSpot}))||latest.focus;
+ const online=key=>latest?.players?.find(p=>norm(p.account)===key);
+ const mine=()=>latest?.players?.find(p=>myNames.has(norm(p.account)));
+ // A pin wins, then the player someone tapped, then the signed-in player (live if online, else the spot they were last seen), then whoever the server picked.
+ function focus(){
+  if(pinTarget)return pinTarget;
+  if(following){const p=(picked&&online(picked))||mine();if(p)return{mode:'player',...p};if(lastSpot)return{mode:'last',name:H.user?.name,...lastSpot};}
+  return latest.focus;
+ }
  function ago(iso){const m=Math.round((Date.now()-new Date(iso))/60000),[n,unit]=m<60?[m,'minute']:m<1440?[Math.round(m/60),'hour']:[Math.round(m/1440),'day'];return m<1?'just now':`${n} ${unit}${n===1?'':'s'} ago`;}
  function showMap(){
   if(!latest?.online)return;showStatus();const f=focus(),follow=!pinTarget&&following&&f.mode==='player';
   const target=follow?'player:'+f.account:'area:'+f.world+':'+Math.round(f.x)+':'+Math.round(f.z);
   const params=new URLSearchParams({worldname:f.world||'world',mapname:f.world==='world'?'surface':'flat',x:Math.round(f.x||0),y:Math.round(f.y||64),z:Math.round(f.z||0),zoom:'5',nogui:'false',nopanel:'true',nocompass:'true'});
   if(follow)params.set('playername',f.account);
-  if(target!==lastTarget){frame.src=BASE+'/mc-map/?'+params;lastTarget=target;$('map-placeholder').hidden=false;$('map-message').textContent='Opening the live map…';clearTimeout(frameTimer);frameTimer=setTimeout(()=>{$('map-message').textContent='The map is taking a little longer. Use “Open map” to try it directly.';},20000);}
+  if(target!==lastTarget){frame.src=BASE+'/mc-map/?'+params;lastTarget=target;$('map-placeholder').hidden=false;$('map-message').textContent='Opening the live map…';clearTimeout(frameTimer);frameTimer=setTimeout(()=>{$('map-message').textContent='The map is taking a little longer. Use “Open the map in a new tab” to try it directly.';},20000);}
   $('open-map').href=BASE+'/mc-map/?'+new URLSearchParams({...Object.fromEntries(params),nogui:'false',nopanel:'false'});
  }
- function followButton(){$('map-follow').textContent=following?'Pause following':'Follow players';$('map-follow').setAttribute('aria-pressed',String(following));}
+ function followButton(){const b=$('map-follow'),label=following?'Pause following':'Follow players';b.setAttribute('aria-pressed',String(following));b.setAttribute('aria-label',label);b.title=label;}
  function showStatus(){
   const n=latest.players.length,f=focus();
   $('map-status').textContent=(n?`${n} player${n===1?'':'s'} online · `:'No one online · ')+(f.mode==='player'?(following?'Following ':'Near ')+(f.name||f.account):f.mode==='pin'?'Showing '+f.name:f.mode==='last'?`${f.name||'You'} last seen here · ${ago(f.seen_at)}`:f.mode==='activity'?'Most active area · past 3 weeks':f.mode==='chunks'?'Recently saved chunks · activity history is building':'World spawn · activity history is building');
@@ -27,80 +32,82 @@
   try{const r=await fetch(BASE+'/mc-status',{cache:'no-store',signal:AbortSignal.timeout(12000)});latest=await r.json();if(!r.ok||!latest.online)throw Error(latest.error||'The live map is temporarily unavailable.');
    // The moment my player leaves, fetch where they were last seen so the map moves there instead of to someone else.
    const on=!!mine();if(wasOnline&&!on)await loadLastSpot();wasOnline=on;
-   showStatus();
+   showStatus();renderPeople();
    if(following||!lastTarget)showMap();
-  }catch(e){$('map-status').textContent=e.message;if(!lastTarget){$('map-placeholder').hidden=false;$('map-message').textContent='Live map unavailable. Join instructions and the build board are ready below.';}}
+  }catch(e){$('map-status').textContent=e.message;if(!lastTarget){$('map-placeholder').hidden=false;$('map-message').textContent='Live map unavailable. Join instructions and the build board are still in the tabs below.';}}
   finally{checking=false;}
  }
  frame.addEventListener('load',()=>{if(frame.getAttribute('src')){clearTimeout(frameTimer);$('map-placeholder').hidden=true;}});
- $('map-follow').addEventListener('click',()=>{following=!following;pinTarget=null;lastTarget='';followButton();showMap();});followButton();
+ // Pausing, or resuming, always drops a tapped player or location and goes back to the usual choice.
+ $('map-follow').addEventListener('click',()=>{following=!following;pinTarget=null;picked=null;lastTarget='';followButton();showMap();});followButton();
 
- const instructions=$('platform-instructions'),platform=$('join-platform'),whitelistForm=$('whitelist-form');
- let accounts=[],whitelistPoll;
- const featured='Mineville, Lifeboat, Enchanted, Galaxite, or The Hive',JAVA='185.172.53.60:25565',BEDROCK='185.172.53.60',FRIEND='GoldServer2951',PS_DNS='45.55.68.52';
- function paragraph(text,cls){const p=H.node('p',text,cls);instructions.append(p);return p;}
- function steps(items,parent=instructions){const list=H.node('ol');for(const text of items)list.append(H.node('li',text));parent.append(list);}
- function address(bedrock=false){const p=H.node('p');p.append(H.node('code',bedrock?BEDROCK:JAVA));if(bedrock)p.append(document.createElement('br'),H.node('span','Port: 19133'));instructions.append(p);const b=H.node('button',bedrock?'Copy Bedrock address':'Copy Java address','quiet');b.type='button';b.addEventListener('click',async()=>{const text=bedrock?BEDROCK:JAVA;try{await navigator.clipboard.writeText(text);b.textContent='Copied';setTimeout(()=>b.textContent=bedrock?'Copy Bedrock address':'Copy Java address',2500);}catch{b.textContent=text;}});instructions.append(b);}
- function dns(kind,parent=instructions){
-  const primary=kind==='playstation'?PS_DNS:'104.238.130.180';
-  steps([kind==='switch'?'System Settings → Internet → Internet Settings → your network → Change Settings → DNS Settings → Manual.':'Open your console’s Internet Settings and choose manual DNS.',`Set primary DNS to ${primary} and secondary DNS to 8.8.8.8.`,`Save and reconnect. In Minecraft’s Servers tab, join ${featured}.`,'In BedrockConnect, enter 185.172.53.60, port 19133.'],parent);
+ // The island and its sheet. One sheet at a time; the tab that opened it closes it. Tapping a player or location on a narrow screen
+ // closes it too, so the map is what you see.
+ const sheet=$('sheet'),tabs=[...document.querySelectorAll('.tab')],views=[...document.querySelectorAll('.sheet-view')],narrow=matchMedia('(max-width:760px)');
+ const TITLES={people:'People & Locations',build:'Construction',join:'Join the server'};let lastTab=null;
+ function openSheet(name){
+  sheet.dataset.view=name;$('sheet-title').textContent=TITLES[name];
+  for(const v of views)v.hidden=v.dataset.for!==name;
+  for(const t of tabs){t.setAttribute('aria-pressed',String(t.dataset.tab===name));if(t.dataset.tab===name)lastTab=t;}
+  sheet.hidden=false;document.body.setAttribute('data-sheet','');$('sheet-title').focus({preventScroll:true});
  }
- // The join grab bar sits on the bottom of the live map, so the map itself can be dragged freely.
- // Tapping the bar, or pulling it up, scrolls to the full instructions below.
- const peeks={java:[JAVA,'Multiplayer → Add Server'],bedrock:[BEDROCK,'Port 19133 · Servers → Add Server'],xbox:[FRIEND,'Add as an Xbox friend'],switch:[FRIEND,'Add as a Microsoft / Xbox friend'],playstation:[PS_DNS,'Primary DNS · secondary 8.8.8.8']};
- const bar=$('join-bar'),peekSelect=$('join-peek-platform'),peekLine=$('join-line'),peekCopy=$('join-copy');let peekValue='',peekTimer;
- peekSelect.append(...[...platform.options].map(o=>o.cloneNode(true)));
- function renderPeek(kind){const [value,hint]=peeks[kind];peekValue=value;peekSelect.value=kind;peekLine.replaceChildren(H.node('code',value),H.node('span',hint,'hint'));clearTimeout(peekTimer);peekCopy.textContent='Copy';peekCopy.setAttribute('aria-label','Copy '+value);bar.hidden=false;}
- peekSelect.addEventListener('change',()=>{platform.value=peekSelect.value;renderPlatform();});
- peekCopy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(peekValue);peekCopy.textContent='Copied';}catch{peekCopy.textContent='Could not copy';}clearTimeout(peekTimer);peekTimer=setTimeout(()=>peekCopy.textContent='Copy',2500);});
- const reduced=matchMedia('(prefers-reduced-motion: reduce)'),behavior=()=>reduced.matches?'auto':'smooth',goBelow=()=>(signed?places:joinSection).scrollIntoView({behavior:behavior(),block:'start'});
- let drag=null,dragged=false;
- bar.addEventListener('pointerdown',e=>{if(e.button||e.target.closest('[data-no-grab]'))return;drag={y:e.clientY,top:scrollY,id:e.pointerId,at:e.timeStamp,moved:false};bar.setPointerCapture(e.pointerId);});
- bar.addEventListener('pointermove',e=>{
-  if(!drag||e.pointerId!==drag.id)return;const dy=drag.y-e.clientY;
-  if(!drag.moved){if(Math.abs(dy)<6)return;drag.moved=dragged=true;bar.setAttribute('data-dragging','');}
-  scrollTo({top:Math.max(0,drag.top+dy),behavior:'instant'});
- });
- // The bar stays under the pointer while the page follows it. On release the page settles on the map or on the instructions.
- function release(e){
-  if(!drag||e.pointerId!==drag.id)return;const d=drag,dy=d.y-e.clientY;drag=null;bar.removeAttribute('data-dragging');
-  if(!d.moved)return;setTimeout(()=>dragged=false,50);
-  if(e.type==='pointerup'&&(dy>90||(dy>24&&dy/Math.max(1,e.timeStamp-d.at)>.6)))goBelow();else scrollTo({top:0,behavior:behavior()});
+ function closeSheet(){
+  if(sheet.hidden)return;sheet.hidden=true;document.body.removeAttribute('data-sheet');
+  for(const t of tabs)t.setAttribute('aria-pressed','false');
+  lastTab?.focus({preventScroll:true});
  }
- bar.addEventListener('pointerup',release);bar.addEventListener('pointercancel',release);
- bar.addEventListener('click',e=>{if(dragged||e.target.closest('[data-no-grab]'))return;goBelow();});
- // Places come from the Dynmap marker files, so a sign marker or anything else put on the map shows up here.
- // Signed in, they are first on the page and on the grab bar; signed out, they sit under the join instructions.
- const joinSection=$('join-server'),places=$('places'),peek=$('join-peek'),barTitle=$('places-bar-title'),grab=$('join-grab');
+ for(const t of tabs)t.addEventListener('click',()=>!sheet.hidden&&sheet.dataset.view===t.dataset.tab?closeSheet():openSheet(t.dataset.tab));
+ $('sheet-close').addEventListener('click',closeSheet);$('sheet-grab').addEventListener('click',closeSheet);
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!sheet.hidden&&!document.querySelector('dialog[open]'))closeSheet();});
+ // Swiping the header down dismisses the sheet.
+ const head=sheet.querySelector('.sheet-head');let swipe=null;
+ head.addEventListener('pointerdown',e=>{if(e.target.closest('.sheet-close'))return;swipe={y:e.clientY,id:e.pointerId};head.setPointerCapture(e.pointerId);});
+ head.addEventListener('pointermove',e=>{if(swipe&&e.pointerId===swipe.id&&e.clientY-swipe.y>60){swipe=null;closeSheet();}});
+ head.addEventListener('pointerup',()=>{swipe=null;});head.addEventListener('pointercancel',()=>{swipe=null;});
+
+ // People and Named Locations. Locations come from the Dynmap marker files, so a sign marker or anything else put on the map shows up.
  const STAR='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>';
- // Going to a place pauses following, and brings the map back into view if the page was scrolled down.
- function goTo(pin){pinTarget={mode:'pin',...pin};following=false;followButton();lastTarget='';showMap();if(scrollY>40)scrollTo({top:0,behavior:behavior()});}
- function layoutPlaces(){
-  signed?joinSection.before(places):joinSection.after(places);
-  // Signed in, the bar is just the list's title; tapping or pulling it opens the list below the map.
-  peek.hidden=signed;barTitle.hidden=!signed;
-  bar.setAttribute('aria-label',signed?'Named Locations':'Join the server');grab.setAttribute('aria-label',signed?'Show named locations':'Show the full join instructions');
+ const EMOJI=[[/spawn/i,'🌍'],[/home|house|base|cabin/i,'🏠'],[/farm|wheat|crop|garden/i,'🌾'],[/mine|cave|quarry/i,'⛏️'],[/village|town|city/i,'🏘️'],[/castle|tower|fort/i,'🏰'],[/ocean|sea|monument|lake|boat|dock/i,'🌊'],[/portal/i,'🌀']];
+ const emoji=p=>EMOJI.find(([re])=>re.test(p.name))?.[1]||({world_nether:'🔥',world_the_end:'🌌'})[p.world]||'📍';
+ const tint=s=>{let h=0;for(const c of String(s))h=(h*31+c.charCodeAt(0))%6;return `var(--bubble-${h+1})`;};
+ // A player's family photo when the directory has one (their in-game name is their first name), else a colored initial.
+ function playerBubble(p){
+  const name=p.name||p.account,b=H.node('span',undefined,'bubble'),photo=window.familyAccount?.photo?.(name);b.style.setProperty('--bubble',tint(name));
+  if(photo&&!photo.startsWith('data:')){const img=H.node('img');img.alt='';img.src=photo;img.addEventListener('error',()=>{img.remove();b.textContent=name.charAt(0).toUpperCase();});b.append(img);}else b.textContent=name.charAt(0).toUpperCase();
+  return b;
  }
- function renderPlaces(){
-  const list=$('places-list');list.replaceChildren();
+ function placeBubble(p){const b=H.node('span',emoji(p),'bubble');b.style.setProperty('--bubble',tint(p.name));return b;}
+ function row({id,bubble,name,sub,go}){
+  const item=H.node('div',undefined,'row-item'),main=H.node('button',undefined,'row-main'),text=H.node('span',undefined,'row-text');
+  main.type='button';text.append(H.node('span',name,'row-name'),H.node('span',sub,'row-sub'));main.append(bubble,text);main.addEventListener('click',go);item.append(main);
+  // The star only shows when the server can save it; without that the list still works.
+  if(starsOn){const on=starred.has(id),star=H.node('button',undefined,'star');star.type='button';star.innerHTML=STAR;star.dataset.pin=id;star.setAttribute('aria-label','Star '+name);star.setAttribute('aria-pressed',String(on));star.addEventListener('click',()=>toggleStar(id,name,star));item.append(star);}
+  return item;
+ }
+ const byStar=(a,b)=>starred.has(b.id)-starred.has(a.id);
+ function renderPeople(){
+  const list=$('people-list'),keep=document.activeElement?.dataset?.pin;list.replaceChildren();
+  const players=(latest?.players||[]).map(p=>({...p,id:'player:'+norm(p.account)})).sort((a,b)=>byStar(a,b)||(a.name||a.account).localeCompare(b.name||b.account));
+  list.append(H.node('p','Online now','rows-title'));
+  if(!players.length)list.append(H.node('p','No one is online right now.','empty'));
+  for(const p of players)list.append(row({id:p.id,bubble:playerBubble(p),name:p.name||p.account,sub:`${WORLDS[p.world]||p.world} · ${Math.round(p.x)}, ${Math.round(p.y)}, ${Math.round(p.z)}`,go:()=>goPlayer(p)}));
+  list.append(H.node('p','Named Locations','rows-title'));
   if(!pins.length)list.append(H.node('p','No locations yet.','empty'));
-  for(const p of pins){
-   const wrap=H.node('div',undefined,'place-row'),row=H.node('button',undefined,'place'),on=starred.has(p.id);row.type='button';row.append(H.node('span',p.name,'place-name'),H.node('span',`${WORLDS[p.world]} · ${p.x}, ${p.y}, ${p.z}`,'place-where'));row.addEventListener('click',()=>goTo(p));wrap.append(row);
-   // The star only shows when the server can save it; without that the list still works.
-   if(starsOn){const star=H.node('button',undefined,'star');star.type='button';star.innerHTML=STAR;star.dataset.pin=p.id;star.setAttribute('aria-label','Star '+p.name);star.setAttribute('aria-pressed',String(on));star.addEventListener('click',()=>toggleStar(p,star));wrap.append(star);}
-   list.append(wrap);
-  }
-  layoutPlaces();
+  for(const p of pins)list.append(row({id:p.id,bubble:placeBubble(p),name:p.name,sub:`${WORLDS[p.world]} · ${p.x}, ${p.y}, ${p.z}`,go:()=>goTo(p)}));
+  if(keep)list.querySelector(`[data-pin="${CSS.escape(keep)}"]`)?.focus();
  }
- // Starred places come first for the signed-in member, then the rest by name.
- function sortPins(){pins.sort((a,b)=>starred.has(b.id)-starred.has(a.id)||a.name.localeCompare(b.name)||a.world.localeCompare(b.world));}
+ // Going to a player follows them live; going to a location pauses following and shows that spot.
+ function goPlayer(p){picked=norm(p.account);pinTarget=null;following=true;followButton();lastTarget='';showMap();if(narrow.matches)closeSheet();}
+ function goTo(pin){pinTarget={mode:'pin',...pin};following=false;followButton();lastTarget='';showMap();if(narrow.matches)closeSheet();}
+ // Starred ones come first for the signed-in member, then the rest by name.
+ function sortPins(){pins.sort((a,b)=>byStar(a,b)||a.name.localeCompare(b.name)||a.world.localeCompare(b.world));}
  async function loadStars(){
   try{starred=new Set((await api('/hub/mc-stars')).stars);starsOn=true;}catch{starred=new Set();starsOn=false;}
-  sortPins();renderPlaces();
+  sortPins();renderPeople();
  }
- async function toggleStar(pin,button){
-  const on=!starred.has(pin.id);button.disabled=true;
-  try{await api('/hub/mc-stars',{method:'POST',body:{pin:pin.id,starred:on}});on?starred.add(pin.id):starred.delete(pin.id);notice('places-message','');sortPins();renderPlaces();document.querySelector(`[data-pin="${CSS.escape(pin.id)}"]`)?.focus();}
+ async function toggleStar(id,name,button){
+  const on=!starred.has(id);button.disabled=true;
+  try{await api('/hub/mc-stars',{method:'POST',body:{pin:id,starred:on}});on?starred.add(id):starred.delete(id);notice('places-message','');sortPins();renderPeople();document.querySelector(`[data-pin="${CSS.escape(id)}"]`)?.focus();}
   catch(e){notice('places-message',e.message,true);button.disabled=false;}
  }
  async function loadLastSpot(){
@@ -111,7 +118,7 @@
  // Runs when someone signs in or out: their stars and last spot belong to them alone.
  function userChanged(){
   starred=new Set();starsOn=false;lastSpot=null;wasOnline=false;
-  if(signed){loadStars();loadLastSpot();}else{sortPins();renderPlaces();}
+  if(signed){loadStars();loadLastSpot();}else{sortPins();renderPeople();}
  }
  async function loadPins(){
   const found=await Promise.allSettled(Object.keys(WORLDS).map(async world=>{
@@ -120,7 +127,18 @@
   }));
   // Keep what is showing if the markers cannot be read.
   if(!found.some(r=>r.status==='fulfilled'))return;
-  pins=found.flatMap(r=>r.status==='fulfilled'?r.value:[]).filter(p=>[p.x,p.y,p.z].every(Number.isFinite));sortPins();renderPlaces();
+  pins=found.flatMap(r=>r.status==='fulfilled'?r.value:[]).filter(p=>[p.x,p.y,p.z].every(Number.isFinite));sortPins();renderPeople();
+ }
+
+ const instructions=$('platform-instructions'),platform=$('join-platform'),whitelistForm=$('whitelist-form');
+ let accounts=[],whitelistPoll;
+ const featured='Mineville, Lifeboat, Enchanted, Galaxite, or The Hive',JAVA='185.172.53.60:25565',BEDROCK='185.172.53.60',PS_DNS='45.55.68.52';
+ function paragraph(text,cls){const p=H.node('p',text,cls);instructions.append(p);return p;}
+ function steps(items,parent=instructions){const list=H.node('ol');for(const text of items)list.append(H.node('li',text));parent.append(list);}
+ function address(bedrock=false){const p=H.node('p');p.append(H.node('code',bedrock?BEDROCK:JAVA));if(bedrock)p.append(document.createElement('br'),H.node('span','Port: 19133'));instructions.append(p);const b=H.node('button',bedrock?'Copy Bedrock address':'Copy Java address','quiet');b.type='button';b.addEventListener('click',async()=>{const text=bedrock?BEDROCK:JAVA;try{await navigator.clipboard.writeText(text);b.textContent='Copied';setTimeout(()=>b.textContent=bedrock?'Copy Bedrock address':'Copy Java address',2500);}catch{b.textContent=text;}});instructions.append(b);}
+ function dns(kind,parent=instructions){
+  const primary=kind==='playstation'?PS_DNS:'104.238.130.180';
+  steps([kind==='switch'?'System Settings → Internet → Internet Settings → your network → Change Settings → DNS Settings → Manual.':'Open your console’s Internet Settings and choose manual DNS.',`Set primary DNS to ${primary} and secondary DNS to 8.8.8.8.`,`Save and reconnect. In Minecraft’s Servers tab, join ${featured}.`,'In BedrockConnect, enter 185.172.53.60, port 19133.'],parent);
  }
  function renderPlatform(){
   instructions.replaceChildren();const selected=platform.value;
@@ -135,7 +153,6 @@
   }
   else dns(selected);
   if(!['java','bedrock'].includes(selected))paragraph('If custom DNS stops working, restore automatic DNS and try again later.','caption');
-  renderPeek(selected);
   const edition=selected==='java'?'java':'bedrock';if(whitelistForm.elements.edition.value!==edition)whitelistForm.elements.username.value='';whitelistForm.elements.edition.value=edition;editionHint();renderAccounts();
  }
  function editionHint(){const bedrock=whitelistForm.elements.edition.value==='bedrock';$('whitelist-name-label').firstChild.textContent=bedrock?'Xbox gamertag':'Minecraft username';$('whitelist-hint').textContent=bedrock?'Enter your Xbox gamertag exactly, including spaces. Leave off the server’s dot prefix.':'Use your Java username, not your email.';}
@@ -143,7 +160,7 @@
   const existing=accounts.find(r=>r.edition===whitelistForm.elements.edition.value&&['pending','processing','added'].includes(r.status));
   whitelistForm.querySelector('button').disabled=!!existing;whitelistForm.elements.username.disabled=!!existing;if(existing)whitelistForm.elements.username.value=existing.username;
  }
- function syncWhitelistAuth(){const ok=!!H.user&&!!window.familyAccount.current;$('whitelist-auth').hidden=ok;whitelistForm.hidden=!ok;if(!ok){accounts=[];myNames.clear();$('whitelist-accounts').replaceChildren();clearTimeout(whitelistPoll);}const changed=ok!==signed;signed=ok;if(changed)userChanged();layoutPlaces();if(following)showMap();}
+ function syncWhitelistAuth(){const ok=!!H.user&&!!window.familyAccount.current;$('whitelist-auth').hidden=ok;whitelistForm.hidden=!ok;if(!ok){accounts=[];myNames.clear();$('whitelist-accounts').replaceChildren();clearTimeout(whitelistPoll);}const changed=ok!==signed;signed=ok;if(changed)userChanged();if(following)showMap();}
  async function loadWhitelist(){
   try{const data=await api('/hub/mc-whitelist');accounts=data.accounts;myNames=new Set(accounts.map(r=>norm(r.username)));syncWhitelistAuth();renderAccounts();clearTimeout(whitelistPoll);if(accounts.some(r=>['pending','processing'].includes(r.status)))whitelistPoll=setTimeout(loadWhitelist,2500);}
   catch(e){notice('whitelist-message',e.message,true);}
@@ -153,6 +170,8 @@
  window.addEventListener('family-account-change',()=>{if(!window.familyAccount.current)syncWhitelistAuth();});renderPlatform();
  $('add-build').addEventListener('click',()=>H.openTask('build'));
  H.init(async()=>{const data=await api('/hub/builds');H.user=data.user;H.board('build-board',data.tasks,'build',data.user);await loadWhitelist();});
+ // Family photos arrive with the directory, so draw the list again once it is ready.
+ window.familyAccount.ready.then(renderPeople,()=>{});renderPeople();
  loadPins();setInterval(()=>{if(!document.hidden)loadPins();},60000);
  mapStatus();setInterval(mapStatus,15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)mapStatus();});
 })();

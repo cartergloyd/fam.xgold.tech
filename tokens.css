@@ -39,6 +39,22 @@
   --star: #ffc400;               /* starred named locations: fill and its darker edge */
   --star-edge: #a86a00;
 
+  /* Liquid glass: floating controls only (island, sheets, map buttons). Never on content. */
+  --glass-bg: rgba(255, 255, 255, 0.58);
+  --glass-bg-strong: rgba(250, 250, 252, 0.8);   /* sheets hold a lot of text */
+  --glass-border: rgba(255, 255, 255, 0.6);
+  --glass-select: rgba(0, 0, 0, 0.08);
+  --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.28);
+  --glass-filter: blur(28px) saturate(1.6);
+
+  /* Bubbles behind a player's photo or a location's emoji. White text reaches 3:1 or better on each. */
+  --bubble-1: #a0638a;
+  --bubble-2: #d9506e;
+  --bubble-3: #4f9a2a;
+  --bubble-4: #2f7fd0;
+  --bubble-5: #c97a12;
+  --bubble-6: #7b6bc4;
+
   /* ---- Typography ----------------------------------------------------- */
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
     "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -127,6 +143,33 @@
     --nav-bg: rgba(0, 0, 0, 0.72);
     --star: #ffd60a;
     --star-edge: #ffd60a;
+    --glass-bg: rgba(44, 44, 48, 0.55);
+    --glass-bg-strong: rgba(30, 30, 33, 0.78);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --glass-select: rgba(255, 255, 255, 0.14);
+    --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.55);
+  }
+}
+
+/* ---- Glass accessibility: opaque when asked, and when the browser cannot blur ------ */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass-bg: var(--bg-elevated);
+    --glass-bg-strong: var(--bg-elevated);
+    --glass-filter: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --glass-border: var(--text-secondary);
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root {
+    --glass-bg: var(--bg-elevated);
+    --glass-bg-strong: var(--bg-elevated);
   }
 }
 

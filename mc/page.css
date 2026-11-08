@@ -1,21 +1,70 @@
-/* The map owns the first screen; the shared ribbon overlays it. */
+/* The map is the whole screen. Everything else floats over it as glass: map buttons, a status chip, a sheet, and the island of tabs.
+   Glass is only for these floating controls; the lists and forms inside a sheet are ordinary content. Tokens live in tokens.css. */
+:root { --ribbon-h:95px; --island-h:68px; --edge:16px; }
+body[data-hub="mc"] { overflow:hidden; }
 body[data-hub="mc"] > family-ribbon { height:0; }
 main.mc-main { max-width:none; margin:0; padding:0; }
-.map-hero { position:relative; width:100%; height:100svh; min-height:400px; background:#151515; }
-.map-hero .map-wrap { position:absolute; inset:0; height:100%; margin:0; border-radius:0; }
-.map-hero .map-wrap .map-placeholder { background:#151515; color:#f5f5f7; }
-.map-dock { position:absolute; left:0; right:0; bottom:0; display:flex; flex-direction:column; gap:12px; pointer-events:none; }
-.map-tools { margin:0 24px; display:flex; align-items:center; justify-content:space-between; gap:16px; }
-.map-tools .map-caption { max-width:560px; margin:0; padding:0 16px; border-radius:20px; background:rgba(0,0,0,.72); color:#fff; font-size:13px; backdrop-filter:blur(12px); }
-.map-tools .row { pointer-events:auto; gap:8px; }
-.map-tools button,.map-tools .button { background:rgba(0,0,0,.72); color:#fff; backdrop-filter:blur(12px); }
-.mc-content { max-width:1160px; margin:auto; padding:64px 24px 100px; }
-.join-widget,.places-widget { max-width:760px; margin:0 auto; padding:32px; }
-.join-widget + .places-widget,.places-widget + .join-widget { margin-top:36px; }
-.join-widget h2 { margin:0; }
-.join-widget > .row { align-items:center; gap:24px; margin-bottom:28px; }
-.join-widget > .row label { min-width:240px; }
-#platform-instructions { min-height:180px; }
+.map-wrap { position:fixed; inset:0; height:100%; margin:0; border-radius:0; background:#151515; }
+.map-wrap .map-placeholder { background:#151515; color:#f5f5f7; }
+.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+.glass { background:var(--glass-bg); -webkit-backdrop-filter:var(--glass-filter); backdrop-filter:var(--glass-filter); border:1px solid var(--glass-border); box-shadow:var(--glass-shadow); color:var(--text); }
+
+/* Map buttons: follow and open, a vertical pill under the ribbon, top right. */
+.map-controls { position:fixed; z-index:10; top:calc(var(--ribbon-h) + 8px + env(safe-area-inset-top,0px)); right:calc(var(--edge) + env(safe-area-inset-right,0px)); display:flex; flex-direction:column; padding:2px; border-radius:var(--radius-pill); }
+.map-controls > * { width:44px; height:44px; min-height:44px; padding:0; border-radius:var(--radius-pill); background:none; color:var(--text); display:grid; place-items:center; }
+.map-controls svg,.tab svg,.sheet-close svg { width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:1.75; stroke-linecap:round; stroke-linejoin:round; }
+.map-controls #map-follow[aria-pressed=true] { color:var(--accent); }
+.map-controls #map-follow[aria-pressed=true] svg { fill:currentColor; }
+
+/* What the map is showing, just above the island. Hidden while a sheet is open. */
+.status-chip { position:fixed; z-index:10; left:50%; transform:translateX(-50%); bottom:calc(var(--edge) + var(--island-h) + 8px + env(safe-area-inset-bottom,0px)); margin:0; max-width:calc(100% - 2 * var(--edge)); min-height:36px; padding:6px 16px; display:flex; align-items:center; text-align:center; border-radius:var(--radius-pill); font-size:13px; line-height:1.3; }
+body[data-sheet] .status-chip { display:none; }
+
+/* The island: three tabs in a floating glass pill, bottom middle. */
+.island { position:fixed; z-index:10; left:50%; transform:translateX(-50%); bottom:calc(var(--edge) + env(safe-area-inset-bottom,0px)); display:flex; gap:4px; padding:6px; border-radius:var(--radius-pill); }
+.tab { flex:none; min-width:92px; min-height:56px; padding:6px 12px; border-radius:var(--radius-pill); background:none; color:var(--text); flex-direction:column; gap:2px; font-size:12px; font-weight:var(--weight-semibold); }
+.tab[aria-pressed=true] { background:var(--glass-select); color:var(--accent); }
+
+/* The sheet rises above the island. One at a time; the tab that opened it closes it. */
+.sheet { position:fixed; z-index:10; left:50%; transform:translateX(-50%); bottom:calc(var(--edge) + var(--island-h) + 12px + env(safe-area-inset-bottom,0px)); width:min(560px,calc(100% - 2 * var(--edge))); max-height:min(680px,calc(100dvh - var(--ribbon-h) - var(--island-h) - 2 * var(--edge) - 24px - env(safe-area-inset-bottom,0px))); display:flex; flex-direction:column; border-radius:var(--radius-card); overflow:hidden; background:var(--glass-bg-strong); animation:sheet-rise var(--duration) var(--ease); }
+.sheet[data-view=build] { width:min(980px,calc(100% - 2 * var(--edge))); }
+@keyframes sheet-rise { from { opacity:0; translate:0 14px; } to { opacity:1; translate:0 0; } }
+.sheet-head { position:relative; flex:none; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:26px 20px 12px 24px; touch-action:none; }
+.grabber { position:absolute; top:0; left:50%; transform:translateX(-50%); width:96px; min-height:0; height:24px; padding:0; background:none; border-radius:var(--radius-pill); display:flex; align-items:center; justify-content:center; }
+.grabber span { width:36px; height:5px; border-radius:var(--radius-pill); background:var(--text-secondary); opacity:.55; }
+.sheet-head h2 { margin:0; font-size:28px; letter-spacing:var(--ls-tight); }
+.sheet-head h2:focus { outline:none; }
+.sheet-close { flex:none; width:44px; height:44px; min-height:44px; padding:0; border-radius:50%; color:var(--text); box-shadow:none; }
+.sheet-body { flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; padding:0 20px 20px; }
+
+/* People and Named Locations: one list, online players first. Photo or emoji bubble on the left, star on the right. */
+.rows { display:grid; gap:2px; }
+.rows-title { margin:14px 4px 4px; font-size:13px; font-weight:var(--weight-semibold); color:var(--text-secondary); }
+.rows .empty { margin:6px 4px; }
+.row-item { display:flex; align-items:center; gap:4px; padding-right:2px; border-radius:var(--radius-card-sm); }
+.row-item:hover { background:var(--glass-select); }
+.row-main { flex:1; min-width:0; min-height:60px; padding:6px 8px; justify-content:flex-start; gap:12px; border-radius:var(--radius-card-sm); background:none; color:var(--text); text-align:left; }
+.row-text { display:grid; min-width:0; }
+.row-name { font-size:17px; font-weight:var(--weight-semibold); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.row-sub { font-size:13px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.bubble { flex:none; width:48px; height:48px; border-radius:50%; display:grid; place-items:center; overflow:hidden; background:var(--bubble,var(--bubble-1)); color:#fff; font-size:24px; font-weight:var(--weight-semibold); line-height:1; }
+.bubble img { width:100%; height:100%; object-fit:cover; display:block; }
+.star { flex:none; width:44px; height:44px; min-height:44px; padding:0; border-radius:var(--radius-pill); background:none; }
+.star svg { width:24px; height:24px; fill:none; stroke:var(--text-secondary); stroke-width:1.75; stroke-linejoin:round; }
+.star[aria-pressed=true] svg { fill:var(--star); stroke:var(--star-edge); }
+#places-message { margin:8px 4px 0; min-height:0; }
+.how-to { margin:8px 4px 0; }
+.how-to summary { cursor:pointer; min-height:44px; display:flex; align-items:center; color:var(--accent); list-style:none; }
+.how-to summary::-webkit-details-marker { display:none; }
+.how-to summary::after { content:'›'; margin-left:6px; }
+.how-to[open] summary::after { display:inline-block; transform:rotate(90deg); }
+.how-to ol { margin:4px 0 0; padding-left:24px; line-height:1.6; }
+.how-to li { margin-bottom:6px; }
+
+/* Join: the platform picker, the steps, and the whitelist form. */
+.join-platform { margin-bottom:20px; }
+#platform-instructions { min-height:140px; }
 #platform-instructions p,#platform-instructions li { line-height:1.6; }
 #platform-instructions ol { padding-left:24px; }
 #platform-instructions li { margin-bottom:10px; }
@@ -23,57 +72,17 @@ main.mc-main { max-width:none; margin:0; padding:0; }
 #platform-instructions .caption { margin-top:20px; }
 #platform-instructions details { margin-top:18px; }
 #platform-instructions summary { cursor:pointer; padding:12px 0; min-height:44px; }
-.whitelist-widget { margin-top:36px; padding-top:28px; }
+.whitelist-widget { margin-top:28px; padding-top:20px; }
 .whitelist-widget h3 { margin-bottom:16px; }
 #whitelist-form { gap:12px; }
 #whitelist-form button { justify-self:start; }
 #whitelist-form .caption { margin:0; }
 #whitelist-accounts p { font-size:14px; margin:8px 0; overflow-wrap:anywhere; }
-.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+.footer-note { margin-top:28px; }
+#page-message { margin:8px 0; min-height:0; }
 @media(max-width:760px) {
- .mc-content { padding:40px 18px 72px; }
- .join-widget { padding:24px; }
- .join-widget > .row { display:block; }
- .join-widget > .row label { margin-top:24px; min-width:0; }
- .map-tools { margin:0 16px; flex-direction:column; align-items:flex-start; gap:10px; }
- .map-tools .map-caption { max-width:100%; }
+ :root { --edge:12px; }
+ .tab { min-width:84px; padding:6px 8px; }
+ .sheet-head h2 { font-size:24px; }
  #whitelist-form .fields { grid-template-columns:1fr; }
 }
-
-.map-caption { display:flex; align-items:center; min-height:44px; pointer-events:auto; }
-.map-caption p { margin:0; }
-@media(max-width:900px) { .map-tools { flex-direction:column; align-items:flex-start; gap:10px; } .map-tools .map-caption { max-width:100%; } }
-
-/* The map is live: drag, zoom and pan it freely. Nothing on it scrolls the page, so the grab bar is the way down.
-   Tap it, or pull it up, to reach the full instructions. The whole bar is one button; the platform picker and Copy sit above it. */
-.join-bar { position:relative; pointer-events:auto; padding:22px var(--gutter) calc(14px + env(safe-area-inset-bottom,0px)); border-radius:var(--radius-card) var(--radius-card) 0 0; background:var(--bg); color:var(--text); touch-action:none; user-select:none; -webkit-user-select:none; }
-.join-grab { position:absolute; inset:0; width:100%; min-height:0; padding:0; border-radius:inherit; background:none; align-items:flex-start; cursor:grab; }
-.join-grab:focus-visible { outline-offset:-4px; }
-.join-handle { margin-top:8px; width:36px; height:5px; border-radius:var(--radius-pill); background:var(--text-secondary); opacity:.5; }
-.join-bar[data-dragging],.join-bar[data-dragging] * { cursor:grabbing; }
-.join-peek { position:relative; display:flex; align-items:center; gap:12px; max-width:var(--container-max); margin:0 auto; pointer-events:none; }
-.join-peek > * { pointer-events:auto; }
-.join-peek select { width:auto; flex:none; min-height:44px; border:0; border-radius:var(--radius-pill); padding:10px 16px; background:var(--bg-alt); font-size:15px; }
-.join-peek .quiet { flex:none; }
-.join-line { flex:1; margin:0; font-size:15px; line-height:1.4; pointer-events:none; }
-.join-line code { font-weight:var(--weight-semibold); }
-.join-line .hint { margin-left:10px; color:var(--text-secondary); }
-/* Named Locations: one stacked list of cards, each with a star. Signed in, the grab bar is just the title. */
-.places-widget h2 { margin:0; }
-.places-list { display:grid; gap:8px; margin:20px 0 0; }
-.place-row { display:flex; align-items:center; gap:8px; padding-right:8px; border-radius:var(--radius-card-sm); background:var(--bg); }
-.places-list .place { flex:1; min-width:0; flex-direction:column; align-items:flex-start; justify-content:center; gap:2px; padding:12px 16px; border-radius:var(--radius-card-sm); background:none; color:var(--text); text-align:left; }
-.place-where { color:var(--text-secondary); font-size:13px; }
-.places-list .star { flex:none; width:44px; padding:0; border-radius:var(--radius-pill); background:none; }
-.star svg { width:24px; height:24px; fill:none; stroke:var(--text-secondary); stroke-width:1.75; stroke-linejoin:round; }
-.star[aria-pressed=true] svg { fill:var(--star); stroke:var(--star-edge); }
-#places-message { margin:12px 0 0; min-height:0; }
-.how-to { margin-top:12px; }
-.how-to summary { cursor:pointer; min-height:44px; display:flex; align-items:center; color:var(--accent); list-style:none; }
-.how-to summary::-webkit-details-marker { display:none; }
-.how-to summary::after { content:'›'; margin-left:6px; }
-.how-to[open] summary::after { display:inline-block; transform:rotate(90deg); }
-.how-to ol { margin:4px 0 0; padding-left:24px; line-height:1.6; }
-.how-to li { margin-bottom:6px; }
-.bar-title { position:relative; margin:0; text-align:center; font-size:var(--fs-body); font-weight:var(--weight-semibold); pointer-events:none; }
-@media(max-width:760px) { .join-peek { flex-wrap:wrap; gap:8px 12px; } .join-peek select { flex:1; } .join-line { order:3; flex-basis:100%; } .join-line .hint { display:block; margin-left:0; } }
