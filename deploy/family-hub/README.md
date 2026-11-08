@@ -188,3 +188,28 @@ Verify without writes with `python3 deploy/family-hub/whitelist-worker.py --chec
 `python3 -m unittest discover -s tests -p test_mc_whitelist.py`. The hub API and browser
 suites also cover account isolation, input validation, idempotent requests, attempt
 limits, all five platforms, and full-viewport layout.
+
+## Places, stars and last seen
+
+The /mc page lists every Dynmap marker (signs, `/dmarker`, anything on the map) as a place by reading
+`/family/mc-map/tiles/_markers_/marker_<world>.json`. That needs no server change. Two extras are per member
+and need this install; the page hides them if the server does not have them yet.
+
+- **Stars** (`family_mc_pin_stars`, `GET/POST /hub/mc-stars`): a member stars places; starred ones come first
+  on the page and on the grab bar. A pin id is `world:set:marker`. Capped at 200 per member.
+- **Last seen** (`family_mc_last_seen`, `GET /hub/mc-last-seen`): `collect-activity.py` also keeps one row per
+  Minecraft account key (lowercase name, no leading dot, no spaces or underscores; no UUID) with the spot it was
+  last seen online, refreshed every minute. The endpoint looks up only the signed-in member's own linked
+  Java and Bedrock names. Signed in and offline, the map shows that spot; online, it follows the player.
+  Accuracy is the one-minute timer, so the spot is up to a minute older than the logout.
+
+Install, in this order (the collector must not run its new code before the table exists):
+1. `psql ... -d fam < places-schema.sql` (additive; same command as schema.sql above).
+2. `python3 install-backend.py`, then `docker restart homelab-directus-fam`.
+3. Pull the site checkout the timer runs from (fam-site-src). The next timer run starts recording spots.
+
+If the table is missing the collector still records activity and prints a hint. Rollback: restore the extension
+backup install-backend.py prints and restart family Directus; the two tables can stay.
+
+Only ops can place `[dynmap]` sign markers by default (`dynmap.marker.sign: default: op`). Letting everyone
+needs a `permissions.yml` override and a Minecraft restart.

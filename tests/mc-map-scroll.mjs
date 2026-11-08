@@ -13,7 +13,8 @@ async function server(){const s=createServer(async(req,res)=>{try{let p=new URL(
 // Dynmap's marker files, one per world: signs and anything else marked on the map.
 const MARKERS={world:{_spawn_world:{label:'Spawn',x:0,y:64,z:0},sign_1:{label:'Base',x:100,y:70,z:-200}},world_nether:{portal:{label:'Portal',x:10,y:80,z:20}},world_the_end:{}};
 const players=[{account:'Alex',name:'Alex',world:'world',x:50,y:70,z:60},{account:'Carter',name:'Carter',world:'world',x:300,y:70,z:400}];
-async function mock(context,{mapUp=true,signed=false,online=[]}={}){
+// stars (a Set) and lastSeen (a spot, or null) switch on the two per-member endpoints; left out they answer 404 like a server without them.
+async function mock(context,{mapUp=true,signed=false,online=[],stars,lastSeen}={}){
  if(signed)await context.addInitScript(()=>{localStorage.setItem('destin-who',JSON.stringify({name:'Carter',email:'test@example.com'}));localStorage.setItem('family-session',JSON.stringify({name:'Carter',token:'test-token'}));});
  await context.route('https://fam-api.xgold.tech/**',route=>{
   const p=new URL(route.request().url()).pathname.replace('/family','');
@@ -21,6 +22,8 @@ async function mock(context,{mapUp=true,signed=false,online=[]}={}){
   const marker=p.match(/^\/mc-map\/tiles\/_markers_\/marker_(\w+)\.json$/);if(marker)return route.fulfill({json:{sets:{markers:{markers:MARKERS[marker[1]]||{}}},timestamp:1}});
   if(p.startsWith('/mc-map/'))return route.fulfill({contentType:'text/html',body:'<!doctype html><title>Map</title><style>html,body{margin:0;height:100%;background:#222;touch-action:none}</style><script>window.wheels=window.downs=window.drags=0;addEventListener("wheel",e=>{e.preventDefault();window.wheels++},{passive:false});addEventListener("pointerdown",()=>window.downs++);addEventListener("pointermove",e=>{if(e.buttons)window.drags++})</script>'});
   if(p==='/users')return route.fulfill({json:{users:[{id:'carter',name:'Carter',registered:true}]}});
+  if(p==='/hub/mc-stars'&&stars){if(route.request().method()==='POST'){const b=route.request().postDataJSON();b.starred?stars.add(b.pin):stars.delete(b.pin);return route.fulfill({json:{starred:b.starred}});}return route.fulfill({json:{stars:[...stars]}});}
+  if(p==='/hub/mc-last-seen'&&lastSeen!==undefined)return route.fulfill({json:{spot:lastSeen}});
   if(p==='/hub/builds')return route.fulfill({json:{user:{id:'carter',name:'Carter'},tasks:[]}});
   if(p==='/hub/mc-whitelist')return route.fulfill({json:{accounts:[{edition:'java',username:'Carter',status:'added'}]}});
   return route.fulfill({status:404,json:{error:'Not mocked'}});
@@ -111,6 +114,8 @@ test('places: signed in they come first, ride on the grab bar, and the map follo
   const context=await browser.newContext({viewport:{width:1280,height:800}});await mock(context,{signed:true,online:players});const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto(origin+'/mc/');await until(()=>page.locator('#places-shelf').isVisible(),'the places on the grab bar');
   assert.equal(await page.evaluate(()=>document.getElementById('places').nextElementSibling.id),'join-server');assert.equal(await page.locator('#join-peek').isVisible(),false);
+  // A server without stars or last-seen still gets a working page, just without those extras.
+  assert.equal(await page.locator('#places-list .star').count(),0);
   // The server would pick Alex (first alphabetically); a signed-in Carter gets his own player.
   await until(async()=>(await page.locator('#live-map').getAttribute('src')||'').includes('playername=Carter'),'the map to follow Carter');assert.match(await page.locator('#map-status').textContent(),/Following Carter/);
   // A place on the bar takes the map there; the bar itself leads to the list, not the join instructions.
@@ -119,6 +124,40 @@ test('places: signed in they come first, ride on the grab bar, and the map follo
   await until(async()=>{const b=await page.locator('#places').boundingBox();return b.y>=0&&b.y<=60;},'the places list');
   // Following again goes back to my player.
   await toTop(page);await page.locator('#map-follow').click();await until(async()=>(await page.locator('#live-map').getAttribute('src')).includes('playername=Carter'),'the map to follow Carter again');
+  assert.deepEqual(errors,[]);await context.close();
+ }finally{await browser.close();await new Promise(r=>s.close(r));}
+});
+// Stars are per account and live on the server; they put a place first on the page and on the grab bar.
+test('stars: starring puts a place first, on the bar too, and it is remembered',async()=>{
+ const s=await server(),browser=await chromium.launch({args:['--no-sandbox']}),origin=`http://127.0.0.1:${s.address().port}`;
+ try{
+  const stars=new Set(),context=await browser.newContext({viewport:{width:1280,height:800}});await mock(context,{signed:true,online:players,stars});const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  const names=()=>page.locator('#places-list .place-name').allTextContents();
+  await page.goto(origin+'/mc/');await until(async()=>await page.locator('#places-list .star').count()===3,'the star buttons');
+  assert.deepEqual(await names(),['Base','Portal','Spawn']);
+  await page.getByRole('button',{name:'Star Spawn'}).click();
+  await until(async()=>(await names())[0]==='Spawn','Spawn to move first');assert.deepEqual([...stars],['world:markers:_spawn_world']);
+  assert.equal(await page.getByRole('button',{name:'Star Spawn'}).getAttribute('aria-pressed'),'true');assert.equal(await page.getByRole('button',{name:'Star Spawn'}).textContent(),'Starred');
+  assert.equal((await page.locator('#places-shelf .place').first().textContent()),'★ Spawn');
+  assert.equal(await page.evaluate(()=>document.activeElement.dataset.pin),'world:markers:_spawn_world','focus stays on the star after it moves');
+  await page.reload();await until(async()=>(await names())[0]==='Spawn','the star to be remembered');
+  await page.getByRole('button',{name:'Star Spawn'}).click();await until(async()=>(await names())[0]==='Base','the star to come off');assert.equal(stars.size,0);
+  assert.deepEqual(errors,[]);await context.close();
+ }finally{await browser.close();await new Promise(r=>s.close(r));}
+});
+// The last spot is sampled while someone is online. Signed in and offline, the map shows it; online, the map follows them.
+test('last seen: offline the map shows where I was, online it follows me, and it goes back after I leave',async()=>{
+ const s=await server(),browser=await chromium.launch({args:['--no-sandbox']}),origin=`http://127.0.0.1:${s.address().port}`;
+ try{
+  const online=[players[0]],seen_at=new Date(Date.now()-2*3600000).toISOString();
+  const context=await browser.newContext({viewport:{width:1280,height:800}});await mock(context,{signed:true,online,lastSeen:{world:'world',x:777,y:70,z:-333,seen_at}});const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  const src=async()=>await page.locator('#live-map').getAttribute('src')||'';
+  const poll=()=>page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
+  await page.goto(origin+'/mc/');await until(async()=>(await src()).includes('x=777'),'the map to show the last spot');
+  assert(!(await src()).includes('playername'),'not following Alex');assert((await src()).includes('z=-333'));
+  assert.match(await page.locator('#map-status').textContent(),/Carter last seen here · 2 hours ago/);
+  online.push(players[1]);await poll();await until(async()=>(await src()).includes('playername=Carter'),'the map to follow Carter');assert.match(await page.locator('#map-status').textContent(),/Following Carter/);
+  online.pop();await poll();await until(async()=>(await src()).includes('x=777'),'the map to go back to the last spot');
   assert.deepEqual(errors,[]);await context.close();
  }finally{await browser.close();await new Promise(r=>s.close(r));}
 });

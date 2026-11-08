@@ -2,12 +2,13 @@
  const H=window.familyHub,{$,api,notice}=H,BASE='https://fam-api.xgold.tech/family';
  let following=!matchMedia('(prefers-reduced-motion: reduce)').matches,latest,lastTarget='',checking=false,frameTimer;
  const frame=$('live-map'),WORLDS={world:'Overworld',world_nether:'Nether',world_the_end:'The End'};
- let pins=[],pinTarget=null,myNames=new Set(),signed=false;
+ let pins=[],pinTarget=null,myNames=new Set(),signed=false,starred=new Set(),starsOn=false,lastSpot=null,wasOnline=false;
  // Dynmap shows Bedrock players as ".Name" with underscores for spaces; the whitelist keeps the gamertag as typed.
  const norm=s=>String(s||'').toLowerCase().replace(/^\./,'').replace(/[\s_]/g,'');
  const mine=()=>myNames.size?latest?.players?.find(p=>myNames.has(norm(p.account))):undefined;
- // A pin wins, then the signed-in player's own account, then whoever the server picked.
- const focus=()=>pinTarget||(following&&mine()&&{mode:'player',...mine()})||latest.focus;
+ // A pin wins, then the signed-in player (live if online, else the spot they were last seen), then whoever the server picked.
+ const focus=()=>pinTarget||(following&&(mine()?{mode:'player',...mine()}:lastSpot&&{mode:'last',name:H.user?.name,...lastSpot}))||latest.focus;
+ function ago(iso){const m=Math.round((Date.now()-new Date(iso))/60000),[n,unit]=m<60?[m,'minute']:m<1440?[Math.round(m/60),'hour']:[Math.round(m/1440),'day'];return m<1?'just now':`${n} ${unit}${n===1?'':'s'} ago`;}
  function showMap(){
   if(!latest?.online)return;showStatus();const f=focus(),follow=!pinTarget&&following&&f.mode==='player';
   const target=follow?'player:'+f.account:'area:'+f.world+':'+Math.round(f.x)+':'+Math.round(f.z);
@@ -19,11 +20,13 @@
  function followButton(){$('map-follow').textContent=following?'Pause following':'Follow players';$('map-follow').setAttribute('aria-pressed',String(following));}
  function showStatus(){
   const n=latest.players.length,f=focus();
-  $('map-status').textContent=(n?`${n} player${n===1?'':'s'} online · `:'No one online · ')+(f.mode==='player'?(following?'Following ':'Near ')+(f.name||f.account):f.mode==='pin'?'Showing '+f.name:f.mode==='activity'?'Most active area · past 3 weeks':f.mode==='chunks'?'Recently saved chunks · activity history is building':'World spawn · activity history is building');
+  $('map-status').textContent=(n?`${n} player${n===1?'':'s'} online · `:'No one online · ')+(f.mode==='player'?(following?'Following ':'Near ')+(f.name||f.account):f.mode==='pin'?'Showing '+f.name:f.mode==='last'?`${f.name||'You'} last seen here · ${ago(f.seen_at)}`:f.mode==='activity'?'Most active area · past 3 weeks':f.mode==='chunks'?'Recently saved chunks · activity history is building':'World spawn · activity history is building');
  }
  async function mapStatus(){
   if(checking||document.hidden)return;checking=true;
   try{const r=await fetch(BASE+'/mc-status',{cache:'no-store',signal:AbortSignal.timeout(12000)});latest=await r.json();if(!r.ok||!latest.online)throw Error(latest.error||'The live map is temporarily unavailable.');
+   // The moment my player leaves, fetch where they were last seen so the map moves there instead of to someone else.
+   const on=!!mine();if(wasOnline&&!on)await loadLastSpot();wasOnline=on;
    showStatus();
    if(following||!lastTarget)showMap();
   }catch(e){$('map-status').textContent=e.message;if(!lastTarget){$('map-placeholder').hidden=false;$('map-message').textContent='Live map unavailable. Join instructions and the build board are ready below.';}}
@@ -81,19 +84,43 @@
   const list=$('places-list');list.replaceChildren();shelf.replaceChildren();
   if(!pins.length)list.append(H.node('p','No places yet.','empty'));
   for(const p of pins){
-   const row=H.node('button',undefined,'place');row.type='button';row.append(H.node('span',p.name,'place-name'),H.node('span',`${WORLDS[p.world]} · ${p.x}, ${p.y}, ${p.z}`,'place-where'));row.addEventListener('click',()=>goTo(p));list.append(row);
-   const chip=H.node('button',title(p),'place');chip.type='button';chip.addEventListener('click',()=>goTo(p));shelf.append(chip);
+   const wrap=H.node('div',undefined,'place-row'),row=H.node('button',undefined,'place'),on=starred.has(p.id);row.type='button';row.append(H.node('span',p.name,'place-name'),H.node('span',`${WORLDS[p.world]} · ${p.x}, ${p.y}, ${p.z}`,'place-where'));row.addEventListener('click',()=>goTo(p));wrap.append(row);
+   // Stars only show when the server can save them; without it Places still works.
+   if(starsOn){const star=H.node('button',on?'Starred':'Star','star');star.type='button';star.dataset.pin=p.id;star.setAttribute('aria-label','Star '+p.name);star.setAttribute('aria-pressed',String(on));star.addEventListener('click',()=>toggleStar(p,star));wrap.append(star);}
+   list.append(wrap);
+   const chip=H.node('button',(on?'★ ':'')+title(p),'place');chip.type='button';if(on)chip.setAttribute('aria-label',title(p)+', starred');chip.addEventListener('click',()=>goTo(p));shelf.append(chip);
   }
   layoutPlaces();
+ }
+ // Starred places come first for the signed-in member, then the rest by name.
+ function sortPins(){pins.sort((a,b)=>starred.has(b.id)-starred.has(a.id)||a.name.localeCompare(b.name)||a.world.localeCompare(b.world));}
+ async function loadStars(){
+  try{starred=new Set((await api('/hub/mc-stars')).stars);starsOn=true;}catch{starred=new Set();starsOn=false;}
+  sortPins();renderPlaces();
+ }
+ async function toggleStar(pin,button){
+  const on=!starred.has(pin.id);button.disabled=true;
+  try{await api('/hub/mc-stars',{method:'POST',body:{pin:pin.id,starred:on}});on?starred.add(pin.id):starred.delete(pin.id);notice('places-message','');sortPins();renderPlaces();document.querySelector(`[data-pin="${CSS.escape(pin.id)}"]`)?.focus();}
+  catch(e){notice('places-message',e.message,true);button.disabled=false;}
+ }
+ async function loadLastSpot(){
+  if(!signed)return;
+  try{lastSpot=(await api('/hub/mc-last-seen')).spot;}catch{lastSpot=null;}
+  if(following)showMap();
+ }
+ // Runs when someone signs in or out: their stars and last spot belong to them alone.
+ function userChanged(){
+  starred=new Set();starsOn=false;lastSpot=null;wasOnline=false;
+  if(signed){loadStars();loadLastSpot();}else{sortPins();renderPlaces();}
  }
  async function loadPins(){
   const found=await Promise.allSettled(Object.keys(WORLDS).map(async world=>{
    const r=await fetch(BASE+'/mc-map/tiles/_markers_/marker_'+world+'.json',{cache:'no-store',signal:AbortSignal.timeout(8000)});if(!r.ok)throw Error('No markers');
-   const data=await r.json();return Object.values(data.sets||{}).flatMap(set=>Object.entries(set.markers||{}).map(([key,m])=>({name:String(m.label||key).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim()||key,world,x:Math.round(m.x),y:Math.round(m.y),z:Math.round(m.z)})));
+   const data=await r.json();return Object.entries(data.sets||{}).flatMap(([setKey,set])=>Object.entries(set.markers||{}).map(([key,m])=>({id:`${world}:${setKey}:${key}`,name:String(m.label||key).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim()||key,world,x:Math.round(m.x),y:Math.round(m.y),z:Math.round(m.z)})));
   }));
   // Keep what is showing if the markers cannot be read.
   if(!found.some(r=>r.status==='fulfilled'))return;
-  pins=found.flatMap(r=>r.status==='fulfilled'?r.value:[]).filter(p=>[p.x,p.y,p.z].every(Number.isFinite)).sort((a,b)=>a.name.localeCompare(b.name)||a.world.localeCompare(b.world));renderPlaces();
+  pins=found.flatMap(r=>r.status==='fulfilled'?r.value:[]).filter(p=>[p.x,p.y,p.z].every(Number.isFinite));sortPins();renderPlaces();
  }
  function renderPlatform(){
   instructions.replaceChildren();const selected=platform.value;
@@ -116,7 +143,7 @@
   const existing=accounts.find(r=>r.edition===whitelistForm.elements.edition.value&&['pending','processing','added'].includes(r.status));
   whitelistForm.querySelector('button').disabled=!!existing;whitelistForm.elements.username.disabled=!!existing;if(existing)whitelistForm.elements.username.value=existing.username;
  }
- function syncWhitelistAuth(){const ok=!!H.user&&!!window.familyAccount.current;$('whitelist-auth').hidden=ok;whitelistForm.hidden=!ok;if(!ok){accounts=[];myNames.clear();$('whitelist-accounts').replaceChildren();clearTimeout(whitelistPoll);}signed=ok;layoutPlaces();if(following)showMap();}
+ function syncWhitelistAuth(){const ok=!!H.user&&!!window.familyAccount.current;$('whitelist-auth').hidden=ok;whitelistForm.hidden=!ok;if(!ok){accounts=[];myNames.clear();$('whitelist-accounts').replaceChildren();clearTimeout(whitelistPoll);}const changed=ok!==signed;signed=ok;if(changed)userChanged();layoutPlaces();if(following)showMap();}
  async function loadWhitelist(){
   try{const data=await api('/hub/mc-whitelist');accounts=data.accounts;myNames=new Set(accounts.map(r=>norm(r.username)));syncWhitelistAuth();renderAccounts();clearTimeout(whitelistPoll);if(accounts.some(r=>['pending','processing'].includes(r.status)))whitelistPoll=setTimeout(loadWhitelist,2500);}
   catch(e){notice('whitelist-message',e.message,true);}

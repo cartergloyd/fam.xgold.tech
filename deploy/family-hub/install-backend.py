@@ -26,11 +26,15 @@ for root in roots:
     if "import whitelistHub from './hub-whitelist.js';" not in body:
         body="import whitelistHub from './hub-whitelist.js';\n"+body
         body=body.replace("familyHub(router, { database });","familyHub(router, { database });\n whitelistHub(router, { database });")
+    if "import placesHub from './hub-places.js';" not in body:
+        body="import placesHub from './hub-places.js';\n"+body
+        assert "whitelistHub(router, { database });" in body, 'Whitelist registration missing; review integration.'
+        body=body.replace("whitelistHub(router, { database });","whitelistHub(router, { database });\n placesHub(router, { database });")
     prepared.append((root,body))
 for index,(root,body) in enumerate(prepared):
     dest=backup/str(index)
     shutil.copytree(root,dest)
-    for name,target in [('endpoint.js','family-hub.js'),('hub-session.js','hub-session.js'),('minecraft.js','hub-minecraft.js'),('whitelist.js','hub-whitelist.js')]:
+    for name,target in [('endpoint.js','family-hub.js'),('hub-session.js','hub-session.js'),('minecraft.js','hub-minecraft.js'),('whitelist.js','hub-whitelist.js'),('places.js','hub-places.js')]:
         shutil.copy2(source/name,root/target)
     (root/'index.js').write_text(body)
 compose=Path('/home/gold/server-platform/public-apps/compose.yml')
