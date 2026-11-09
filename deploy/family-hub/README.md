@@ -22,12 +22,43 @@ status changes only). Until it does, to reschedule, cancel and create a new stay
 Closed stays remain in the database. Stays open from the calendar, where managers
 approve, decline or cancel them.
 
-Lake schedule: schema.sql adds a `lake_schedule` flag on users (set for Chester), a
-`title` on reservations, and the family_lake_days, family_lake_away, family_lake_weekends
-and family_lake_invites tables. `lake-schedule-2026.xlsx` beside this file holds Chester's
-2026 data to load, one sheet per table. The /hub/lake routes the page calls (listed on
-the spreadsheet's README sheet) are not written yet, so until they exist the page shows
-the owner the ordinary manager view and keeps the lake tabs hidden.
+Lake schedule: schema.sql adds a `lake_schedule` flag on users, a `title` on reservations and the family_lake_days,
+family_lake_away, family_lake_weekends and family_lake_invites tables. `lake-schema.sql` (apply after schema.sql, same psql
+command, safe to run twice) adds the `lake_owner` flag and the `source` column on away ranges. There is one schedule, stored under
+its owner (Chester); every user with `lake_schedule` (Carter too) sees and edits that same schedule, and /hub/me reports the flag.
+`lake.js` (installed as hub-lake.js) serves what the 6108 page calls: GET /hub/lake, PUT /hub/lake/days/:day,
+PUT /hub/lake/weekends/:friday, POST and DELETE /hub/lake/away, POST, PATCH and DELETE /hub/lake/invites, and
+PUT and DELETE /hub/lake/calendar. Weekend saves are last-write-wins.
+Load the 2026 sheet with `python3 load-lake.py | docker exec -i gold-platform-postgres sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d fam'`.
+It reads `lake-schedule-2026.json` (transcribed from Chester's sheet; the .xlsx beside it is the reviewable copy), is safe to run
+twice, and never overwrites a row that already exists, including ones edited on the site since.
+Chester must register (his directory row starts as "invited") before he can sign in; Carter sees the schedule now.
+
+### Guest links, manager edits, calendar feed, calendar sync, email
+
+`booking-schema.sql` (apply before installing the endpoint) adds `manage_token_hash`, `guest_email` and `reminded_at` to reservations.
+- **Guest links.** A request from a visitor with no account returns a one-time `manage_token`; only its sha256 is stored. The visitor opens
+  `/6108/?stay=<token>` to see the stay, change its dates (it goes back to pending for approval) or cancel it, until the stay starts.
+  Routes: GET /hub/stay, POST /hub/stay/cancel and /hub/stay/reschedule, all with `?k=<token>`. A visitor may also leave an email.
+- **Manager edits.** PATCH /hub/reservations/:id with no `status` edits title, dates, guests and notes (managers only, revision checked).
+- **Calendar feed.** GET /hub/calendar-link (signed in) returns a private token, and GET /hub/calendar.ics?k=<token> serves every stay as
+  an all-day event for Apple or Google Calendar to subscribe to; lake users also get their Away days. The token is an HMAC of the member's
+  id and PIN hash, so changing the PIN revokes the link. The page's per-stay "Add to calendar" and the trip page's button build files
+  in the browser with `ics.js`.
+- **Calendar sync.** Chester pastes a read-only calendar link on the Away tab. It is read before it is saved, stored in
+  family_lake_calendar (never sent back to the page), and re-read every six hours. Events with Travel, Flight, Trip, Out of town or
+  Vacation in the title become Away ranges (`source='calendar'`, replaced each sync); repeating events are skipped.
+- **Email.** `notify.js` mails on a new request (visitor and both managers), approval, decline, cancellation, edits, guest changes and a
+  reminder a week before check-in (checked every six hours; `reminded_at` stops repeats). Confirmations carry a calendar file. It stays
+  off until the family Directus has a real transport: set `EMAIL_TRANSPORT` (not `sendmail`), `EMAIL_FROM` and that transport's settings
+  (for SMTP, `EMAIL_SMTP_HOST`, `EMAIL_SMTP_PORT`, `EMAIL_SMTP_USER`, `EMAIL_SMTP_PASSWORD`) in the service's compose environment and
+  restart it. As of 2026-11-09 none is set. Recipients are the visitor's `guest_email`, a member's account email and the condo managers'.
+
+Tests: `npm run test:lake` runs the offline suites. `tests/lake-hub-db.mjs` is the real-PostgreSQL run; it executes everything inside one
+transaction that is always rolled back, so it is safe against the live database: copy `deploy/family-hub` and the test into the
+`homelab-directus-fam` container and run `HUB_TEST_DATABASE=fam HUB_SOURCE=<copy>/deploy/family-hub node --test tests/lake-hub-db.mjs`
+there (it uses that container's knex and DB_* settings; PostgreSQL only admits the `fam` user to the `fam` database).
+
 Bookings name the guests in each suite (Master Suite and Disney Suite) in the
 additive `suites` jsonb column; the guest count is derived from those names, and
 the page sends the count too so it works until schema.sql is re-applied.
@@ -71,7 +102,7 @@ accounts, or precise movement trails are stored in the activity table.
 
 ## Installation
 
-1. Back up fam using the normal private backup process. Apply schema.sql as the
+1. Back up fam using the normal private backup process. Apply schema.sql, then lake-schema.sql and booking-schema.sql, as the
    PostgreSQL owner (`docker exec -i gold-platform-postgres sh -c 'psql -v
    ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d fam' < schema.sql`). The migration is additive.
 2. Run `python3 install-backend.py`. It backs up both active and canonical family

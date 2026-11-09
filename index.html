@@ -5,6 +5,7 @@
 <script src="/family-directory.js"></script>
 <script src="/profile-match.js?v=1"></script>
 <script src="/family-account.js?v=2"></script>
+<script src="/ics.js?v=1" defer></script>
 <link rel="stylesheet" href="/family-account.css?v=3">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -135,6 +136,8 @@ h1 { margin: 0; font-size: clamp(2.75rem, 10.5vw, 7rem); line-height: 1.04; font
 @media (max-width: 900px) { #itinerary { padding-inline: var(--gutter); } }
 #itinerary h2 { font-size: clamp(2.25rem, 8.6vw, 4.5rem); line-height: 1.04; letter-spacing: -0.04em; margin-bottom: 16px; }
 .sub { margin: -8px 0 24px; color: var(--muted); font-size: 1.0625rem; max-width: 34em; }
+.textbtn { all: unset; display: block; margin-top: 8px; color: #2997ff; font-size: 1.0625rem; cursor: pointer; border-radius: 6px; }
+.textbtn:focus-visible { outline: 2px solid #2997ff; outline-offset: 2px; }
 .days { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .day { background: var(--strip); border-radius: 22px; overflow: hidden; }
 .day-head { all: unset; box-sizing: border-box; width: 100%; display: flex; align-items: center; gap: 16px; padding: 14px 18px 14px 14px; cursor: pointer; min-height: 76px; }
@@ -555,7 +558,7 @@ h2 { margin: 0 0 20px; font-size: clamp(1.75rem, 6vw, 3rem); line-height: 1.08; 
 
 <section class="wrap" id="itinerary" aria-label="Itinerary">
   <h2>The week.</h2>
-  <p class="sub">Tap a day to see the plan or add to it.<span id="sports-note" hidden> Cardinals, Blues and March Madness games are listed in Eastern time with the channel they are on. TBA and Channel TBD mean it has not been announced yet.</span></p>
+  <p class="sub">Tap a day to see the plan or add to it.<span id="sports-note" hidden> Cardinals, Blues and March Madness games are listed in Eastern time with the channel they are on. TBA and Channel TBD mean it has not been announced yet.</span><button type="button" class="textbtn" id="trip-ics">Add to calendar ›</button></p>
   <ol class="days" id="days"></ol>
 </section>
 
@@ -1237,6 +1240,24 @@ h2 { margin: 0 0 20px; font-size: clamp(1.75rem, 6vw, 3rem); line-height: 1.08; 
   }
   function span(ds) { var s = ds.slice().sort(), keys = Object.keys(ui).sort(); return s.length ? keys.filter(function (k) { return k >= s[0] && k <= s[s.length - 1]; }) : []; }
   function dayLabel(k) { var p = k.split('-'), d = new Date(+p[0], +p[1] - 1, +p[2]); return DAYS[d.getDay()].slice(0, 3) + ', ' + MON[d.getMonth()] + ' ' + d.getDate(); }
+  // "Add to calendar": the stay, check-in and check-out, each plan and each flight, as they stand on screen now. Clock times have no zone, so they read the same on any calendar.
+  document.getElementById('trip-ics').addEventListener('click', function () {
+    var id = 'trip-' + trip.id, ev = [], hm = function (t) { return String(t || '').slice(0, 5); }, at = function (day, t) { return t ? day + 'T' + hm(t) : day; };
+    ev.push({ uid: id + '@fam.xgold.tech', summary: trip.title, start: trip.start_date, end: trip.end_date, location: prop.address });
+    ev.push({ uid: id + '-in@fam.xgold.tech', summary: 'Check-in · ' + prop.title, start: at(trip.start_date, prop.check_in), location: prop.address });
+    ev.push({ uid: id + '-out@fam.xgold.tech', summary: 'Check-out · ' + prop.title, start: at(trip.end_date, prop.check_out), location: prop.address });
+    (planDocs || []).forEach(function (s) {
+      var q = s.data(); if (!q || !q.day || !q.text) return;
+      ev.push({ uid: id + '-plan-' + s.id + '@fam.xgold.tech', summary: q.text, start: at(q.day, q.time), description: q.by ? 'Added by ' + q.by : '' });
+    });
+    (flightDocs || []).forEach(function (s) {
+      var q = s.data(); if (!q) return; var days = (q.days && q.days.length) ? span(q.days) : parseDays(q.info); if (!days.length) return;
+      var who = (q.people || []).length ? 'Travelers: ' + q.people.join(', ') : '', dep = q.depAirport || q.arrAirport;
+      ev.push({ uid: id + '-fly-' + s.id + '-arr@fam.xgold.tech', summary: (q.arrFlight || q.info || 'Flight') + ' lands' + (q.arrAirport ? ' at ' + q.arrAirport : ''), start: at(days[0], q.arrTime), description: [who, DRIVER && 'Pickup: ' + DRIVER].filter(Boolean).join(' · ') });
+      ev.push({ uid: id + '-fly-' + s.id + '-dep@fam.xgold.tech', summary: (q.depFlight || q.info || 'Flight') + ' departs' + (dep ? ' from ' + dep : ''), start: at(days[days.length - 1], q.depTime), description: [who, DRIVER && 'Drop-off: ' + DRIVER].filter(Boolean).join(' · ') });
+    });
+    window.famIcs.download(id + '.ics', trip.title, ev);
+  });
   var seenF = null;
   function paintArrivals(flights, fresh) {
     Object.keys(ui).forEach(function (k) {

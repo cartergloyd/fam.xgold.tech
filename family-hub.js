@@ -72,6 +72,6 @@
  $('task-dialog').addEventListener('close',()=>{delete $('delete-task').dataset.confirm;$('delete-task').textContent='Delete card';});
  window.addEventListener('family-account-change',load);
  window.addEventListener('storage',e=>{if(e.key==='family-session')load();});
- window.familyHub={api,$,node,notice,board,openTask,load,action,signedIn,get user(){return currentUser;},set user(u){currentUser=u;},init(fn,options={}){refresh=fn;anonymous=!!options.anonymous;load();}};
+ window.familyHub={base:BASE,api,$,node,notice,board,openTask,load,action,signedIn,get user(){return currentUser;},set user(u){currentUser=u;},init(fn,options={}){refresh=fn;anonymous=!!options.anonymous;load();}};
  setInterval(()=>{if(!document.hidden&&!$('task-dialog').open)load();},60000);
 })();

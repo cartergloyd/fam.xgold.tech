@@ -30,11 +30,27 @@ for root in roots:
         body="import placesHub from './hub-places.js';\n"+body
         assert "whitelistHub(router, { database });" in body, 'Whitelist registration missing; review integration.'
         body=body.replace("whitelistHub(router, { database });","whitelistHub(router, { database });\n placesHub(router, { database });")
+    if "import lakeHub from './hub-lake.js';" not in body:
+        body="import lakeHub from './hub-lake.js';\n"+body
+        assert "placesHub(router, { database });" in body, 'Places registration missing; review integration.'
+        body=body.replace("placesHub(router, { database });","placesHub(router, { database });\n lakeHub(router, { database });")
+    if "import calendarHub from './hub-calendar.js';" not in body:
+        body="import calendarHub from './hub-calendar.js';\n"+body
+        assert "lakeHub(router, { database });" in body, 'Lake registration missing; review integration.'
+        body=body.replace("lakeHub(router, { database });","lakeHub(router, { database });\n calendarHub(router, { database });")
+    if "const notify = notifier(" not in body:
+        # Email needs Directus's own services, so the handler asks for them; mail stays off until EMAIL_TRANSPORT is configured.
+        body="import { notifier, startReminders } from './hub-notify.js';\n"+body
+        before="export default { id: 'family', handler(router, { database }) {"
+        assert before in body, 'Endpoint handler changed; review integration before installing.'
+        body=body.replace(before,"export default { id: 'family', handler(router, { database, services, getSchema, env, logger }) {\n const notify = notifier({ database, services, getSchema, env, logger });\n startReminders(notify, logger);")
+        assert " familyHub(router, { database });" in body, 'Family hub registration missing; review integration.'
+        body=body.replace(" familyHub(router, { database });"," familyHub(router, { database }, { notify });")
     prepared.append((root,body))
 for index,(root,body) in enumerate(prepared):
     dest=backup/str(index)
     shutil.copytree(root,dest)
-    for name,target in [('endpoint.js','family-hub.js'),('hub-session.js','hub-session.js'),('minecraft.js','hub-minecraft.js'),('whitelist.js','hub-whitelist.js'),('places.js','hub-places.js'),('map-bubbles.js','hub-map-bubbles.js'),('map-bubbles.css','hub-map-bubbles.css')]:
+    for name,target in [('endpoint.js','family-hub.js'),('hub-session.js','hub-session.js'),('minecraft.js','hub-minecraft.js'),('whitelist.js','hub-whitelist.js'),('places.js','hub-places.js'),('lake.js','hub-lake.js'),('calendar.js','hub-calendar.js'),('notify.js','hub-notify.js'),('map-bubbles.js','hub-map-bubbles.js'),('map-bubbles.css','hub-map-bubbles.css')]:
         shutil.copy2(source/name,root/target)
     (root/'index.js').write_text(body)
 compose=Path('/home/gold/server-platform/public-apps/compose.yml')

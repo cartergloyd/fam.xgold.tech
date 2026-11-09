@@ -24,7 +24,7 @@
    // Out-of-range day numbers roll into the neighbouring months, which render muted.
    const d=new Date(month.getFullYear(),month.getMonth(),i-first+1),key=iso(d),r=occupied(key),button=node('button',String(d.getDate()));button.type='button';
    button.classList.toggle('other',d.getMonth()!==month.getMonth());
-   const presence=presenceOf(key);if(LAKE_CLASS[presence]){button.classList.add(LAKE_CLASS[presence]);if(presence!=='away'){const who=node('img',undefined,'who');who.alt='';who.src=window.familyAccount.photo(state.user.name);button.append(who);}}
+   const presence=presenceOf(key);if(LAKE_CLASS[presence]){button.classList.add(LAKE_CLASS[presence]);if(presence!=='away'){const who=node('img',undefined,'who');who.alt='';who.src=window.familyAccount.photo(lake.owner);button.append(who);}}
    const past=key<today,sel=(awayMode?awayForm:form).elements;button.disabled=past&&!marking&&!(awayMode?awayFor(key):r);button.classList.toggle('past',past);button.classList.toggle('busy',!!r);button.classList.toggle('selected',key===sel.start_date.value||key===sel.end_date.value||(key>sel.start_date.value&&key<sel.end_date.value));
    button.setAttribute('aria-pressed',button.classList.contains('selected')?'true':'false');
    button.setAttribute('aria-label',d.toLocaleDateString(undefined,{dateStyle:'full'})+(r?`, ${r.status==='blocked'?'unavailable':r.status+' stay'}`:', available')+(LAKE_LABEL[presence]?', '+LAKE_LABEL[presence]:''));
@@ -66,8 +66,8 @@
   const user=state.user;H.user=user;
   lake=user?.lake_schedule?await api('/hub/lake'):null;
   if(lake){lake.days=Object.fromEntries(lake.days.map(d=>[d.day,d.presence]));lake.weekends=Object.fromEntries(lake.weekends.map(w=>[w.friday,w]));lake.away=lake.away||[];}
-  for(const id of ['lake-tabs','mark-days','lake-fields','book-there'])$(id).hidden=!lake;if(lake)$('book-there').querySelector('span').textContent=firstName(user.name)+' will be there';if(!lake)document.querySelector('#lake-tabs [data-tab=calendar]').click();document.querySelectorAll('.legend .key-here,.legend .key-away').forEach(e=>e.hidden=!lake);
-  document.querySelector('family-ribbon').hidden=!user;$('signin-link').hidden=!!user;
+  for(const id of ['lake-tabs','mark-days','lake-fields','book-there','calendar-link'])$(id).hidden=!lake;if(lake)calendarStatus();if(lake)$('book-there').querySelector('span').textContent=firstName(lake.owner)+' will be there';if(!lake)document.querySelector('#lake-tabs [data-tab=calendar]').click();document.querySelectorAll('.legend .key-here,.legend .key-away').forEach(e=>e.hidden=!lake);
+  document.querySelector('family-ribbon').hidden=!user;$('signin-link').hidden=!!user;$('subscribe').hidden=!user?.calendar_feed;$('guest-email-wrap').hidden=!(state.guest_links&&!user);
   $('property-title').textContent=state.property.title;$('maintenance-tab').hidden=!user;$('manage-tab').hidden=!user?.condo_manager;
   const open=document.querySelector('#section-tabs [aria-pressed=true]');if(open?.hidden)document.querySelector('[data-tab=details]').click();
   form.elements.start_date.min=todayKey();
@@ -86,7 +86,10 @@
   if(!guests){notice('booking-message','Add at least one guest name.',true);return;}
   const b=$('book-submit');b.disabled=true;notice('booking-message','Saving…');
   const body={start_date:form.elements.start_date.value,end_date:form.elements.end_date.value,title:form.elements.title.value.trim(),guests,suites,note:form.elements.note.value};
-  try{const {reservation}=editing?await api('/hub/reservations/'+viewing.id,{method:'PATCH',body:{...body,revision:viewing.revision}}):await api('/hub/reservations',{method:'POST',body,anonymous:!state.user});
+  const email=form.elements.email.value.trim();if(email&&!state.user&&state.guest_links)body.email=email;
+  try{const {reservation,manage_token}=editing?await api('/hub/reservations/'+viewing.id,{method:'PATCH',body:{...body,revision:viewing.revision}}):await api('/hub/reservations',{method:'POST',body,anonymous:!state.user});
+   // A visitor's request comes back with a private link; it is the only way to change or cancel without an account.
+   const link=$('stay-link');link.hidden=!manage_token;if(manage_token){const a=node('a','Change or cancel your request ›');a.href=`${location.origin}/6108/?stay=${encodeURIComponent(manage_token)}`;link.replaceChildren('Save this link. ',a);}
    if(lake){
     // The owner's stays record whether he will be there each night; the box starts checked. An edit only rewrites nights when the box changed.
     const want=form.elements.there.checked;
@@ -161,12 +164,19 @@
   const acts=$('stay-actions');acts.replaceChildren();
   if(view&&state.user&&viewing.id){
    const r=viewing,add=(label,status,text)=>{const b=node('button',label,'quiet');b.type='button';b.addEventListener('click',()=>H.action(b,async()=>{await api('/hub/reservations/'+r.id,{method:'PATCH',body:{status,revision:r.revision}});await H.load();notice('booking-message',text);}));acts.append(b);};
+   if(['confirmed','pending'].includes(r.status)){const b=node('button','Add to calendar','quiet');b.type='button';b.addEventListener('click',()=>window.famIcs.download(`6108-${r.start_date}.ics`,'6108',[{uid:`stay-${r.id}@fam.xgold.tech`,start:r.start_date,end:r.end_date,sequence:r.revision,summary:'6108 · '+(r.title||r.name||'Stay'),status:r.status==='pending'?'TENTATIVE':'CONFIRMED'}]));acts.append(b);}
    if(r.status==='pending'&&state.user.condo_manager){add('Approve','confirmed','Stay approved.');add('Decline','declined','Request declined. Dates are available again.');}
    if(['confirmed','pending','blocked'].includes(r.status)&&(state.user.condo_manager||r.user_id===state.user.id))add(r.status==='blocked'?'Unblock dates':'Cancel stay','cancelled',r.status==='blocked'?'Dates unblocked.':'Reservation cancelled. Dates are available again.');
   }
   acts.hidden=!acts.children.length;
  }
  $('edit-stay').addEventListener('click',()=>showStay(viewing,!editing));
+ // The feed link carries a private token, so it is fetched on tap, copied for Google Calendar, and opened as webcal for Apple Calendar.
+ $('subscribe').addEventListener('click',()=>H.action($('subscribe'),async()=>{
+  const {token}=await api('/hub/calendar-link'),url=`${H.base}/hub/calendar.ics?k=${encodeURIComponent(token)}`;
+  try{await navigator.clipboard.writeText(url);notice('page-message','Calendar link copied. In Google Calendar choose Add calendar, From URL.');}catch{notice('page-message',url);}
+  location.href=url.replace(/^https:/,'webcal:');
+ }));
  $('mark-days').addEventListener('click',()=>{
   marking=!marking;const b=$('mark-days');b.setAttribute('aria-pressed',String(marking));b.textContent=marking?'Done marking':'Mark my days';
   document.querySelector('.calendar').classList.toggle('marking',marking);notice('booking-message',marking?'Tap a day to mark it at the lake; tap again to clear. Away dates are added on the Away tab.':'');calendar();
@@ -198,10 +208,16 @@
  let awayMode=false,awaySel=null,awayOpen=null;const awayForm=$('away-form');
  function setAwayMode(on){awayMode=on;form.hidden=on;awayForm.hidden=!on;if(on)newAway();else calendar();}
  function newAway(){awayOpen=null;awaySel=null;awayForm.reset();awayForm.querySelectorAll('input').forEach(i=>{i.readOnly=false;});$('away-new').hidden=true;$('away-submit').hidden=false;$('away-remove').hidden=true;notice('away-message','');calendar();}
- function showAway(a){awayOpen=a;awaySel=null;awayForm.elements.start_date.value=a.start_date;awayForm.elements.end_date.value=a.end_date;awayForm.elements.reason.value=a.reason||'';awayForm.querySelectorAll('input').forEach(i=>{i.readOnly=true;});$('away-new').hidden=false;$('away-submit').hidden=true;$('away-remove').hidden=false;notice('away-message','');calendar();}
+ function showAway(a){awayOpen=a;awaySel=null;awayForm.elements.start_date.value=a.start_date;awayForm.elements.end_date.value=a.end_date;awayForm.elements.reason.value=a.reason||'';awayForm.querySelectorAll('input').forEach(i=>{i.readOnly=true;});$('away-new').hidden=false;$('away-submit').hidden=true;$('away-remove').hidden=a.source==='calendar';notice('away-message',a.source==='calendar'?'From your calendar link. It updates on its own.':'');calendar();}
  document.querySelectorAll('#lake-tabs [data-tab]').forEach(b=>b.addEventListener('click',()=>setAwayMode(b.dataset.tab==='away')));
  $('away-new').addEventListener('click',newAway);
  $('away-remove').addEventListener('click',()=>{const a=awayOpen,b=$('away-remove');H.action(b,async()=>{await api('/hub/lake/away/'+a.id,{method:'DELETE'});lake.away=lake.away.filter(x=>x!==a);newAway();});});
+ // ---- Calendar link: Chester's travel events fill Away. The link is read before it is saved and never shown again. ----
+ const calendarStatus=()=>{const c=lake.calendar||{};$('calendar-status').textContent=!c.linked?'Not linked':c.error?'The last read failed: '+c.error:c.synced_at?'Synced '+new Date(c.synced_at).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'Linked';$('calendar-unlink').hidden=!c.linked;};
+ const away_=(button,fn)=>{button.disabled=true;return fn().catch(e=>notice('away-message',e.message,true)).finally(()=>{button.disabled=false;});};
+ $('calendar-url').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('calendar-save').click();}});
+ $('calendar-save').addEventListener('click',()=>away_($('calendar-save'),async()=>{notice('away-message','Reading the calendar…');const {count}=await api('/hub/lake/calendar',{method:'PUT',body:{url:$('calendar-url').value}});$('calendar-url').value='';await H.load();notice('away-message',`Synced. ${count} travel event${count===1?'':'s'} marked Away.`);}));
+ $('calendar-unlink').addEventListener('click',()=>away_($('calendar-unlink'),async()=>{await api('/hub/lake/calendar',{method:'DELETE'});await H.load();notice('away-message','Unlinked.');}));
  awayForm.addEventListener('submit',async e=>{
   e.preventDefault();const b=$('away-submit'),body=Object.fromEntries(new FormData(awayForm));
   if(!body.start_date||!body.end_date||body.end_date<body.start_date){notice('away-message','Choose a first and last day, in order.',true);return;}
@@ -212,5 +228,27 @@
   e.preventDefault();const f=e.currentTarget,b=f.querySelector('[type=submit]');b.disabled=true;
   try{const {invite}=await api('/hub/lake/invites',{method:'POST',body:Object.fromEntries(new FormData(f))});lake.invites.push(invite);f.reset();notice('invite-message','Added to the list.');invites();}catch(err){notice('invite-message',err.message,true);}finally{b.disabled=false;}
  });
+ // ---- A visitor's own request, opened from the private link they were given (?stay=). Change dates sends it back for approval. ----
+ const stayKey=new URLSearchParams(location.search).get('stay');let myStay=null,myZone='America/Chicago';
+ const stayPath=action=>`/hub/stay${action}?k=${encodeURIComponent(stayKey)}`;
+ function showMyStay(s,error){
+  myStay=s;$('my-stay').hidden=false;const hasStay=!!s;
+  const nights=hasStay?(Date.parse(s.end_date)-Date.parse(s.start_date))/86400000:0,status={pending:'Waiting for approval',confirmed:'Confirmed',cancelled:'Cancelled',declined:'Not available'};
+  $('my-stay-summary').textContent=hasStay?`${status[s.status]||s.status} · ${fmt(s.start_date)} to ${fmt(s.end_date)} · ${nights} night${nights===1?'':'s'}${s.title?' · '+s.title:''}`:error;
+  const open=hasStay&&['pending','confirmed'].includes(s.status)&&s.start_date>new Intl.DateTimeFormat('en-CA',{timeZone:myZone}).format(new Date());
+  $('my-dates').hidden=!open;$('my-change').hidden=!open;$('my-cancel').hidden=!open;
+  if(hasStay){$('my-start').value=s.start_date;$('my-end').value=s.end_date;}
+ }
+ const mine=(button,fn)=>{button.disabled=true;return fn().catch(e=>notice('my-message',e.message,true)).finally(()=>{button.disabled=false;});};
+ $('my-change').addEventListener('click',()=>mine($('my-change'),async()=>{
+  const {stay}=await api(stayPath('/reschedule'),{method:'POST',body:{start_date:$('my-start').value,end_date:$('my-end').value,revision:myStay.revision},anonymous:true});
+  showMyStay(stay);notice('my-message','New dates sent. They wait for approval again.');await H.load();
+ }));
+ $('my-cancel').addEventListener('click',()=>{
+  const b=$('my-cancel');if(b.dataset.confirm!=='yes'){b.dataset.confirm='yes';b.textContent='Cancel this stay?';return;}
+  delete b.dataset.confirm;b.textContent='Cancel stay';
+  mine(b,async()=>{const {stay}=await api(stayPath('/cancel'),{method:'POST',body:{revision:myStay.revision},anonymous:true});showMyStay(stay);notice('my-message','Stay cancelled.');await H.load();});
+ });
+ if(stayKey)api(stayPath(''),{anonymous:true}).then(({stay,property})=>{myZone=property.timezone;showMyStay(stay);}).catch(e=>showMyStay(null,e.message));
  H.init(refresh,{anonymous:true});
 })();
