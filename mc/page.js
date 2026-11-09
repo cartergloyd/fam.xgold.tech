@@ -4,7 +4,8 @@
  // that gap (--gap), and the dock stays where it is, just above where the viewport ends.
  let gap=0;
  function measureGap(){
-  const standalone=navigator.standalone||matchMedia('(display-mode: standalone)').matches,g=standalone?Math.round(screen.height-innerHeight):0;
+  // Where fixed things really end (innerHeight can disagree with it) against the screen's height.
+  const standalone=navigator.standalone||matchMedia('(display-mode: standalone)').matches,g=standalone?Math.round(screen.height-$('edge-probe').getBoundingClientRect().bottom):0;
   gap=g>20&&g<120?g:0;document.documentElement.style.setProperty('--gap',gap+'px');
  }
  measureGap();addEventListener('resize',measureGap);

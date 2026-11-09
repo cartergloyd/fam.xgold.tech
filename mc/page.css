@@ -33,6 +33,7 @@ main.mc-main { max-width:none; margin:0; padding:0; }
    raising a second window. Its size is animated with explicit values; the sheet inside keeps its open width so the text never reflows mid-move. */
 .dock { position:fixed; z-index:10; left:50%; transform:translateX(-50%); bottom:var(--closed-bottom); width:var(--closed-w); height:var(--island-h); display:flex; flex-direction:column; align-items:center; overflow:hidden; border-radius:calc(var(--island-h) / 2); transition:width var(--duration-sheet) var(--ease-sheet), height var(--duration-sheet) var(--ease-sheet), bottom var(--duration-sheet) var(--ease-sheet), border-radius var(--duration-sheet) var(--ease-sheet), background-color var(--duration-sheet) var(--ease-sheet); will-change:width,height; }
 .dock[data-open] { width:var(--open-w); height:calc(var(--panel-h,0px) + var(--island-h)); bottom:var(--open-bottom); border-radius:var(--radius-card); background:var(--glass-bg-strong); }
+.edge-probe { position:fixed; left:0; bottom:0; width:0; height:0; visibility:hidden; pointer-events:none; }
 .dock-probe { position:fixed; left:0; width:0; height:0; bottom:var(--open-bottom); visibility:hidden; pointer-events:none; }
 .island { flex:none; width:100%; display:flex; justify-content:center; gap:4px; padding:6px; }
 .tab { flex:none; min-width:92px; min-height:56px; padding:6px 12px; border-radius:var(--radius-pill); background:none; color:var(--text); flex-direction:column; gap:2px; font-size:12px; font-weight:var(--weight-semibold); }
