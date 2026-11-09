@@ -14,3 +14,8 @@
 .dynmap .playerMarker.fm-has-photo .playerIcon,
 .dynmap .playerMarker.fm-has-photo .playerIconSm,
 .dynmap .playerMarker.fm-has-photo .playerIconLg { visibility:hidden; }
+/* Players are just the bubble and their name: no hearts or armor bars, and the name sits beside the bubble. */
+.dynmap .playerMarker .healthContainer,
+.dynmap .playerMarker .healthContainerSm,
+.dynmap .playerMarker .healthContainerLg { display:none !important; }
+.dynmap .playerMarker .playerName { top:-12px !important; left:22px !important; }

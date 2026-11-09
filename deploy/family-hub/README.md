@@ -133,7 +133,7 @@ any 'added' request for that edition to 'failed'; the server's whitelist entry s
 Apply whitelist-schema.sql to fam (schema.sql holds the account columns). Install
 whitelist.js as hub-whitelist.js beside the existing extension and register
 whitelistHub(router,{database}); install-backend.py performs that integration. Restart
-family Directus afterwards. No public Directus collection permissions are added.
+family Directus once; after that a changed `hub-map-bubbles.*` is picked up without a restart. No public Directus collection permissions are added.
 
 Install fam-mc-whitelist.service in the user service directory and enable it. It runs
 whitelist-worker.py from the deployed fam-site-src tree. Every two seconds it claims one
@@ -218,7 +218,7 @@ needs a `permissions.yml` override and a Minecraft restart. The how-to under Nam
 ## Map bubbles
 
 `map-bubbles.js` and `map-bubbles.css` make Dynmap draw named locations as Find My style emoji pins and players as rings around their
-family photo. They run inside the proxied Dynmap page: `minecraft.js` adds `<link href="family-map.css">` and `<script src="family-map.js">`
+family photo, with no health or armor bars. They run inside the proxied Dynmap page: `minecraft.js` adds `<link href="family-map.css">` and `<script src="family-map.js">`
 to the map's index.html and serves both files itself, and only when `hub-map-bubbles.js` and `hub-map-bubbles.css` sit beside
 `hub-minecraft.js`. Without them the map is plain Dynmap, so install order does not matter. `install-backend.py` copies them; restart
 family Directus afterwards. The emoji and color tables in `map-bubbles.js` mirror `mc/page.js`; change both together.

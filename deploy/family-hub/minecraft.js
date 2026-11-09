@@ -1,11 +1,12 @@
-import {readFileSync} from 'node:fs';
+import {readFileSync,statSync} from 'node:fs';
 const BASE='http://192.168.1.148:8123';
 // The bubble script and stylesheet sit beside this file once installed (hub-map-bubbles.js/.css). Without them the map is plain Dynmap.
+// A file is read again when its time changes, so installing a new stylesheet needs no restart.
 const assets={};
 function asset(kind,options){
  if(options.assets&&kind in options.assets)return options.assets[kind];
- if(!(kind in assets)){try{assets[kind]=readFileSync(new URL('./hub-map-bubbles.'+kind,import.meta.url),'utf8');}catch{assets[kind]=null;}}
- return assets[kind];
+ const url=new URL('./hub-map-bubbles.'+kind,import.meta.url);
+ try{const m=statSync(url).mtimeMs;if(assets[kind]?.m!==m)assets[kind]={m,text:readFileSync(url,'utf8')};return assets[kind].text;}catch{return null;}
 }
 export const injectBubbles=html=>html.replace('</head>','<link rel="stylesheet" href="family-map.css"></head>').replace('</body>','<script src="family-map.js"></script></body>');
 export function chooseFocus(players,hotspot,spawn={world:'world',x:0,y:64,z:0}){
