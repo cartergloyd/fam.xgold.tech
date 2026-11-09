@@ -34,8 +34,9 @@ for root in roots:
         body="import lakeHub from './hub-lake.js';\n"+body
         assert "placesHub(router, { database });" in body, 'Places registration missing; review integration.'
         body=body.replace("placesHub(router, { database });","placesHub(router, { database });\n lakeHub(router, { database });")
-    if "import calendarHub from './hub-calendar.js';" not in body:
-        body="import calendarHub from './hub-calendar.js';\n"+body
+    # calendar.js and lake-sync.js keep their own names because hub-lake.js and hub-notify.js import them by those names.
+    if "import calendarHub from './calendar.js';" not in body:
+        body="import calendarHub from './calendar.js';\n"+body
         assert "lakeHub(router, { database });" in body, 'Lake registration missing; review integration.'
         body=body.replace("lakeHub(router, { database });","lakeHub(router, { database });\n calendarHub(router, { database });")
     if "const notify = notifier(" not in body:
@@ -50,7 +51,7 @@ for root in roots:
 for index,(root,body) in enumerate(prepared):
     dest=backup/str(index)
     shutil.copytree(root,dest)
-    for name,target in [('endpoint.js','family-hub.js'),('hub-session.js','hub-session.js'),('minecraft.js','hub-minecraft.js'),('whitelist.js','hub-whitelist.js'),('places.js','hub-places.js'),('lake.js','hub-lake.js'),('calendar.js','hub-calendar.js'),('notify.js','hub-notify.js'),('map-bubbles.js','hub-map-bubbles.js'),('map-bubbles.css','hub-map-bubbles.css')]:
+    for name,target in [('endpoint.js','family-hub.js'),('hub-session.js','hub-session.js'),('minecraft.js','hub-minecraft.js'),('whitelist.js','hub-whitelist.js'),('places.js','hub-places.js'),('lake.js','hub-lake.js'),('calendar.js','calendar.js'),('lake-sync.js','lake-sync.js'),('notify.js','hub-notify.js'),('map-bubbles.js','hub-map-bubbles.js'),('map-bubbles.css','hub-map-bubbles.css')]:
         shutil.copy2(source/name,root/target)
     (root/'index.js').write_text(body)
 compose=Path('/home/gold/server-platform/public-apps/compose.yml')
