@@ -346,6 +346,43 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
 .kw-fantasy-name { display:block; color:#c6c6cf; font-size:13px; line-height:1.4; margin-top:3px; overflow-wrap:anywhere; }
 .kw-note { margin:12px 0 0; font-size:13px; line-height:1.45; color:#bcbcc5; }
 @media(max-width:560px) { .kw-kickers { gap:8px; } .kw-player { padding:10px 7px; } .kw-images { gap:5px; } .kw-headshot,.kw-team-logo { width:clamp(36px,10vw,56px); height:clamp(36px,10vw,56px); } .kw-name { font-size:13px; } .kw-fantasy-name { font-size:12px; } }
+
+/* Chips and selects shared by the waiver wire, recap and record book. */
+.chips { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 14px; }
+.chip,.sel { min-height:44px; padding:0 18px; border-radius:999px; border:1px solid var(--glass-edge); background:rgba(30,34,46,.75); color:var(--muted); font-size:15px; font-weight:600; cursor:pointer; -webkit-backdrop-filter:blur(18px); backdrop-filter:blur(18px); }
+.chip:hover,.sel:hover { color:var(--fg); }
+.chip[aria-pressed="true"] { background:var(--accent); border-color:transparent; color:var(--accent-ink); }
+.sel { appearance:none; -webkit-appearance:none; padding-right:36px; color:var(--fg); background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%23a1a1a6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.500l5 5 5-5'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 16px center; }
+.sel option { color:#000; }
+
+/* Playoff odds reuses the power-ranking row; the cut line is the only addition. */
+.odds-note { margin:14px 4px 6px; color:var(--faint); font-size:13px; line-height:1.45; }
+.tag { display:inline-block; margin-left:6px; padding:1px 7px; border-radius:999px; background:rgba(255,255,255,.12); color:var(--fg); font-size:11px; font-weight:600; letter-spacing:.02em; vertical-align:1px; }
+.tag.in { background:var(--accent); color:var(--accent-ink); }
+
+/* Weekly recap */
+.rc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr)); gap:14px; margin-bottom:14px; }
+.rc { padding:16px 18px; }
+.rc small { display:block; color:var(--muted); font-size:12px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; }
+.rc b { display:block; margin-top:6px; font-size:19px; letter-spacing:-0.015em; line-height:1.25; }
+.rc p { margin:6px 0 0; color:var(--muted); font-size:14px; line-height:1.4; }
+.rc-sub { margin:22px 4px 4px; color:var(--muted); font-size:15px; font-weight:600; }
+
+/* Waiver wire */
+.fa { list-style:none; margin:0; padding:0; }
+.fa li { display:grid; grid-template-columns:48px minmax(0,1fr) auto; align-items:center; gap:14px; padding:12px 0; border-top:1px solid var(--line); }
+.fa li:first-child { border-top:0; }
+.fa img,.fa .fa-ph { width:48px; height:48px; border-radius:14px; background:rgba(255,255,255,.09); object-fit:cover; }
+.fa b { display:block; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.fa small { display:block; margin-top:2px; color:var(--faint); font-size:13px; }
+.fa small.helps { color:var(--muted); }
+.fa .pj { text-align:right; font-size:20px; font-weight:600; font-variant-numeric:tabular-nums; }
+.fa .pj small { margin:0; font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; }
+
+/* Record book */
+.hist-bar { display:flex; align-items:center; flex-wrap:wrap; gap:10px 14px; margin:0 0 14px; }
+.hist-bar span { color:var(--muted); font-size:15px; }
+.rb-sub { margin:26px 4px 4px; color:var(--muted); font-size:15px; font-weight:600; }
 </style><link rel="stylesheet" href="/ribbon.css?v=6">
 <script src="/ribbon.js?v=6" defer></script>
 </head><body>
@@ -384,9 +421,26 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
     <div class="panel" id="standings-body"><div class="sk" style="min-height:300px;margin:6px -12px"></div></div>
   </section>
 
+  <section id="odds" aria-labelledby="odds-h">
+    <div class="sec-head"><div><h2 id="odds-h">Playoff odds</h2><p id="odds-sub">Chance each team makes the playoffs, from 5,000 simulated finishes of the regular season.</p></div></div>
+    <div class="panel" id="odds-body"><div class="sk" style="min-height:300px;margin:6px -12px"></div></div>
+  </section>
+
   <section id="power" aria-labelledby="power-h">
     <div class="sec-head"><div><h2 id="power-h">Power rankings</h2><p>Who's actually good: 50% all-play record, 30% last three weeks of scoring, 20% real record.</p></div></div>
     <div class="panel" id="power-body"><div class="sk" style="min-height:300px;margin:6px -12px"></div></div>
+  </section>
+
+  <section id="recap" aria-labelledby="recap-h">
+    <div class="sec-head">
+      <div><h2 id="recap-h">Weekly recap</h2><p id="recap-sub"></p></div>
+      <div class="weekpick" role="group" aria-label="Choose recap week" id="recap-pick" hidden>
+        <button type="button" id="rc-prev" aria-label="Previous week"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <span id="rc-label">Week</span>
+        <button type="button" id="rc-next" aria-label="Next week"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+      </div>
+    </div>
+    <div id="recap-body"><div class="sk"></div></div>
   </section>
 
   <section id="moves" aria-labelledby="moves-h">
@@ -394,9 +448,20 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
     <div class="panel" id="moves-body"><div class="sk" style="min-height:200px;margin:6px -12px"></div></div>
   </section>
 
+  <section id="waiver" aria-labelledby="waiver-h">
+    <div class="sec-head"><div><h2 id="waiver-h">Waiver wire</h2><p id="waiver-sub">Best free agents by projected points under our league's scoring.</p></div></div>
+    <div class="chips" id="waiver-tabs" role="group" aria-label="Position"></div>
+    <div class="panel" id="waiver-body"><div class="sk" style="min-height:200px;margin:6px -12px"></div></div>
+  </section>
+
   <section id="injuries" aria-labelledby="injuries-h">
     <div class="sec-head"><div><h2 id="injuries-h">Injury watch</h2><p>Starters in this week's lineups with an injury designation.</p></div></div>
     <div id="injuries-body"><div class="sk"></div></div>
+  </section>
+
+  <section id="history" aria-labelledby="history-h">
+    <div class="sec-head"><div><h2 id="history-h">Record book</h2><p id="history-sub">Champions, league records and head-to-head results across every season.</p></div></div>
+    <div id="history-body"><div class="sk"></div></div>
   </section>
 </main>
 
@@ -937,6 +1002,344 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
     $('injuries-body').innerHTML = cards.length ? '<div class="inj">' + cards.join('') + '</div>' : '<p class="empty panel">Every starting lineup is healthy. For now.</p>';
   }
 
+  // ---------- Shared helpers for the sections below ----------
+  function teamName(rid) { var t = S.teams.get(rid); return t ? t.name : 'Team ' + rid; }
+  function plural(n, word) { return n + ' ' + word + (n === 1 ? '' : 's'); }
+  function safe(fn) { try { fn(); } catch (e) { console.error(e); } }
+  // Weeks of regular season still to play: from the first unscored week up to the one before the playoffs.
+  function remainingWeeks() {
+    var start = (S.league.settings || {}).playoff_week_start || S.last + 1, out = [];
+    for (var w = S.done + 1; w < start && w <= S.last; w++) out.push(w);
+    return out;
+  }
+
+  // ---------- Playoff odds ----------
+  // Monte Carlo: each team's weekly score is drawn around its own average (pulled toward the league average
+  // while the sample is small) with the league's typical spread. Rank by wins, then points for.
+  function gauss() { var u = 0; while (!u) u = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * Math.random()); }
+  function mean(a) { return a.length ? a.reduce(function (s, x) { return s + x; }, 0) / a.length : 0; }
+  function simulateOdds(sims) {
+    var teams = Array.from(S.teams.values()), weeks = remainingWeeks(), cut = (S.league.settings || {}).playoff_teams || 4;
+    var scores = {}, all = [];
+    teams.forEach(function (t) { scores[t.id] = []; });
+    for (var w = S.first; w <= S.done; w++) (S.weeks[w] || []).forEach(function (m) { if (scores[m.roster_id] && pts(m) > 0) { scores[m.roster_id].push(pts(m)); all.push(pts(m)); } });
+    var lm = mean(all) || 100, sd = Math.max(8, Math.sqrt(mean(all.map(function (x) { return (x - lm) * (x - lm); }))) || 20);
+    var mu = {};
+    teams.forEach(function (t) { var n = scores[t.id].length; mu[t.id] = (mean(scores[t.id]) * n + lm * 2) / (n + 2); });
+    var sched = weeks.map(function (w) { return pairs(S.weeks[w] || []); });
+    var made = {}, wins = {};
+    teams.forEach(function (t) { made[t.id] = 0; wins[t.id] = 0; });
+    for (var i = 0; i < sims; i++) {
+      var W = {}, P = {};
+      teams.forEach(function (t) { W[t.id] = t.wins + t.ties / 2; P[t.id] = t.pf; });
+      sched.forEach(function (ps) {
+        ps.forEach(function (p) {
+          var a = p[0].roster_id, b = p[1].roster_id;
+          if (!(a in W) || !(b in W)) return;
+          var sa = mu[a] + sd * gauss(), sb = mu[b] + sd * gauss();
+          P[a] += sa; P[b] += sb;
+          if (sa > sb) W[a]++; else W[b]++;
+        });
+      });
+      teams.slice().sort(function (x, y) { return W[y.id] - W[x.id] || P[y.id] - P[x.id]; }).forEach(function (t, k) { if (k < cut) made[t.id]++; });
+      teams.forEach(function (t) { wins[t.id] += W[t.id]; });
+    }
+    return teams.map(function (t) {
+      var left = sched.filter(function (ps) { return ps.some(function (p) { return p[0].roster_id === t.id || p[1].roster_id === t.id; }); }).length;
+      return { team: t, odds: made[t.id] / sims, wins: wins[t.id] / sims, left: left };
+    }).sort(function (x, y) { return y.odds - x.odds || y.wins - x.wins || y.team.pf - x.team.pf; });
+  }
+  function renderOdds() {
+    var body = $('odds-body');
+    if (S.done < 1) { body.innerHTML = '<p class="empty">Odds start after week ' + S.first + '.</p>'; return; }
+    var rows = simulateOdds(5000), cut = (S.league.settings || {}).playoff_teams || 4, left = remainingWeeks().length;
+    $('odds-sub').textContent = left ? 'Top ' + cut + ' make it. From 5,000 simulated finishes; ' + plural(left, 'regular-season week') + ' left.' : 'The regular season is over.';
+    body.innerHTML = '<ol class="pr">' + rows.map(function (r, i) {
+      var pct = r.odds * 100, label = pct >= 99.5 ? 'In' : pct < 0.5 ? 'Out' : pct >= 99 ? '>99%' : pct < 1 ? '<1%' : Math.round(pct) + '%';
+      var tag = pct >= 99.5 ? '<span class="tag in">Clinched</span>' : pct < 0.5 ? '<span class="tag">Eliminated</span>' : '';
+      var proj = 'Projected ' + r.wins.toFixed(1) + ' wins';
+      return '<li><span class="rk">' + (i + 1) + '</span><span>' + avatar(r.team.avatar) + '</span>' +
+        '<div class="team"><div><b>' + esc(r.team.name) + tag + '</b><small>' + rec(r.team) + ' now · ' + proj + '</small></div></div>' +
+        '<div class="meter" title="' + esc(proj) + '"><div class="track" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.round(pct) + '" aria-label="Playoff odds"><div class="fill" style="width:' + Math.max(2, pct).toFixed(1) + '%"></div></div><b style="width:44px">' + label + '</b></div></li>';
+    }).join('') + '</ol><p class="odds-note">A forecast, not a promise: it assumes each team keeps scoring near its season average and ignores injuries, byes and trades.</p>';
+  }
+  function initOdds() {
+    Promise.all(remainingWeeks().map(function (w) { return matchups(w).catch(function () { return []; }); })).then(function () { safe(renderOdds); });
+  }
+
+  // ---------- Weekly recap ----------
+  var FLEX_SLOTS = { FLEX: ['RB', 'WR', 'TE'], SUPER_FLEX: ['QB', 'RB', 'WR', 'TE'], REC_FLEX: ['WR', 'TE'], WRRB_FLEX: ['WR', 'RB'] };
+  // Best score the team could have started from everyone it had that week: tightest slots first, flex last.
+  function bestLineup(m) {
+    var pp = m.players_points || {}, pool = Object.keys(pp).map(function (pid) { return { pid: pid, pos: player(pid).pos, v: pp[pid] || 0 }; })
+      .filter(function (p) { return p.pos; }).sort(function (a, b) { return b.v - a.v; });
+    var slots = (S.league.roster_positions || []).filter(function (s) { return s !== 'BN'; }).map(function (s) { return FLEX_SLOTS[s] || [s]; })
+      .sort(function (a, b) { return a.length - b.length; });
+    var used = {}, sum = 0;
+    slots.forEach(function (el) {
+      for (var i = 0; i < pool.length; i++) if (!used[pool[i].pid] && el.indexOf(pool[i].pos) >= 0) { used[pool[i].pid] = 1; sum += pool[i].v; return; }
+    });
+    return sum;
+  }
+  function benchTop(m) {
+    var pp = m.players_points || {}, starters = {};
+    (m.starters || []).forEach(function (pid) { starters[pid] = 1; });
+    return Object.keys(pp).filter(function (pid) { return !starters[pid]; }).sort(function (a, b) { return pp[b] - pp[a]; })[0];
+  }
+  var recapWeek = 0;
+  function recapCard(label, head, detail) { return '<div class="panel rc"><small>' + esc(label) + '</small><b>' + head + '</b>' + (detail ? '<p>' + detail + '</p>' : '') + '</div>'; }
+  function renderRecap() {
+    var w = recapWeek, rows = (S.weeks[w] || []).filter(function (m) { return S.teams.has(m.roster_id); }), ps = pairs(rows);
+    $('rc-label').textContent = 'Week ' + w;
+    $('rc-prev').disabled = w <= S.first;
+    $('rc-next').disabled = w >= S.done;
+    if (!ps.length) { $('recap-body').innerHTML = '<p class="empty panel">No finished games in week ' + w + '.</p>'; return; }
+    var n = function (id) { return '<b style="display:inline;font-size:inherit">' + esc(teamName(id)) + '</b>'; };
+    var cards = [], games = ps.map(function (p) { var d = pts(p[0]) - pts(p[1]); return { win: d >= 0 ? p[0] : p[1], lose: d >= 0 ? p[1] : p[0], margin: Math.abs(d) }; });
+    var blow = games.slice().sort(function (a, b) { return b.margin - a.margin; })[0], close = games.slice().sort(function (a, b) { return a.margin - b.margin; })[0];
+    cards.push(recapCard('Blowout', esc(teamName(blow.win.roster_id)), n(blow.win.roster_id) + ' beat ' + n(blow.lose.roster_id) + ' by ' + fmt(blow.margin) + ', ' + fmt(pts(blow.win)) + ' to ' + fmt(pts(blow.lose)) + '.'));
+    if (close !== blow) cards.push(recapCard('Nail-biter', esc(teamName(close.win.roster_id)), n(close.win.roster_id) + ' edged ' + n(close.lose.roster_id) + ' by ' + fmt(close.margin) + ', ' + fmt(pts(close.win)) + ' to ' + fmt(pts(close.lose)) + '.'));
+    var byPts = rows.slice().sort(function (a, b) { return pts(b) - pts(a); }), hi = byPts[0], lo = byPts[byPts.length - 1];
+    cards.push(recapCard('High score', esc(teamName(hi.roster_id)), fmt(pts(hi)) + ' points, the best of the week.'));
+    cards.push(recapCard('Rough week', esc(teamName(lo.roster_id)), fmt(pts(lo)) + ' points, the lowest of the week.'));
+    // Unluckiest loser: the highest score among teams that lost, and how many teams it would have beaten.
+    var beats = function (m) { return rows.filter(function (o) { return o !== m && pts(m) > pts(o); }).length; };
+    var unlucky = games.map(function (g) { return g.lose; }).sort(function (a, b) { return pts(b) - pts(a); })[0];
+    if (unlucky && beats(unlucky) >= (rows.length - 1) / 2) cards.push(recapCard('Unlucky loss', esc(teamName(unlucky.roster_id)), 'Scored ' + fmt(pts(unlucky)) + ' and lost, a total that beat ' + beats(unlucky) + ' of the other ' + (rows.length - 1) + ' teams.'));
+    var lucky = games.map(function (g) { return g.win; }).sort(function (a, b) { return pts(a) - pts(b); })[0];
+    if (lucky && beats(lucky) < (rows.length - 1) / 2) cards.push(recapCard('Lucky win', esc(teamName(lucky.roster_id)), 'Won with ' + fmt(pts(lucky)) + ', a total that beat only ' + beats(lucky) + ' of the other ' + (rows.length - 1) + ' teams.'));
+    var eff = [];
+    if (S.playersReady) {
+      // Best single starter of the week.
+      var top = null;
+      rows.forEach(function (m) { (m.starters || []).forEach(function (pid) { var v = (m.players_points || {})[pid] || 0; if (pid && pid !== '0' && (!top || v > top.v)) top = { pid: pid, v: v, rid: m.roster_id }; }); });
+      if (top) { var tp = player(top.pid); cards.push(recapCard('Player of the week', esc(tp.name), fmt(top.v) + ' points for ' + n(top.rid) + '. <small style="display:inline;text-transform:none;letter-spacing:0;font-weight:400">' + esc(where(tp)) + '</small>')); }
+      eff = rows.map(function (m) { var best = Math.max(bestLineup(m), pts(m)); return { m: m, pts: pts(m), best: best, left: Math.max(0, best - pts(m)) }; });
+      var waste = eff.slice().sort(function (a, b) { return b.left - a.left; })[0];
+      if (waste && waste.left >= 5) {
+        var bt = benchTop(waste.m), bp = bt ? player(bt) : null;
+        cards.push(recapCard('Bench blunder', esc(teamName(waste.m.roster_id)), 'Left ' + fmt(waste.left) + ' points on the table versus the best possible lineup' + (bp ? '; ' + esc(bp.name) + ' scored ' + fmt((waste.m.players_points || {})[bt]) + ' on the bench.' : '.')));
+      }
+    }
+    var table = '';
+    if (eff.length) {
+      eff.sort(function (a, b) { return b.pts / (b.best || 1) - a.pts / (a.best || 1); });
+      table = '<p class="rc-sub">Lineup efficiency</p><div class="panel"><table><thead><tr><th>Team</th><th class="n">Scored</th><th class="n hide-sm">Best</th><th class="n">Eff.</th></tr></thead><tbody>' +
+        eff.map(function (r) { var t = S.teams.get(r.m.roster_id); return '<tr><td><div class="team">' + avatar(t.avatar) + '<div><b>' + esc(t.name) + '</b></div></div></td><td class="n">' + fmt(r.pts) + '</td><td class="n hide-sm">' + fmt(r.best) + '</td><td class="n">' + Math.round(100 * r.pts / (r.best || 1)) + '%</td></tr>'; }).join('') +
+        '</tbody></table></div>';
+    }
+    $('recap-body').innerHTML = '<div class="rc-grid">' + cards.join('') + '</div>' + table;
+  }
+  function initRecap() {
+    if (S.done < 1) { $('recap-body').innerHTML = '<p class="empty panel">Recaps start after week ' + S.first + '.</p>'; return; }
+    recapWeek = S.done;
+    $('recap-pick').hidden = false;
+    $('rc-prev').addEventListener('click', function () { if (recapWeek > S.first) { recapWeek--; safe(renderRecap); } });
+    $('rc-next').addEventListener('click', function () { if (recapWeek < S.done) { recapWeek++; safe(renderRecap); } });
+    renderRecap();
+  }
+
+  // ---------- Waiver wire ----------
+  var POS = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'], waiver = null, waiverTab = 'Trending';
+  function projPoints(stats) {
+    var sc = S.league.scoring_settings || {}, sum = 0;
+    Object.keys(stats || {}).forEach(function (k) { if (sc[k]) sum += stats[k] * sc[k]; });
+    return sum;
+  }
+  function loadWaiver() {
+    var week = S.current || Math.min(S.done + 1, S.last), qs = POS.map(function (p) { return 'position%5B%5D=' + p; }).join('&');
+    var proj = fetch('https://api.sleeper.com/projections/nfl/' + encodeURIComponent(S.league.season) + '/' + week + '?season_type=regular&' + qs)
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); });
+    var trend = fetch(API + '/players/nfl/trending/add?lookback_hours=48&limit=60')
+      .then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; });
+    return Promise.all([proj, trend]).then(function (res) {
+      var info = {};
+      res[0].forEach(function (r) {
+        var p = r.player || {}, pos = p.position;
+        if (POS.indexOf(pos) < 0 || !r.stats || !(r.stats.gp > 0)) return;
+        info[r.player_id] = { id: r.player_id, name: pos === 'DEF' ? ((p.first_name || '') + ' ' + (p.last_name || '')).trim() + ' D/ST' : [p.first_name, p.last_name].filter(Boolean).join(' '),
+          pos: pos, team: p.team || r.team || '', inj: p.injury_status || '', pts: projPoints(r.stats), opp: r.opponent || '' };
+      });
+      var rostered = {};
+      S.teams.forEach(function (t) { (t.players || []).forEach(function (pid) { rostered[pid] = 1; }); });
+      // Each team's projected depth by position, to see who a free agent would actually help.
+      var depth = {};
+      S.teams.forEach(function (t) {
+        depth[t.id] = {};
+        (t.players || []).forEach(function (pid) { var i = info[pid]; if (i) (depth[t.id][i.pos] = depth[t.id][i.pos] || []).push(i.pts); });
+        POS.forEach(function (p) { (depth[t.id][p] = depth[t.id][p] || []).sort(function (a, b) { return b - a; }); });
+      });
+      var slots = {};
+      (S.league.roster_positions || []).forEach(function (s) { slots[s] = (slots[s] || 0) + 1; });
+      var free = Object.keys(info).filter(function (id) { return !rostered[id] && info[id].pts > 0; }).map(function (id) {
+        var i = info[id], need = slots[i.pos] || 1;
+        i.helps = Array.from(S.teams.values()).map(function (t) { return { t: t, gain: i.pts - ((depth[t.id][i.pos] || [])[need - 1] || 0) }; })
+          .filter(function (x) { return x.gain >= 0.5; }).sort(function (a, b) { return b.gain - a.gain; }).slice(0, 2);
+        return i;
+      }).sort(function (a, b) { return b.pts - a.pts; });
+      var freeById = {};
+      free.forEach(function (i) { freeById[i.id] = i; });
+      var trending = res[1].map(function (x) { return freeById[x.player_id]; }).filter(Boolean);
+      waiver = { week: week, free: free, trending: trending };
+    });
+  }
+  function renderWaiver() {
+    var tabs = ['Trending'].concat(POS);
+    $('waiver-tabs').innerHTML = tabs.map(function (t) { return '<button type="button" class="chip" data-tab="' + t + '" aria-pressed="' + (t === waiverTab) + '">' + t + '</button>'; }).join('');
+    if (!waiver) { $('waiver-body').innerHTML = '<p class="empty">Projections are unavailable right now.</p>'; return; }
+    var list = waiverTab === 'Trending' ? waiver.trending : waiver.free.filter(function (i) { return i.pos === waiverTab; });
+    list = list.slice(0, 8);
+    $('waiver-sub').textContent = 'Best free agents by Week ' + waiver.week + ' projected points under our league’s scoring.' + (waiverTab === 'Trending' ? ' Trending is most-added across Sleeper in the last two days.' : '');
+    if (!list.length) { $('waiver-body').innerHTML = '<p class="empty">Nobody notable is available here.</p>'; return; }
+    $('waiver-body').innerHTML = '<ul class="fa">' + list.map(function (i) {
+      var img = i.pos === 'DEF' ? 'https://sleepercdn.com/images/team_logos/nfl/' + encodeURIComponent(i.id.toLowerCase()) + '.png' : 'https://sleepercdn.com/content/nfl/players/thumb/' + encodeURIComponent(i.id) + '.jpg';
+      var helps = i.helps.length ? '<small class="helps">Helps ' + i.helps.map(function (h) { return esc(h.t.name) + ' (+' + h.gain.toFixed(1) + ')'; }).join(', ') + '</small>' : '';
+      return '<li><img src="' + esc(img) + '" alt="" loading="lazy" onerror="this.onerror=null;this.style.visibility=\'hidden\'"><div><b>' + esc(i.name) + pill(i.inj) + '</b><small>' + esc(i.pos === 'DEF' ? 'DEF' : i.pos + ' · ' + (i.team || 'FA')) + (i.opp ? ' · vs ' + esc(i.opp) : '') + '</small>' + helps + '</div><div class="pj">' + i.pts.toFixed(1) + '<small>proj</small></div></li>';
+    }).join('') + '</ul>';
+  }
+  function initWaiver() {
+    $('waiver-tabs').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-tab]'); if (!b) return;
+      waiverTab = b.dataset.tab; renderWaiver();
+    });
+    renderWaiver();
+    loadWaiver().catch(function (e) { console.error(e); waiver = null; }).then(renderWaiver);
+  }
+
+  // ---------- Record book ----------
+  // Walks the league's previous_league_id chain, so every past season joins in automatically. Finished seasons never
+  // change, so they are cached in this browser. The current season uses what the page already loaded.
+  var HIST_V = 1;
+  function readCache(id) { try { var c = JSON.parse(localStorage.getItem('ff-hist-' + HIST_V + '-' + id)); return c && c.done ? c : null; } catch (e) { return null; } }
+  function writeCache(id, data) { try { localStorage.setItem('ff-hist-' + HIST_V + '-' + id, JSON.stringify(data)); } catch (e) {} }
+  function loadSeason(league, current) {
+    var id = league.league_id, cached = !current && readCache(id);
+    if (cached) return Promise.resolve(cached);
+    var first = (league.settings && league.settings.start_week) || 1, last = lastWeek(league), wks = [];
+    for (var w = first; w <= last; w++) wks.push(w);
+    var weeksP = current ? Promise.resolve(S.weeks) : Promise.all(wks.map(function (w) { return get('/league/' + id + '/matchups/' + w).catch(function () { return []; }); })).then(function (r) { var o = {}; wks.forEach(function (w, i) { o[w] = r[i] || []; }); return o; });
+    return Promise.all([
+      get('/league/' + id + '/users').catch(function () { return []; }),
+      get('/league/' + id + '/rosters').catch(function () { return []; }),
+      get('/league/' + id + '/winners_bracket').catch(function () { return []; }),
+      weeksP
+    ]).then(function (r) {
+      var owner = {}, names = {}, users = {};
+      (r[0] || []).forEach(function (u) { users[u.user_id] = u; });
+      (r[1] || []).forEach(function (ro) { owner[ro.roster_id] = ro.owner_id; var u = users[ro.owner_id] || {}; names[ro.owner_id] = (u.metadata || {}).team_name || u.display_name || 'Team ' + ro.roster_id; });
+      var bracket = r[2] || [], final = bracket.filter(function (b) { return b.p === 1; })[0];
+      var champ = final && final.w ? owner[final.w] : null, runner = final && final.l ? owner[final.l] : null;
+      var playoffStart = (league.settings || {}).playoff_week_start || last + 1, games = [], weeks = r[3] || {};
+      Object.keys(weeks).map(Number).sort(function (a, b) { return a - b; }).forEach(function (w) {
+        if (w >= playoffStart || (current && w > S.done)) return;
+        pairs(weeks[w] || []).forEach(function (p) {
+          var a = pts(p[0]), b = pts(p[1]);
+          if (!(a > 0 && b > 0) || !owner[p[0].roster_id] || !owner[p[1].roster_id]) return;
+          games.push([w, owner[p[0].roster_id], a, owner[p[1].roster_id], b]);
+        });
+      });
+      var table = (r[1] || []).map(function (ro) { var s = ro.settings || {}; return { o: ro.owner_id, w: s.wins || 0, l: s.losses || 0, t: s.ties || 0, pf: (s.fpts || 0) + (s.fpts_decimal || 0) / 100 }; })
+        .sort(function (x, y) { return y.w - x.w || y.pf - x.pf; });
+      return { id: id, season: league.season, status: league.status, done: true, names: names, champ: champ, runner: runner, games: games, top: table[0] || null, hasBracket: !!final };
+    }).then(function (d) {
+      // Cache only seasons that are finished and had a decided final.
+      if (!current && d.status === 'complete' && d.champ) writeCache(id, d);
+      return d;
+    });
+  }
+  function loadHistory() {
+    var chain = [S.league];
+    function more(l) {
+      if (!l.previous_league_id || chain.length >= 15) return Promise.resolve();
+      return get('/league/' + l.previous_league_id).then(function (p) { if (!p || !p.league_id) return; chain.push(p); return more(p); }).catch(function () {});
+    }
+    return more(S.league).then(function () {
+      return Promise.all(chain.map(function (l, i) { return loadSeason(l, i === 0); }));
+    });
+  }
+  function renderHistory(seasons) {
+    var body = $('history-body');
+    var now = {};   // current owner -> team name, so people keep one name across seasons
+    S.teams.forEach(function (t) { now[t.ownerId] = t.name; });
+    var nm = function (o, season) { return now[o] || (season && season.names[o]) || 'Former member'; };
+    var all = [];
+    seasons.forEach(function (s) { s.games.forEach(function (g) { all.push({ s: s, w: g[0], a: g[1], pa: g[2], b: g[3], pb: g[4] }); }); });
+    if (!all.length && !seasons.some(function (s) { return s.champ; })) { body.innerHTML = '<p class="empty panel">Records appear once games have been played.</p>'; return; }
+    var lbl = function (g) { return g.s.season + ' week ' + g.w; };
+    var html = '';
+
+    // Season by season.
+    html += '<div class="panel"><table><thead><tr><th>Season</th><th>Champion</th><th class="hide-sm">Top record</th></tr></thead><tbody>' + seasons.map(function (s) {
+      var champ = s.champ ? '<b>' + esc(nm(s.champ, s)) + '</b>' + (s.runner ? '<small>over ' + esc(nm(s.runner, s)) + '</small>' : '') : '<small>' + (s.status === 'complete' ? 'No final recorded' : 'In progress') + '</small>';
+      var top = s.top ? esc(nm(s.top.o, s)) + ' <small style="display:inline">' + s.top.w + '-' + s.top.l + (s.top.t ? '-' + s.top.t : '') + '</small>' : '';
+      return '<tr><td>' + esc(s.season) + '</td><td class="team"><div>' + champ + '</div></td><td class="hide-sm">' + top + '</td></tr>';
+    }).join('') + '</tbody></table></div>';
+
+    // League records.
+    if (all.length) {
+      var hi = all.reduce(function (m, g) { var s = Math.max(g.pa, g.pb); return !m || s > m.v ? { v: s, o: g.pa >= g.pb ? g.a : g.b, g: g } : m; }, null);
+      var lo = all.reduce(function (m, g) { var s = Math.min(g.pa, g.pb); return !m || s < m.v ? { v: s, o: g.pa <= g.pb ? g.a : g.b, g: g } : m; }, null);
+      var blow = all.slice().sort(function (x, y) { return Math.abs(y.pa - y.pb) - Math.abs(x.pa - x.pb); })[0];
+      var near = all.slice().sort(function (x, y) { return Math.abs(x.pa - x.pb) - Math.abs(y.pa - y.pb); })[0];
+      var win = function (g) { return g.pa >= g.pb ? { w: g.a, l: g.b } : { w: g.b, l: g.a }; };
+      // Longest regular-season win streak per owner, in order across seasons.
+      var runs = {}, best = null;
+      seasons.slice().reverse().forEach(function (s) {
+        s.games.forEach(function (g) {
+          [[g[1], g[2], g[4]], [g[3], g[4], g[2]]].forEach(function (x) {
+            var r = runs[x[0]] = runs[x[0]] || { cur: 0 };
+            if (x[1] > x[2]) { r.cur++; if (!best || r.cur > best.n) best = { n: r.cur, o: x[0], s: s }; } else r.cur = 0;
+          });
+        });
+      });
+      html += '<p class="rb-sub">League records</p><div class="rc-grid">' +
+        recapCard('Highest score', esc(nm(hi.o, hi.g.s)), fmt(hi.v) + ' points, ' + lbl(hi.g) + '.') +
+        recapCard('Lowest score', esc(nm(lo.o, lo.g.s)), fmt(lo.v) + ' points, ' + lbl(lo.g) + '.') +
+        recapCard('Biggest blowout', esc(nm(win(blow).w, blow.s)), 'Beat ' + esc(nm(win(blow).l, blow.s)) + ' by ' + fmt(Math.abs(blow.pa - blow.pb)) + ', ' + lbl(blow) + '.') +
+        recapCard('Closest game', esc(nm(win(near).w, near.s)), 'Beat ' + esc(nm(win(near).l, near.s)) + ' by ' + fmt(Math.abs(near.pa - near.pb)) + ', ' + lbl(near) + '.') +
+        (best && best.n >= 2 ? recapCard('Longest win streak', esc(nm(best.o, best.s)), plural(best.n, 'game') + ' in a row.') : '') + '</div>';
+    }
+
+    // Head to head, one owner at a time.
+    var owners = Array.from(S.teams.values()).map(function (t) { return t.ownerId; }).filter(Boolean);
+    if (owners.length && all.length) {
+      var pick = owners.indexOf(S.meId) >= 0 ? S.meId : owners[0];
+      html += '<p class="rb-sub">Head to head</p><div class="hist-bar"><select class="sel" id="h2h-pick" aria-label="Choose a team">' +
+        owners.map(function (o) { return '<option value="' + esc(o) + '"' + (o === pick ? ' selected' : '') + '>' + esc(now[o]) + '</option>'; }).join('') +
+        '</select><span>Regular-season record against everyone else.</span></div><div class="panel" id="h2h-body"></div>';
+      body.innerHTML = html;
+      var draw = function (me) {
+        var rec = {};
+        all.forEach(function (g) {
+          var mine = g.a === me ? [g.pa, g.b, g.pb] : g.b === me ? [g.pb, g.a, g.pa] : null;
+          if (!mine) return;
+          var r = rec[mine[1]] = rec[mine[1]] || { w: 0, l: 0, t: 0, f: 0, a: 0 };
+          if (mine[0] > mine[2]) r.w++; else if (mine[0] < mine[2]) r.l++; else r.t++;
+          r.f += mine[0]; r.a += mine[2];
+        });
+        var rows = owners.filter(function (o) { return o !== me && rec[o]; }).sort(function (x, y) { return (rec[y].w - rec[y].l) - (rec[x].w - rec[x].l) || rec[y].f - rec[x].f; });
+        $('h2h-body').innerHTML = rows.length ? '<table><thead><tr><th>Opponent</th><th class="n">Record</th><th class="n hide-sm">PF</th><th class="n hide-sm">PA</th></tr></thead><tbody>' + rows.map(function (o) {
+          var r = rec[o], t = Array.from(S.teams.values()).filter(function (x) { return x.ownerId === o; })[0] || {};
+          return '<tr><td><div class="team">' + avatar(t.avatar) + '<div><b>' + esc(now[o]) + '</b></div></div></td><td class="n">' + r.w + '-' + r.l + (r.t ? '-' + r.t : '') + '</td><td class="n hide-sm">' + r.f.toFixed(1) + '</td><td class="n hide-sm">' + r.a.toFixed(1) + '</td></tr>';
+        }).join('') + '</tbody></table>' : '<p class="empty">No games played yet.</p>';
+      };
+      draw(pick);
+      $('h2h-pick').addEventListener('change', function (e) { draw(e.target.value); });
+      return;
+    }
+    body.innerHTML = html;
+  }
+  function initHistory() {
+    var go = function () {
+      loadHistory().then(function (s) { safe(function () { renderHistory(s); }); })
+        .catch(function (e) { console.error(e); $('history-body').innerHTML = '<p class="empty panel">Couldn’t load league history.</p>'; });
+    };
+    // Past seasons are many requests, so wait until the section is near the screen.
+    if (!('IntersectionObserver' in window)) { go(); return; }
+    var io = new IntersectionObserver(function (e) { if (e[0].isIntersecting) { io.disconnect(); go(); } }, { rootMargin: '600px 0px' });
+    io.observe($('history'));
+  }
+
   // ---------- Boot ----------
   function fail(e) {
     console.error(e);
@@ -959,6 +1362,7 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
     var completed = !active ? 0 : S.nfl.season_type === 'regular' ? Math.min(w - 1, S.last) : S.nfl.season_type === 'post' ? S.last : 0;
     S.week = S.current || (completed >= S.first ? completed : S.first);
     S.anchor = S.week;
+    S.done = completed;
     renderHero();
     return Promise.all([get('/league/' + league.league_id + '/users'), get('/league/' + league.league_id + '/rosters'), familyReady]).then(function (r) {
       S.teams = buildTeams(r[0] || [], r[1] || []);
@@ -981,6 +1385,10 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
         renderPower(done);
         renderMoves([].concat.apply([], res[1]));
         renderInjuries();
+        safe(initOdds);
+        safe(initRecap);
+        safe(initWaiver);
+        safe(initHistory);
         poll();
       });
     });
