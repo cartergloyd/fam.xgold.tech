@@ -1,19 +1,17 @@
 {
   "title": "Marilyn’s Fantasy Football Awards",
-  "season": "2026",
+  "season": "2026–2027",
   "when": "",
   "where": "",
   "address": "",
   "dress": "",
   "note": "",
   "categories": [
-    { "id": "manager", "title": "Manager of the year", "hint": "Who ran the best team?", "type": "manager" },
-    { "id": "unlucky", "title": "Hard-luck award", "hint": "Who scored the most and lost anyway?", "type": "manager" },
-    { "id": "improved", "title": "Most improved", "hint": "Who climbed the furthest?", "type": "manager" },
-    { "id": "trash-talk", "title": "Best trash talk", "hint": "Who dished it out best?", "type": "manager" },
-    { "id": "team-name", "title": "Best team name and logo", "hint": "Name the team that earned it.", "type": "manager" },
-    { "id": "trade", "title": "Trade of the year", "hint": "Describe the trade.", "type": "text" },
-    { "id": "pickup", "title": "Best waiver pickup", "hint": "Which player came from nowhere?", "type": "text" },
-    { "id": "blunder", "title": "Blunder of the year", "hint": "The move everyone is still talking about.", "type": "text" }
+    { "id": "bonehead", "title": "Bonehead Coaching Move of the Year", "hint": "In our league or the NFL." },
+    { "id": "leech", "title": "The Mike Leech Quote of the Year", "hint": "The quote that belongs on a wall." },
+    { "id": "jordan", "title": "The Michael Jordan Trash Talk Moment of the Year", "hint": "Who said it, and how did it age?" },
+    { "id": "highlight", "title": "Reebok Fantasy Files Highlight of the Year", "hint": "The best moment on the field." },
+    { "id": "folly", "title": "Football Folly of the Year", "hint": "The biggest blunder on the field." },
+    { "id": "mvp", "title": "Chase Daniel Trophy: League MVP", "hint": "Name the NFL player." }
   ]
 }

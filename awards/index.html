@@ -54,6 +54,7 @@ h2 { margin: 0; font-size: var(--fs-section); font-weight: var(--weight-semibold
 .who b { display: block; font-size: var(--fs-card); line-height: var(--lh-snug); font-weight: var(--weight-semibold); }
 label { display: block; margin: var(--space-4) 0 var(--space-2); font-size: var(--fs-small); color: var(--text-secondary); }
 input[type=text], input[type=password], select, textarea { width: 100%; min-height: var(--tap-target); padding: var(--space-3) var(--space-4); border: 1px solid var(--hairline); border-radius: var(--radius-card-sm); background: var(--bg); }
+textarea { resize: vertical; min-height: 88px; line-height: var(--lh-body); }
 input.pin { max-width: 200px; letter-spacing: .5em; text-align: center; font-size: var(--fs-card); }
 .gate .btn { margin-top: var(--space-5); }
 
@@ -92,8 +93,6 @@ details summary { cursor: pointer; min-height: var(--tap-target); display: flex;
     <form id="gate-form" novalidate>
       <label for="pin" id="pin-label">Passcode</label>
       <input class="pin" id="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="&bull;&bull;&bull;&bull;">
-      <div id="pin2-wrap" hidden><label for="pin2">Type it again</label>
-      <input class="pin" id="pin2" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="&bull;&bull;&bull;&bull;"></div>
       <p class="status" id="gate-status" role="alert"></p>
       <button class="btn" id="gate-go" type="submit">Continue</button>
     </form>
@@ -109,7 +108,7 @@ details summary { cursor: pointer; min-height: var(--tap-target); display: flex;
   </div></section>
 
   <section class="block" id="ballot" hidden><div class="wrap narrow">
-    <h2>Nominate.</h2><p class="lead">Pick someone, or leave a category blank. Add a reason if you like.</p>
+    <h2>Nominate.</h2><p class="lead">Answer any category, or leave it blank.</p>
     <form id="ballot-form" onsubmit="return false"></form>
     <div class="row"><button class="btn" id="ballot-save" type="button">Save ballot</button></div>
     <p class="status" id="ballot-status" role="status"></p>
@@ -182,22 +181,23 @@ details summary { cursor: pointer; min-height: var(--tap-target); display: flex;
     greet(inv.first_name);
     $('gate-photo').innerHTML = inv.photo_url ? '<img src="' + esc(inv.photo_url) + '" alt="">' : '<div class="ph" aria-hidden="true"></div>';
     $('gate-name').textContent = inv.name;
-    $('gate-sub').textContent = inv.hasPin ? 'Enter your four-digit passcode.' : 'Pick a four-digit passcode to keep your RSVP and ballot private.';
+    $('gate-sub').textContent = inv.hasPin ? 'Enter your four-digit passcode.' : 'Pick a four-digit passcode. It becomes your family PIN, the same one used across the site.';
     $('pin-label').textContent = inv.hasPin ? 'Passcode' : 'Create a passcode';
-    show('pin2-wrap', !inv.hasPin);
     show('gate', true);
     $('gate-form').onsubmit = function (ev) {
       ev.preventDefault();
       var pin = $('pin').value;
       if (!/^\d{4}$/.test(pin)) return say('gate-status', 'Enter four digits.', true);
-      if (!inv.hasPin && pin !== $('pin2').value) return say('gate-status', 'The two passcodes don’t match.', true);
       $('gate-go').disabled = true; say('gate-status', '');
       api('POST', '/claim', { k: K, pin: pin }).then(function (r) {
         S.token = r.session;
-        try { localStorage.setItem(SAVED, JSON.stringify({ token: r.session })); } catch (e) {}
+        try {
+          localStorage.setItem(SAVED, JSON.stringify({ token: r.session }));
+          if (r.family) localStorage.setItem('family-session', JSON.stringify({ token: r.family, name: r.name }));  // same sign-in the rest of the site uses
+        } catch (e) {}
         history.replaceState(null, '', location.pathname);  // the link is a secret, keep it out of history
         show('gate', false); return start();
-      }, function (e) { say('gate-status', e.message, true); $('pin').value = ''; $('pin2').value = ''; $('pin').focus(); })
+      }, function (e) { say('gate-status', e.message, true); $('pin').value = ''; $('pin').focus(); })
         .then(function () { $('gate-go').disabled = false; });
     };
     $('pin').focus();
@@ -240,27 +240,16 @@ details summary { cursor: pointer; min-height: var(--tap-target); display: flex;
 
   function renderBallot() {
     var mine = S.me.ballot || {};
-    var options = '<option value="">No nomination</option>' + (S.me.managers || []).map(function (m) {
-      var v = m.fantasy_team + ' (' + m.name.split(' ')[0] + ')';
-      return '<option value="' + esc(v) + '">' + esc(v) + '</option>';
-    }).join('');
     $('ballot-form').innerHTML = S.event.categories.map(function (c) {
-      var field = c.type === 'manager'
-        ? '<select id="n-' + c.id + '" aria-label="' + esc(c.title) + '">' + options + '</select>'
-        : '<input type="text" id="n-' + c.id + '" maxlength="80" aria-label="' + esc(c.title) + '" placeholder="Your nomination">';
-      return '<fieldset class="cat card"><h3>' + esc(c.title) + '</h3><p>' + esc(c.hint) + '</p>' + field +
-        '<label for="r-' + c.id + '">Why? (optional)</label><input type="text" id="r-' + c.id + '" maxlength="300"></fieldset>';
+      return '<fieldset class="cat card"><h3><label for="n-' + c.id + '" style="margin:0;font:inherit;color:inherit">' + esc(c.title) + '</label></h3><p>' + esc(c.hint) + '</p>' +
+        '<textarea id="n-' + c.id + '" rows="3" maxlength="500"></textarea></fieldset>';
     }).join('');
-    S.event.categories.forEach(function (c) {
-      var cur = mine[c.id] || {};
-      $('n-' + c.id).value = cur.nominee || '';
-      $('r-' + c.id).value = cur.reason || '';
-    });
+    S.event.categories.forEach(function (c) { $('n-' + c.id).value = mine[c.id] || ''; });
   }
   $('ballot-save').onclick = function () {
     var ballot = {};
-    S.event.categories.forEach(function (c) { ballot[c.id] = { nominee: $('n-' + c.id).value, reason: $('r-' + c.id).value }; });
-    $('ballot-save').disabled = true; say('ballot-status', 'Saving…');
+    S.event.categories.forEach(function (c) { ballot[c.id] = $('n-' + c.id).value; });
+    $('ballot-save').disabled = true; say('ballot-status', 'Saving\u2026');
     api('PUT', '/ballot', { ballot: ballot }).then(function (r) { S.me.ballot = r.ballot; say('ballot-status', 'Saved. You can change it any time.'); },
       function (e) { say('ballot-status', e.message, true); }).then(function () { $('ballot-save').disabled = false; });
   };
@@ -303,12 +292,10 @@ details summary { cursor: pointer; min-height: var(--tap-target); display: flex;
       var html = '<div class="res"><h3>RSVPs</h3><p><b>' + going.length + ' going</b> · ' + no.length + ' not going · ' + none.length + ' no reply</p><p class="fine">Going: ' + names(going) + '<br>Not going: ' + names(no) + '<br>No reply: ' + names(none) + '</p></div>';
       S.event.categories.forEach(function (c) {
         var tally = {};
-        g.forEach(function (x) { var n = (x.ballot || {})[c.id]; if (!n) return; var k = n.nominee.toLowerCase(); var t = tally[k] = tally[k] || { name: n.nominee, votes: [] }; t.votes.push({ who: x.name, why: n.reason }); });
-        var list = Object.keys(tally).map(function (k) { return tally[k]; }).sort(function (a, b) { return b.votes.length - a.votes.length; });
+        g.forEach(function (x) { var n = (x.ballot || {})[c.id]; if (!n) return; var k = n.toLowerCase().replace(/\s+/g, ' '); var t = tally[k] = tally[k] || { text: n, who: [] }; t.who.push(x.name); });
+        var list = Object.keys(tally).map(function (k) { return tally[k]; }).sort(function (a, b) { return b.who.length - a.who.length; });
         html += '<div class="res"><h3>' + esc(c.title) + '</h3>' + (list.length ? '<ol>' + list.map(function (t) {
-          var why = t.votes.filter(function (v) { return v.why; });
-          return '<li><b>' + esc(t.name) + '</b> <small>' + t.votes.length + (t.votes.length === 1 ? ' nomination' : ' nominations') + '</small>' +
-            (why.length ? '<br><small>' + why.map(function (v) { return esc(v.who) + ': “' + esc(v.why) + '”'; }).join('<br>') + '</small>' : '') + '</li>';
+          return '<li>' + esc(t.text) + '<br><small>' + t.who.length + (t.who.length === 1 ? ' nomination: ' : ' nominations: ') + t.who.map(esc).join(', ') + '</small></li>';
         }).join('') + '</ol>' : '<p class="fine">No nominations yet.</p>') + '</div>';
       });
       var paper = g.filter(function (x) { return x.upload; });

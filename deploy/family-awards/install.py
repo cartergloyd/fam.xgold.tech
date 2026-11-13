@@ -12,8 +12,8 @@ for root in roots:
     body = (root / 'index.js').read_text()
     if "import awardsHub from './awards.js';" not in body:
         anchor = ' streamingRequests(router, { database });'
-        assert anchor in body, 'Streaming registration missing; review integration before installing.'
-        body = "import awardsHub from './awards.js';\n" + body.replace(anchor, anchor + '\n awardsHub(router, { database });')
+        assert anchor in body and "import { issueSession } from './hub-session.js';" in body, 'Streaming registration or session import missing; review integration before installing.'
+        body = "import awardsHub from './awards.js';\n" + body.replace(anchor, anchor + '\n awardsHub(router, { database }, { familySession: row => issueSession(row, process.env.SECRET) });')
     prepared.append((root, body))
 for index, (root, body) in enumerate(prepared):
     shutil.copytree(root, backup / str(index))
