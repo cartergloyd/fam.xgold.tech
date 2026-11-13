@@ -1,8 +1,8 @@
 # Fantasy awards: invitations, RSVP and ballots
 
 The page is `/awards/` (static; event details and categories are in `awards/event.json`). Each printed invitation carries a QR code to
-`/awards/?k=<token>`. The link opens a sign-in card with that person's name already chosen: first visit they create a four-digit
-passcode, later visits they enter it. Then they RSVP, nominate in each category, and/or upload a photo or PDF of a handwritten ballot.
+`/awards/?k=<token>`. The link opens a sign-in card with that person's name already chosen: first visit they pick a four-digit
+passcode (their family PIN), later visits they enter it. Then they RSVP, nominate in each category, and/or upload a photo or PDF of a handwritten ballot.
 Until this server side is installed the page still shows the invitation and says RSVP is not open yet.
 
 The passcode is the family PIN. Someone with no PIN yet types one once and it is saved to `family_users` (hash only, same scheme as
@@ -22,7 +22,7 @@ are stored in the table. The ballot is one text answer (up to 500 characters) pe
    and a printable `invites.html` of QR cards. Load `invites.sql` with psql the same way as the schema.
    Re-running only covers people who have no invitation yet, so old QR codes keep working.
 4. Open the Carter link and enter the family PIN: the organizer (`--admin NAME`) also sees RSVPs, tallies, reasons and paper ballots at the
-   bottom of the page. Reset someone's passcode with `UPDATE family_award_guests SET pin_hash=NULL, failed=0, locked_until=NULL WHERE user_id=...`.
+   bottom of the page. Clear a lock with `UPDATE family_award_guests SET failed=0, locked_until=NULL WHERE user_id=...`. A forgotten PIN is reset in Directus on `family_users` like any other.
 
 Routes (under `/family`): GET `/awards/invite?k=`, POST `/awards/claim`, GET `/awards/me`, PUT `/awards/rsvp`, PUT `/awards/ballot`,
 PUT and DELETE `/awards/upload`, GET `/awards/upload/:id|me`, GET `/awards/results` (organizer). Sessions travel in the existing
