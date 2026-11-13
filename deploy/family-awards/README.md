@@ -24,8 +24,8 @@ are stored in the table. The ballot is one text answer (up to 500 characters) pe
 4. Open the Carter link and enter the family PIN: the organizer (`--admin NAME`) also sees RSVPs, tallies, reasons and paper ballots at the
    bottom of the page. Clear a lock with `UPDATE family_award_guests SET failed=0, locked_until=NULL WHERE user_id=...`. A forgotten PIN is reset in Directus on `family_users` like any other.
 
-Routes (under `/family`): GET `/awards/invite?k=`, POST `/awards/claim`, GET `/awards/me`, PUT `/awards/rsvp`, PUT `/awards/ballot`,
-PUT and DELETE `/awards/upload`, GET `/awards/upload/:id|me`, GET `/awards/results` (organizer). Sessions travel in the existing
+Routes (under `/family`): GET `/awards/invite?k=`, POST `/awards/claim`, GET `/awards/me`, PATCH `/awards/rsvp`, PATCH `/awards/ballot`,
+PATCH and DELETE `/awards/upload`, GET `/awards/upload/:id|me`, GET `/awards/results` (organizer). Sessions travel in the existing
 `X-Family-Session` header, so no CORS change is needed. Writes require the family origin.
 
 Tests: `AWARDS_TEST_MODULES=<folder holding node_modules with knex and pg-mem> npm run test:awards` (skipped without it).

@@ -82,14 +82,14 @@ export default function awards(router, { database }, options = {}) {
   res.json({ name: g.user.name, first_name: first(g.user), admin: g.is_admin, rsvp: g.rsvp, ballot: g.ballot,
    upload: g.upload_name ? { name: g.upload_name, type: g.upload_type, at: g.upload_at } : null, going: going.map(r => r.name) });
  }));
- router.put('/awards/rsvp', run(async (req, res) => {
+ router.patch('/awards/rsvp', run(async (req, res) => {
   const g = await guestFor(req);
   if (typeof req.body?.going !== 'boolean') failure(400, 'Choose yes or no.');
   await database('family_award_guests').where({ user_id: g.user_id }).update({ rsvp: req.body.going, rsvp_at: new Date() });
   res.json({ rsvp: req.body.going });
  }));
  // The ballot is one text answer per category, keyed by the category id from awards/event.json.
- router.put('/awards/ballot', run(async (req, res) => {
+ router.patch('/awards/ballot', run(async (req, res) => {
   const g = await guestFor(req), input = req.body?.ballot;
   if (!input || typeof input !== 'object' || Array.isArray(input) || Object.keys(input).length > 40) failure(400, 'That ballot could not be read.');
   const ballot = {};
@@ -101,7 +101,7 @@ export default function awards(router, { database }, options = {}) {
   await database('family_award_guests').where({ user_id: g.user_id }).update({ ballot: JSON.stringify(ballot), ballot_at: new Date() });
   res.json({ ballot });
  }));
- router.put('/awards/upload', run(async (req, res) => {
+ router.patch('/awards/upload', run(async (req, res) => {
   const g = await guestFor(req), type = (req.get('Content-Type') || '').split(';')[0].trim().toLowerCase();
   if (!FILE_TYPES[type]) failure(415, 'Upload a photo (JPEG, PNG, WebP, HEIC) or a PDF.');
   const body = await readBody(req);

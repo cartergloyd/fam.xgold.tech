@@ -29,7 +29,7 @@ test('awards: invite, family PIN, session, rsvp, ballot, upload, results', { ski
     await db('family_award_guests').insert({ user_id: id, token_hash: sha(tokens[name]), is_admin: name === 'Carter' });
   }
   const handlers = {}, router = {};
-  for (const m of ['get', 'post', 'put', 'delete']) router[m] = (path, fn) => handlers[m.toUpperCase() + ' ' + path] = fn;
+  for (const m of ['get', 'post', 'patch', 'delete']) router[m] = (path, fn) => handlers[m.toUpperCase() + ' ' + path] = fn;
   awards(router, { database: db }, { secret, familySession: u => 'family-session-for-' + u.name });
   async function call(method, path, { session, body, query = {}, params = {}, raw, type, origin = ORIGIN } = {}) {
     const result = { status: 200, headers: {} };
@@ -76,20 +76,20 @@ test('awards: invite, family PIN, session, rsvp, ballot, upload, results', { ski
   assert.equal((await call('POST', '/awards/claim', { body: { k: tokens.Carter, pin: '4321' } })).status, 429, 'locked even for the right passcode');
   assert.equal((await call('GET', '/awards/me', { session: carter.session })).status, 200, 'an existing session survives the lock');
   // rsvp
-  assert.equal((await call('PUT', '/awards/rsvp', { session: rick2, body: { going: 'yes' } })).status, 400);
-  assert.equal((await call('PUT', '/awards/rsvp', { session: rick2, body: { going: true } })).status, 200);
+  assert.equal((await call('PATCH', '/awards/rsvp', { session: rick2, body: { going: 'yes' } })).status, 400);
+  assert.equal((await call('PATCH', '/awards/rsvp', { session: rick2, body: { going: true } })).status, 200);
   assert.deepEqual((await call('GET', '/awards/me', { session: rick2 })).data.going, ['Rick']);
   // ballot: one text answer per category; blanks dropped, text trimmed, shape checked
-  for (const bad of [{ 'Bad Id': 'x' }, { mvp: 5 }, { mvp: 'x'.repeat(501) }]) assert.equal((await call('PUT', '/awards/ballot', { session: rick2, body: { ballot: bad } })).status, 400);
-  const ballot = (await call('PUT', '/awards/ballot', { session: rick2, body: { ballot: { mvp: ' Josh Allen ', folly: '   ', leech: 'x'.repeat(500) } } })).data.ballot;
+  for (const bad of [{ 'Bad Id': 'x' }, { mvp: 5 }, { mvp: 'x'.repeat(501) }]) assert.equal((await call('PATCH', '/awards/ballot', { session: rick2, body: { ballot: bad } })).status, 400);
+  const ballot = (await call('PATCH', '/awards/ballot', { session: rick2, body: { ballot: { mvp: ' Josh Allen ', folly: '   ', leech: 'x'.repeat(500) } } })).data.ballot;
   assert.deepEqual(Object.keys(ballot), ['mvp', 'leech']);
   assert.equal(ballot.mvp, 'Josh Allen');
   assert.deepEqual((await call('GET', '/awards/me', { session: rick2 })).data.ballot, ballot);
   // paper ballot
-  assert.equal((await call('PUT', '/awards/upload', { session: rick2, raw: Buffer.from('x'), type: 'text/html' })).status, 415);
-  assert.equal((await call('PUT', '/awards/upload', { session: rick2, raw: Buffer.alloc(0), type: 'image/png' })).status, 400);
+  assert.equal((await call('PATCH', '/awards/upload', { session: rick2, raw: Buffer.from('x'), type: 'text/html' })).status, 415);
+  assert.equal((await call('PATCH', '/awards/upload', { session: rick2, raw: Buffer.alloc(0), type: 'image/png' })).status, 400);
   const file = Buffer.from('PNG-bytes-for-test'); // ASCII only: pg-mem stores bytea as text, real PostgreSQL keeps any byte
-  assert.equal((await call('PUT', '/awards/upload', { session: rick2, raw: file, type: 'image/png' })).data.upload.name, 'ballot.png');
+  assert.equal((await call('PATCH', '/awards/upload', { session: rick2, raw: file, type: 'image/png' })).data.upload.name, 'ballot.png');
   const back = await call('GET', '/awards/upload/:id', { session: rick2, params: { id: 'me' } });
   assert.deepEqual([back.headers['Content-Type'], Buffer.compare(back.bytes, file)], ['image/png', 0]);
   assert.equal((await call('GET', '/awards/upload/:id', { session: carter.session, params: { id: ids.Rick } })).status, 200, 'organizer reads any');

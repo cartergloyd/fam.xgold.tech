@@ -228,7 +228,7 @@ details summary { cursor: pointer; min-height: var(--tap-target); display: flex;
     $('going').hidden = !g.length; $('going').textContent = g.length ? 'Going so far: ' + g.join(', ') + '.' : '';
   }
   function setRsvp(going) {
-    api('PUT', '/rsvp', { going: going }).then(function () {
+    api('PATCH', '/rsvp', { going: going }).then(function () {
       S.me.rsvp = going;
       var i = S.me.going.indexOf(S.me.name); if (i >= 0) S.me.going.splice(i, 1);
       if (going) { S.me.going.push(S.me.name); S.me.going.sort(); }
@@ -250,7 +250,7 @@ details summary { cursor: pointer; min-height: var(--tap-target); display: flex;
     var ballot = {};
     S.event.categories.forEach(function (c) { ballot[c.id] = $('n-' + c.id).value; });
     $('ballot-save').disabled = true; say('ballot-status', 'Saving\u2026');
-    api('PUT', '/ballot', { ballot: ballot }).then(function (r) { S.me.ballot = r.ballot; say('ballot-status', 'Saved. You can change it any time.'); },
+    api('PATCH', '/ballot', { ballot: ballot }).then(function (r) { S.me.ballot = r.ballot; say('ballot-status', 'Saved. You can change it any time.'); },
       function (e) { say('ballot-status', e.message, true); }).then(function () { $('ballot-save').disabled = false; });
   };
 
@@ -279,7 +279,7 @@ details summary { cursor: pointer; min-height: var(--tap-target); display: flex;
     var type = f.type || TYPES[(f.name.split('.').pop() || '').toLowerCase()] || '';
     if (f.size > 8 * 1024 * 1024) return say('upload-status', 'That file is over 8 MB. Try a smaller photo.', true);
     say('upload-status', 'Uploading…');
-    api('PUT', '/upload', new Blob([f], { type: type }), { 'Content-Type': type }).then(function (r) {
+    api('PATCH', '/upload', new Blob([f], { type: type }), { 'Content-Type': type }).then(function (r) {
       S.me.upload = r.upload; renderUpload(); say('upload-status', 'Uploaded. Thank you.');
     }, function (e) { say('upload-status', e.message, true); });
   };
