@@ -5,7 +5,7 @@
   invites.html  printable sheet, one card per person with a QR code
 Keep the out-dir private: anyone with a link can set that person's passcode. Pass --admin NAME to make someone the organizer.
 
-  ssh gold@gold-server 'docker exec -i gold-platform-postgres sh -c "psql -U \\$POSTGRES_USER -d fam -At -c \\"select id,name from family_users where status<>\x27disabled\x27 and id not in (select user_id from family_award_guests) order by name\\""' \\
+  ssh gold@gold-server 'docker exec -i gold-platform-postgres sh -c "psql -U \\$POSTGRES_USER -d fam -At -c \\"select id,name from family_users where status<>\x27disabled\x27 and fantasy_team is not null and id not in (select user_id from family_award_guests) order by name\\""' \\
     | python3 make-invites.py ~/Documents/awards-invites --admin Carter
 """
 import sys, secrets, hashlib, html, csv, argparse
