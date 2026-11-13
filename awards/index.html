@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#000000">
+<title>Fantasy Awards</title>
+<meta name="description" content="Your invitation to the fantasy football awards. RSVP and nominate.">
+<link rel="stylesheet" href="/tokens.css">
+<style>
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font); font-size: var(--fs-body); line-height: var(--lh-body); -webkit-font-smoothing: antialiased; padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+[hidden] { display: none !important; }
+.wrap { max-width: var(--container-max); margin: 0 auto; padding: 0 var(--gutter); }
+
+/* Hero: the invitation itself */
+.hero { background: var(--bg-dark); color: var(--text-on-dark); text-align: center; padding: var(--section-pad-y) 0; }
+.eyebrow { margin: 0 0 var(--space-3); color: var(--text-on-dark-secondary); font-size: var(--fs-small); font-weight: var(--weight-semibold); letter-spacing: .08em; text-transform: uppercase; }
+h1 { margin: 0; font-size: var(--fs-page-title); font-weight: var(--weight-bold); line-height: var(--lh-tight); letter-spacing: var(--ls-tight); text-wrap: balance; }
+.for { margin: var(--space-5) 0 0; font-size: var(--fs-card); font-weight: var(--weight-semibold); line-height: var(--lh-snug); letter-spacing: var(--ls-tight); color: var(--text-on-dark-secondary); }
+.for b { color: var(--text-on-dark); font-weight: inherit; }
+.facts { list-style: none; margin: var(--space-6) 0 0; padding: 0; display: grid; gap: var(--space-2); color: var(--text-on-dark); }
+.facts span { color: var(--text-on-dark-secondary); }
+.hero .btn { margin-top: var(--space-6); }
+
+/* Sections alternate on color, not lines */
+section.block { padding: var(--section-pad-y) 0; }
+section.block:nth-of-type(even) { background: var(--bg-alt); }
+h2 { margin: 0; font-size: var(--fs-section); font-weight: var(--weight-semibold); line-height: var(--lh-tight); letter-spacing: var(--ls-tight); }
+.lead { margin: var(--space-3) 0 var(--space-7); color: var(--text-secondary); }
+.narrow { max-width: 640px; margin: 0 auto; }
+.fine { color: var(--text-secondary); font-size: var(--fs-small); }
+.btn { display: inline-flex; align-items: center; justify-content: center; min-height: var(--tap-target); padding: var(--btn-pad-y) var(--btn-pad-x); border: 0; border-radius: var(--radius-pill); background: var(--accent); color: #fff; font-size: var(--btn-font-size); cursor: pointer; transition: background var(--duration-fast) var(--ease); }
+.btn:hover:not(:disabled) { background: var(--accent-hover); text-decoration: none; }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn.ghost { background: transparent; color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.btn.ghost:hover:not(:disabled) { background: transparent; box-shadow: inset 0 0 0 2px var(--accent-hover); }
+.btn.ghost[aria-pressed="true"] { background: var(--accent); color: #fff; box-shadow: none; }
+.hero .btn { background: var(--text-on-dark); color: var(--bg-dark); }
+.link { background: none; border: 0; padding: var(--space-3) var(--space-2); min-height: var(--tap-target); color: var(--accent); cursor: pointer; }
+.row { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
+.status { min-height: 1.4em; margin: var(--space-4) 0 0; color: var(--text-secondary); font-size: var(--fs-small); }
+.status.err { color: #d70015; }
+@media (prefers-color-scheme: dark) { .status.err { color: #ff6961; } }
+
+/* Gate */
+.gate { background: var(--bg-alt); padding: var(--space-8) 0; }
+.card { background: var(--bg-elevated); border-radius: var(--radius-card); padding: var(--space-6); }
+.who { display: flex; align-items: center; gap: var(--space-4); margin-bottom: var(--space-5); }
+.who img, .who .ph { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; background: var(--bg-alt); flex: none; }
+.who b { display: block; font-size: var(--fs-card); line-height: var(--lh-snug); font-weight: var(--weight-semibold); }
+label { display: block; margin: var(--space-4) 0 var(--space-2); font-size: var(--fs-small); color: var(--text-secondary); }
+input[type=text], input[type=password], select, textarea { width: 100%; min-height: var(--tap-target); padding: var(--space-3) var(--space-4); border: 1px solid var(--hairline); border-radius: var(--radius-card-sm); background: var(--bg); }
+input.pin { max-width: 200px; letter-spacing: .5em; text-align: center; font-size: var(--fs-card); }
+.gate .btn { margin-top: var(--space-5); }
+
+/* Ballot */
+fieldset.cat { border: 0; margin: 0 0 var(--space-4); }
+.cat h3 { margin: 0; font-size: var(--fs-card); font-weight: var(--weight-semibold); line-height: var(--lh-snug); letter-spacing: var(--ls-tight); }
+.cat p { margin: var(--space-1) 0 var(--space-3); color: var(--text-secondary); }
+.upload-box { display: grid; gap: var(--space-4); justify-items: start; }
+input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.upload-box:focus-within #file-btn { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.preview img { max-width: 100%; max-height: 520px; border-radius: var(--radius-card-sm); }
+.going { margin: var(--space-5) 0 0; color: var(--text-secondary); }
+
+/* Results (organizer) */
+.res { margin: 0 0 var(--space-6); }
+.res h3 { margin: 0 0 var(--space-2); font-size: var(--fs-body); font-weight: var(--weight-semibold); }
+.res ol { margin: 0; padding-left: 1.4em; }
+.res li { margin: var(--space-1) 0; }
+.res small { color: var(--text-secondary); font-size: var(--fs-small); }
+details summary { cursor: pointer; min-height: var(--tap-target); display: flex; align-items: center; }
+@media (min-width: 700px) { .facts { grid-auto-flow: column; justify-content: center; gap: var(--space-6); } }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
+</style></head><body>
+
+<header class="hero"><div class="wrap">
+  <p class="eyebrow" id="eyebrow">Season 2026</p>
+  <h1 id="title">Fantasy Awards</h1>
+  <p class="for" id="for" hidden>You&rsquo;re invited, <b id="for-name"></b>.</p>
+  <ul class="facts" id="facts"></ul>
+  <a class="btn" id="hero-cta" href="#rsvp" hidden>RSVP</a>
+</div></header>
+
+<main>
+  <section class="gate" id="gate" hidden><div class="wrap narrow"><div class="card">
+    <div class="who"><div id="gate-photo"></div><div><b id="gate-name"></b><span class="fine" id="gate-sub"></span></div></div>
+    <form id="gate-form" novalidate>
+      <label for="pin" id="pin-label">Passcode</label>
+      <input class="pin" id="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="&bull;&bull;&bull;&bull;">
+      <div id="pin2-wrap" hidden><label for="pin2">Type it again</label>
+      <input class="pin" id="pin2" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="&bull;&bull;&bull;&bull;"></div>
+      <p class="status" id="gate-status" role="alert"></p>
+      <button class="btn" id="gate-go" type="submit">Continue</button>
+    </form>
+  </div></div></section>
+
+  <section class="block" id="note" hidden><div class="wrap narrow"><h2>Scan your invitation.</h2><p class="lead" id="note-text">Each printed invitation has its own QR code. Scan yours to RSVP and nominate.</p></div></section>
+
+  <section class="block" id="rsvp" hidden><div class="wrap narrow">
+    <h2>Will you be there?</h2><p class="lead">One tap. You can change it any time.</p>
+    <div class="row"><button class="btn ghost" id="yes" type="button" aria-pressed="false">Yes, I&rsquo;ll be there</button><button class="btn ghost" id="no" type="button" aria-pressed="false">Can&rsquo;t make it</button></div>
+    <p class="status" id="rsvp-status" role="status"></p>
+    <p class="going" id="going" hidden></p>
+  </div></section>
+
+  <section class="block" id="ballot" hidden><div class="wrap narrow">
+    <h2>Nominate.</h2><p class="lead">Pick someone, or leave a category blank. Add a reason if you like.</p>
+    <form id="ballot-form" onsubmit="return false"></form>
+    <div class="row"><button class="btn" id="ballot-save" type="button">Save ballot</button></div>
+    <p class="status" id="ballot-status" role="status"></p>
+  </div></section>
+
+  <section class="block" id="upload" hidden><div class="wrap narrow">
+    <h2>Prefer paper?</h2><p class="lead">Fill it out by hand, then upload a photo or PDF. It&rsquo;s counted with the rest.</p>
+    <div class="upload-box">
+      <label class="btn ghost" for="file" id="file-btn" style="margin:0">Choose a photo or PDF</label>
+      <input id="file" type="file" accept="image/*,application/pdf">
+      <div id="upload-info" class="fine"></div>
+      <div class="preview" id="preview"></div>
+    </div>
+    <p class="status" id="upload-status" role="status"></p>
+  </div></section>
+
+  <section class="block" id="results" hidden><div class="wrap narrow">
+    <h2>Results.</h2><p class="lead">Only you can see this.</p>
+    <div id="results-body"></div>
+  </div></section>
+
+  <section class="block" id="out" hidden><div class="wrap narrow"><button class="link" id="signout" type="button">Not <span id="out-name"></span>? Sign out</button></div></section>
+</main>
+
+<script>
+(function () {
+  var API = 'https://fam-api.xgold.tech/family/awards';
+  var $ = function (id) { return document.getElementById(id); };
+  var K = new URLSearchParams(location.search).get('k');
+  var S = { event: null, me: null, token: '' };
+  var SAVED = 'awards-session';
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function show(id, on) { $(id).hidden = !on; }
+  function say(id, msg, bad) { var el = $(id); el.textContent = msg || ''; el.classList.toggle('err', !!bad); }
+  try { var saved = JSON.parse(localStorage.getItem(SAVED)); if (saved && saved.token) S.token = saved.token; } catch (e) {}
+
+  // Resolves to the JSON; rejects with {message, down}. down means the awards server is unreachable or not installed yet.
+  function api(method, path, body, headers) {
+    var h = Object.assign({ Accept: 'application/json' }, headers || {});
+    if (S.token) h['X-Family-Session'] = S.token;
+    var isJson = body !== undefined && !(body instanceof Blob);
+    if (isJson) h['Content-Type'] = 'application/json';
+    return fetch(API + path, { method: method, headers: h, body: isJson ? JSON.stringify(body) : body, cache: 'no-store', credentials: 'omit' })
+      .catch(function () { throw { message: 'Couldn’t reach the server. Check your connection and try again.', down: true }; })
+      .then(function (r) {
+        return r.json().catch(function () { return {}; }).then(function (j) {
+          if (r.ok) return j;
+          throw { status: r.status, message: j.error || 'Awards aren’t available yet. Please check back soon.', down: !j.error };
+        });
+      });
+  }
+
+  // ---- Invitation ----
+  function renderEvent() {
+    var e = S.event;
+    document.title = e.title;
+    $('title').textContent = e.title;
+    $('eyebrow').textContent = 'Season ' + e.season;
+    var facts = [];
+    if (e.when) facts.push('<li>' + esc(e.when) + '</li>');
+    if (e.where) facts.push('<li>' + (e.address ? '<a href="https://maps.apple.com/?q=' + encodeURIComponent(e.address) + '" style="color:inherit">' + esc(e.where) + '</a>' : esc(e.where)) + '</li>');
+    if (e.dress) facts.push('<li><span>Dress</span> ' + esc(e.dress) + '</li>');
+    if (e.note) facts.push('<li><span>' + esc(e.note) + '</span></li>');
+    $('facts').innerHTML = facts.length ? facts.join('') : '<li><span>Date and place to come.</span></li>';
+  }
+  function greet(name) { $('for-name').textContent = name; show('for', true); }
+
+  // ---- Sign in from the QR code ----
+  function showGate(inv) {
+    greet(inv.first_name);
+    $('gate-photo').innerHTML = inv.photo_url ? '<img src="' + esc(inv.photo_url) + '" alt="">' : '<div class="ph" aria-hidden="true"></div>';
+    $('gate-name').textContent = inv.name;
+    $('gate-sub').textContent = inv.hasPin ? 'Enter your four-digit passcode.' : 'Pick a four-digit passcode to keep your RSVP and ballot private.';
+    $('pin-label').textContent = inv.hasPin ? 'Passcode' : 'Create a passcode';
+    show('pin2-wrap', !inv.hasPin);
+    show('gate', true);
+    $('gate-form').onsubmit = function (ev) {
+      ev.preventDefault();
+      var pin = $('pin').value;
+      if (!/^\d{4}$/.test(pin)) return say('gate-status', 'Enter four digits.', true);
+      if (!inv.hasPin && pin !== $('pin2').value) return say('gate-status', 'The two passcodes don’t match.', true);
+      $('gate-go').disabled = true; say('gate-status', '');
+      api('POST', '/claim', { k: K, pin: pin }).then(function (r) {
+        S.token = r.session;
+        try { localStorage.setItem(SAVED, JSON.stringify({ token: r.session })); } catch (e) {}
+        history.replaceState(null, '', location.pathname);  // the link is a secret, keep it out of history
+        show('gate', false); return start();
+      }, function (e) { say('gate-status', e.message, true); $('pin').value = ''; $('pin2').value = ''; $('pin').focus(); })
+        .then(function () { $('gate-go').disabled = false; });
+    };
+    $('pin').focus();
+  }
+
+  // ---- Signed in ----
+  function start() {
+    return api('GET', '/me').then(function (me) { S.me = me; renderMe(); }, function (e) {
+      if (e.status === 401) { S.token = ''; try { localStorage.removeItem(SAVED); } catch (x) {} }
+      throw e;
+    });
+  }
+  function renderMe() {
+    var me = S.me;
+    greet(me.first_name);
+    ['rsvp', 'ballot', 'upload', 'out'].forEach(function (id) { show(id, true); });
+    show('note', false); show('hero-cta', true);
+    $('out-name').textContent = me.first_name;
+    renderRsvp(); renderBallot(); renderUpload();
+    show('results', me.admin);
+    if (me.admin) loadResults();
+  }
+  function renderRsvp() {
+    var r = S.me.rsvp;
+    $('yes').setAttribute('aria-pressed', r === true); $('no').setAttribute('aria-pressed', r === false);
+    say('rsvp-status', r === true ? 'You’re going.' : r === false ? 'You’re not going. Change your mind any time.' : '');
+    var g = S.me.going || [];
+    $('going').hidden = !g.length; $('going').textContent = g.length ? 'Going so far: ' + g.join(', ') + '.' : '';
+  }
+  function setRsvp(going) {
+    api('PUT', '/rsvp', { going: going }).then(function () {
+      S.me.rsvp = going;
+      var i = S.me.going.indexOf(S.me.name); if (i >= 0) S.me.going.splice(i, 1);
+      if (going) { S.me.going.push(S.me.name); S.me.going.sort(); }
+      renderRsvp();
+    }, function (e) { say('rsvp-status', e.message, true); });
+  }
+  $('yes').onclick = function () { setRsvp(true); };
+  $('no').onclick = function () { setRsvp(false); };
+
+  function renderBallot() {
+    var mine = S.me.ballot || {};
+    var options = '<option value="">No nomination</option>' + (S.me.managers || []).map(function (m) {
+      var v = m.fantasy_team + ' (' + m.name.split(' ')[0] + ')';
+      return '<option value="' + esc(v) + '">' + esc(v) + '</option>';
+    }).join('');
+    $('ballot-form').innerHTML = S.event.categories.map(function (c) {
+      var field = c.type === 'manager'
+        ? '<select id="n-' + c.id + '" aria-label="' + esc(c.title) + '">' + options + '</select>'
+        : '<input type="text" id="n-' + c.id + '" maxlength="80" aria-label="' + esc(c.title) + '" placeholder="Your nomination">';
+      return '<fieldset class="cat card"><h3>' + esc(c.title) + '</h3><p>' + esc(c.hint) + '</p>' + field +
+        '<label for="r-' + c.id + '">Why? (optional)</label><input type="text" id="r-' + c.id + '" maxlength="300"></fieldset>';
+    }).join('');
+    S.event.categories.forEach(function (c) {
+      var cur = mine[c.id] || {};
+      $('n-' + c.id).value = cur.nominee || '';
+      $('r-' + c.id).value = cur.reason || '';
+    });
+  }
+  $('ballot-save').onclick = function () {
+    var ballot = {};
+    S.event.categories.forEach(function (c) { ballot[c.id] = { nominee: $('n-' + c.id).value, reason: $('r-' + c.id).value }; });
+    $('ballot-save').disabled = true; say('ballot-status', 'Saving…');
+    api('PUT', '/ballot', { ballot: ballot }).then(function (r) { S.me.ballot = r.ballot; say('ballot-status', 'Saved. You can change it any time.'); },
+      function (e) { say('ballot-status', e.message, true); }).then(function () { $('ballot-save').disabled = false; });
+  };
+
+  var TYPES = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', heic: 'image/heic', pdf: 'application/pdf' };
+  function renderUpload() {
+    var u = S.me.upload;
+    $('preview').innerHTML = '';
+    $('upload-info').innerHTML = u ? 'Uploaded ' + esc(new Date(u.at).toLocaleDateString(undefined, { month: 'long', day: 'numeric' })) + '. <button class="link" id="view" type="button">View</button><button class="link" id="remove" type="button">Remove</button>' : '';
+    $('file-btn').textContent = u ? 'Replace file' : 'Choose a photo or PDF';
+    if (u) { $('view').onclick = function () { showFile('me', $('preview')); }; $('remove').onclick = removeFile; }
+  }
+  // Fetch with the session header, then show it here (a popup would be blocked on phones).
+  function showFile(id, into) {
+    into.textContent = 'Loading…';
+    fetch(API + '/upload/' + id, { headers: { 'X-Family-Session': S.token }, cache: 'no-store' }).then(function (r) { if (!r.ok) throw 0; return r.blob(); }).then(function (b) {
+      var url = URL.createObjectURL(b);
+      into.innerHTML = b.type === 'application/pdf' ? '<a href="' + url + '" target="_blank" rel="noopener">Open the PDF</a>' : '<img alt="Uploaded ballot" src="' + url + '">';
+    }).catch(function () { into.textContent = 'Couldn’t load the file.'; });
+  }
+  function removeFile() {
+    api('DELETE', '/upload').then(function () { S.me.upload = null; renderUpload(); say('upload-status', 'Removed.'); }, function (e) { say('upload-status', e.message, true); });
+  }
+  $('file').onchange = function () {
+    var f = this.files[0]; this.value = '';
+    if (!f) return;
+    var type = f.type || TYPES[(f.name.split('.').pop() || '').toLowerCase()] || '';
+    if (f.size > 8 * 1024 * 1024) return say('upload-status', 'That file is over 8 MB. Try a smaller photo.', true);
+    say('upload-status', 'Uploading…');
+    api('PUT', '/upload', new Blob([f], { type: type }), { 'Content-Type': type }).then(function (r) {
+      S.me.upload = r.upload; renderUpload(); say('upload-status', 'Uploaded. Thank you.');
+    }, function (e) { say('upload-status', e.message, true); });
+  };
+
+  // ---- Organizer results ----
+  function loadResults() {
+    api('GET', '/results').then(function (r) {
+      var g = r.guests, going = g.filter(function (x) { return x.rsvp === true; }), no = g.filter(function (x) { return x.rsvp === false; }), none = g.filter(function (x) { return x.rsvp === null; });
+      var names = function (a) { return a.length ? a.map(function (x) { return esc(x.name); }).join(', ') : 'No one'; };
+      var html = '<div class="res"><h3>RSVPs</h3><p><b>' + going.length + ' going</b> · ' + no.length + ' not going · ' + none.length + ' no reply</p><p class="fine">Going: ' + names(going) + '<br>Not going: ' + names(no) + '<br>No reply: ' + names(none) + '</p></div>';
+      S.event.categories.forEach(function (c) {
+        var tally = {};
+        g.forEach(function (x) { var n = (x.ballot || {})[c.id]; if (!n) return; var k = n.nominee.toLowerCase(); var t = tally[k] = tally[k] || { name: n.nominee, votes: [] }; t.votes.push({ who: x.name, why: n.reason }); });
+        var list = Object.keys(tally).map(function (k) { return tally[k]; }).sort(function (a, b) { return b.votes.length - a.votes.length; });
+        html += '<div class="res"><h3>' + esc(c.title) + '</h3>' + (list.length ? '<ol>' + list.map(function (t) {
+          var why = t.votes.filter(function (v) { return v.why; });
+          return '<li><b>' + esc(t.name) + '</b> <small>' + t.votes.length + (t.votes.length === 1 ? ' nomination' : ' nominations') + '</small>' +
+            (why.length ? '<br><small>' + why.map(function (v) { return esc(v.who) + ': “' + esc(v.why) + '”'; }).join('<br>') + '</small>' : '') + '</li>';
+        }).join('') + '</ol>' : '<p class="fine">No nominations yet.</p>') + '</div>';
+      });
+      var paper = g.filter(function (x) { return x.upload; });
+      html += '<div class="res"><h3>Paper ballots</h3>' + (paper.length ? paper.map(function (x) { return '<details data-id="' + esc(x.id) + '"><summary>' + esc(x.name) + '</summary><div class="preview"></div></details>'; }).join('') : '<p class="fine">None uploaded.</p>') + '</div>';
+      $('results-body').innerHTML = html;
+      Array.prototype.forEach.call($('results-body').querySelectorAll('details'), function (d) {
+        d.addEventListener('toggle', function () { if (d.open && !d.dataset.loaded) { d.dataset.loaded = 1; showFile(d.dataset.id, d.querySelector('.preview')); } });
+      });
+    }, function (e) { $('results-body').textContent = e.message; });
+  }
+
+  $('signout').onclick = function () { try { localStorage.removeItem(SAVED); } catch (e) {} location.href = location.pathname; };
+
+  // ---- Boot: the invitation always shows; the rest needs the awards server ----
+  function guestNote(msg) { if (msg) $('note-text').textContent = msg; show('note', true); }
+  function invitePath() {
+    if (!K) { guestNote(); return; }
+    return api('GET', '/invite?k=' + encodeURIComponent(K)).then(showGate);
+  }
+  fetch('event.json').then(function (r) { return r.json(); }).then(function (e) { S.event = e; renderEvent(); }).then(function () {
+    if (S.token) return start().catch(function (e) { if (e.status !== 401) throw e; return invitePath(); });
+    return invitePath();
+  }).catch(function (e) {
+    if (!S.event) { $('facts').innerHTML = '<li><span>Couldn’t load the invitation. Please refresh.</span></li>'; return; }
+    guestNote(e && e.down ? 'RSVP and nominations aren’t open just yet. Please check back soon.' : e && e.message);
+  });
+})();
+</script>
+</body></html>

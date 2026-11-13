@@ -10,6 +10,7 @@
     "test:mc": "node --test tests/mc-map.mjs tests/mc-places-api.mjs tests/mc-map-assets.mjs tests/mc-map-bubbles.mjs",
     "test:trip": "node test-directus-db.mjs && node --test tests/family-trips.mjs tests/home-trip.mjs",
     "test:whitelist": "python3 -m unittest discover -s tests -p test_mc_whitelist.py",
+    "test:awards": "node --test --test-force-exit tests/awards-api.mjs",
     "test:lake": "node --test tests/lake-api.mjs tests/lake-sync.mjs tests/calendar-ics.mjs tests/notify.mjs tests/install-names.mjs"
   },
   "devDependencies": {

@@ -1,0 +1,19 @@
+{
+  "title": "Marilyn’s Fantasy Football Awards",
+  "season": "2026",
+  "when": "",
+  "where": "",
+  "address": "",
+  "dress": "",
+  "note": "",
+  "categories": [
+    { "id": "manager", "title": "Manager of the year", "hint": "Who ran the best team?", "type": "manager" },
+    { "id": "unlucky", "title": "Hard-luck award", "hint": "Who scored the most and lost anyway?", "type": "manager" },
+    { "id": "improved", "title": "Most improved", "hint": "Who climbed the furthest?", "type": "manager" },
+    { "id": "trash-talk", "title": "Best trash talk", "hint": "Who dished it out best?", "type": "manager" },
+    { "id": "team-name", "title": "Best team name and logo", "hint": "Name the team that earned it.", "type": "manager" },
+    { "id": "trade", "title": "Trade of the year", "hint": "Describe the trade.", "type": "text" },
+    { "id": "pickup", "title": "Best waiver pickup", "hint": "Which player came from nowhere?", "type": "text" },
+    { "id": "blunder", "title": "Blunder of the year", "hint": "The move everyone is still talking about.", "type": "text" }
+  ]
+}
