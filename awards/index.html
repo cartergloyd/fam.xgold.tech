@@ -1,59 +1,91 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#1a0a40">
 <title>Fantasy Awards</title>
 <meta name="description" content="Your invitation to the fantasy football awards. RSVP and nominate.">
+<link rel="icon" type="image/png" href="logo-mark.png">
+<meta property="og:image" content="https://fam.xgold.tech/awards/logo.png">
 <link rel="stylesheet" href="/tokens.css">
 <style>
+/* Honors night: the site's galaxy stage in violet, with a yellow-to-blue headline and a skyline. Always dark. */
+:root {
+  color-scheme: dark;
+  --bg: #0d0624; --bg-alt: rgba(10, 4, 32, .55); --bg-elevated: rgba(30, 14, 70, .72);
+  --text: #f5f5f7; --text-secondary: #b9b4d0; --hairline: rgba(255, 255, 255, .18);
+  --accent: #f5f5f7; --accent-hover: #ffffff; --focus-ring: #2997ff;
+  --honors-yellow: #ffe600; --honors-pink: #ff3d9a; --honors-violet: #9a55ff; --honors-blue: #3d8bff;
+  --honors-gradient: linear-gradient(90deg, var(--honors-yellow) 0%, #ff7a45 22%, var(--honors-pink) 48%, var(--honors-violet) 76%, var(--honors-blue) 100%);
+}
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font); font-size: var(--fs-body); line-height: var(--lh-body); -webkit-font-smoothing: antialiased; padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
-a { color: var(--accent); text-decoration: none; }
+body { margin: 0; min-height: 100vh; overflow-x: hidden; background: radial-gradient(ellipse at 50% 0%, rgba(106, 36, 197, .55), transparent 55%), radial-gradient(ellipse at 85% 60%, rgba(35, 110, 169, .25), transparent 45%), #0d0624; background-attachment: fixed; color: var(--text); font-family: var(--font); font-size: var(--fs-body); line-height: var(--lh-body); -webkit-font-smoothing: antialiased; padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+a { color: var(--honors-yellow); text-decoration: none; }
 a:hover { text-decoration: underline; }
 button, input, select, textarea { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 [hidden] { display: none !important; }
 .wrap { max-width: var(--container-max); margin: 0 auto; padding: 0 var(--gutter); }
 
+/* Galaxy: drifting stars and a soft nebula, fixed behind the page. */
+body::before, body::after { content: ""; position: fixed; inset: -18%; pointer-events: none; z-index: 0; }
+body::before { opacity: .78; background-repeat: repeat; background-size: 213px 187px, 307px 269px, 397px 331px, 433px 359px; animation: galaxy-stars 145s linear infinite alternate;
+  background-image: radial-gradient(1px 1px at 19px 31px, #fff 98%, transparent), radial-gradient(1.5px 1.5px at 114px 93px, #c9dcff 98%, transparent), radial-gradient(1px 1px at 171px 151px, #fff 98%, transparent), radial-gradient(2px 2px at 54px 69px, #d4bfff 98%, transparent); }
+body::after { opacity: .7; filter: blur(32px) saturate(1.3); animation: galaxy-nebula 32s ease-in-out infinite alternate;
+  background: radial-gradient(ellipse at 42% 18%, rgba(126, 73, 255, .38), transparent 29%), radial-gradient(ellipse at 70% 32%, rgba(39, 125, 245, .29), transparent 32%), radial-gradient(ellipse at 22% 63%, rgba(238, 52, 163, .24), transparent 30%), radial-gradient(ellipse at 80% 81%, rgba(92, 61, 216, .26), transparent 30%); }
+@keyframes galaxy-stars { from { transform: translate3d(-2%, 2%, 0) scale(1); } to { transform: translate3d(3%, -3%, 0) scale(1.05); } }
+@keyframes galaxy-nebula { from { transform: translate3d(-3%, 1%, 0) scale(1); } to { transform: translate3d(3%, -2%, 0) scale(1.1); } }
+header.hero, main { position: relative; z-index: 1; }
+
 /* Hero: the invitation itself */
-.hero { background: var(--bg-dark); color: var(--text-on-dark); text-align: center; padding: var(--section-pad-y) 0; }
-.eyebrow { margin: 0 0 var(--space-3); color: var(--text-on-dark-secondary); font-size: var(--fs-small); font-weight: var(--weight-semibold); letter-spacing: .08em; text-transform: uppercase; }
+.hero { position: relative; overflow: hidden; isolation: isolate; text-align: center; padding: clamp(40px, 8vw, 88px) 0 clamp(150px, 26vw, 300px); background: linear-gradient(180deg, #6a24c5 0%, rgba(58, 19, 128, .85) 55%, rgba(13, 6, 36, 0) 100%); }
+.hero-grid { display: grid; gap: var(--space-6); justify-items: center; align-items: center; }
+.emblem { order: -1; width: clamp(104px, 28vw, 200px); height: auto; filter: drop-shadow(0 12px 32px rgba(255, 61, 154, .35)); }
+.skyline { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: clamp(150px, 26vw, 300px); z-index: -1; }
+.kicker { display: block; color: var(--honors-yellow); font-size: clamp(1.0625rem, 3.4vw, 1.875rem); font-weight: var(--weight-bold); letter-spacing: .01em; text-transform: uppercase; line-height: var(--lh-snug); }
+.grad { display: block; margin-top: var(--space-1); font-size: clamp(3.25rem, 15vw, 8rem); font-weight: 800; letter-spacing: -.03em; line-height: 1; text-transform: uppercase; background: var(--honors-gradient); -webkit-background-clip: text; background-clip: text; color: transparent; }
+@media (min-width: 860px) {
+  .hero { text-align: left; }
+  .hero-grid { grid-template-columns: 1fr auto; gap: var(--space-8); justify-items: start; }
+  .hero-grid .emblem { justify-self: center; width: clamp(200px, 22vw, 300px); order: 2; }
+  .facts { justify-content: flex-start !important; }
+}
+.eyebrow { margin: 0 0 var(--space-3); color: var(--text-secondary); font-size: var(--fs-small); font-weight: var(--weight-semibold); letter-spacing: .08em; text-transform: uppercase; }
 h1 { margin: 0; font-size: var(--fs-page-title); font-weight: var(--weight-bold); line-height: var(--lh-tight); letter-spacing: var(--ls-tight); text-wrap: balance; }
-.for { margin: var(--space-5) 0 0; font-size: var(--fs-card); font-weight: var(--weight-semibold); line-height: var(--lh-snug); letter-spacing: var(--ls-tight); color: var(--text-on-dark-secondary); }
-.for b { color: var(--text-on-dark); font-weight: inherit; }
-.facts { list-style: none; margin: var(--space-6) 0 0; padding: 0; display: grid; gap: var(--space-2); color: var(--text-on-dark); }
-.facts span { color: var(--text-on-dark-secondary); }
+.for { margin: var(--space-5) 0 0; font-size: var(--fs-card); font-weight: var(--weight-semibold); line-height: var(--lh-snug); letter-spacing: var(--ls-tight); color: var(--text-secondary); }
+.for b { color: var(--text); font-weight: inherit; }
+.facts { list-style: none; margin: var(--space-6) 0 0; padding: 0; display: grid; gap: var(--space-2); color: var(--text); }
+.facts span { color: var(--text-secondary); }
 .hero .btn { margin-top: var(--space-6); }
 
 /* Sections alternate on color, not lines */
 section.block { padding: var(--section-pad-y) 0; }
 section.block:nth-of-type(even) { background: var(--bg-alt); }
+section.block h2, .gate .who b { text-shadow: 0 2px 24px #0008; }
 h2 { margin: 0; font-size: var(--fs-section); font-weight: var(--weight-semibold); line-height: var(--lh-tight); letter-spacing: var(--ls-tight); }
 .lead { margin: var(--space-3) 0 var(--space-7); color: var(--text-secondary); }
 .narrow { max-width: 640px; margin: 0 auto; }
 .fine { color: var(--text-secondary); font-size: var(--fs-small); }
-.btn { display: inline-flex; align-items: center; justify-content: center; min-height: var(--tap-target); padding: var(--btn-pad-y) var(--btn-pad-x); border: 0; border-radius: var(--radius-pill); background: var(--accent); color: #fff; font-size: var(--btn-font-size); cursor: pointer; transition: background var(--duration-fast) var(--ease); }
+.btn { display: inline-flex; align-items: center; justify-content: center; min-height: var(--tap-target); padding: var(--btn-pad-y) var(--btn-pad-x); border: 0; border-radius: var(--radius-pill); background: var(--accent); color: #1a0a40; font-size: var(--btn-font-size); cursor: pointer; transition: background var(--duration-fast) var(--ease); }
 .btn:hover:not(:disabled) { background: var(--accent-hover); text-decoration: none; }
 .btn:disabled { opacity: .5; cursor: default; }
-.btn.ghost { background: transparent; color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
-.btn.ghost:hover:not(:disabled) { background: transparent; box-shadow: inset 0 0 0 2px var(--accent-hover); }
-.btn.ghost[aria-pressed="true"] { background: var(--accent); color: #fff; box-shadow: none; }
-.hero .btn { background: var(--text-on-dark); color: var(--bg-dark); }
-.link { background: none; border: 0; padding: var(--space-3) var(--space-2); min-height: var(--tap-target); color: var(--accent); cursor: pointer; }
+.btn.ghost { background: transparent; color: var(--text); box-shadow: inset 0 0 0 1px var(--hairline); }
+.btn.ghost:hover:not(:disabled) { background: transparent; box-shadow: inset 0 0 0 2px var(--text); }
+.btn.ghost[aria-pressed="true"] { background: var(--accent); color: #1a0a40; box-shadow: none; }
+.link { background: none; border: 0; padding: var(--space-3) var(--space-2); min-height: var(--tap-target); color: var(--honors-yellow); cursor: pointer; }
 .row { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
 .status { min-height: 1.4em; margin: var(--space-4) 0 0; color: var(--text-secondary); font-size: var(--fs-small); }
-.status.err { color: #d70015; }
-@media (prefers-color-scheme: dark) { .status.err { color: #ff6961; } }
+.status.err { color: #ff6961; }
 
 /* Gate */
 .gate { background: var(--bg-alt); padding: var(--space-8) 0; }
+.card { backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); }
 .card { background: var(--bg-elevated); border-radius: var(--radius-card); padding: var(--space-6); }
 .who { display: flex; align-items: center; gap: var(--space-4); margin-bottom: var(--space-5); }
 .who img, .who .ph { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; background: var(--bg-alt); flex: none; }
 .who b { display: block; font-size: var(--fs-card); line-height: var(--lh-snug); font-weight: var(--weight-semibold); }
 label { display: block; margin: var(--space-4) 0 var(--space-2); font-size: var(--fs-small); color: var(--text-secondary); }
-input[type=text], input[type=password], select, textarea { width: 100%; min-height: var(--tap-target); padding: var(--space-3) var(--space-4); border: 1px solid var(--hairline); border-radius: var(--radius-card-sm); background: var(--bg); }
+input[type=text], input[type=password], select, textarea { width: 100%; min-height: var(--tap-target); padding: var(--space-3) var(--space-4); border: 1px solid var(--hairline); border-radius: var(--radius-card-sm); background: rgba(8, 3, 24, .6); }
 textarea { resize: vertical; min-height: 88px; line-height: var(--lh-body); }
 input.pin { max-width: 200px; letter-spacing: .5em; text-align: center; font-size: var(--fs-card); }
 .gate .btn { margin-top: var(--space-5); }
@@ -76,16 +108,32 @@ input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .res small { color: var(--text-secondary); font-size: var(--fs-small); }
 details summary { cursor: pointer; min-height: var(--tap-target); display: flex; align-items: center; }
 @media (min-width: 700px) { .facts { grid-auto-flow: column; justify-content: center; gap: var(--space-6); } }
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } body::before, body::after { animation: none; } }
 </style></head><body>
 
-<header class="hero"><div class="wrap">
-  <p class="eyebrow" id="eyebrow">Season 2026</p>
-  <h1 id="title">Fantasy Awards</h1>
-  <p class="for" id="for" hidden>You&rsquo;re invited, <b id="for-name"></b>.</p>
-  <ul class="facts" id="facts"></ul>
-  <a class="btn" id="hero-cta" href="#rsvp" hidden>RSVP</a>
-</div></header>
+<header class="hero">
+<svg class="skyline" viewBox="0 0 1440 300" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">
+<defs>
+<linearGradient id="bldA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff3d9a"/><stop offset="1" stop-color="#7b2fd6"/></linearGradient>
+<linearGradient id="bldB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9a55ff"/><stop offset="1" stop-color="#4a1fa8"/></linearGradient>
+<linearGradient id="arch" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffe600"/><stop offset=".5" stop-color="#ff3d9a"/><stop offset="1" stop-color="#3d8bff"/></linearGradient>
+<pattern id="winp" width="6" height="8" patternUnits="userSpaceOnUse"><rect width="6" height="3" fill="#fff" fill-opacity=".22"/></pattern>
+<pattern id="win" width="14" height="8" patternUnits="userSpaceOnUse"><rect width="14" height="8" fill="url(#winp)"/><rect width="2" height="8" fill="#1a0a40" fill-opacity=".35"/></pattern>
+</defs>
+<path d="M0 300V190C120 150 220 150 330 118 420 92 470 92 560 130 650 168 720 150 820 120 920 92 1010 104 1110 140 1220 182 1330 150 1440 176V300Z" fill="#241058"/><rect x="-20" y="210" width="78" height="90" fill="url(#bldB)"/><rect x="-20" y="210" width="78" height="90" fill="url(#win)"/><rect x="66" y="236" width="54" height="64" fill="url(#bldA)"/><rect x="66" y="236" width="54" height="64" fill="url(#win)"/><rect x="134" y="182" width="54" height="118" fill="url(#bldA)"/><rect x="134" y="182" width="54" height="118" fill="url(#win)"/><rect x="202" y="124" width="54" height="176" fill="url(#bldB)"/><rect x="202" y="124" width="54" height="176" fill="url(#win)"/><rect x="260" y="236" width="54" height="64" fill="url(#bldA)"/><rect x="260" y="236" width="54" height="64" fill="url(#win)"/><rect x="322" y="236" width="92" height="64" fill="url(#bldA)"/><rect x="322" y="236" width="92" height="64" fill="url(#win)"/><rect x="418" y="124" width="54" height="176" fill="url(#bldB)"/><rect x="418" y="124" width="54" height="176" fill="url(#win)"/><rect x="443.0" y="98" width="4" height="26" fill="#ffe600"/><rect x="480" y="124" width="54" height="176" fill="url(#bldA)"/><rect x="480" y="124" width="54" height="176" fill="url(#win)"/><rect x="538" y="95" width="66" height="205" fill="url(#bldA)"/><rect x="538" y="95" width="66" height="205" fill="url(#win)"/><rect x="569.0" y="69" width="4" height="26" fill="#ffe600"/><rect x="618" y="236" width="110" height="64" fill="url(#bldB)"/><rect x="618" y="236" width="110" height="64" fill="url(#win)"/><rect x="742" y="230" width="110" height="70" fill="url(#bldA)"/><rect x="742" y="230" width="110" height="70" fill="url(#win)"/><rect x="856" y="236" width="66" height="64" fill="url(#bldA)"/><rect x="856" y="236" width="66" height="64" fill="url(#win)"/><rect x="936" y="182" width="66" height="118" fill="url(#bldB)"/><rect x="936" y="182" width="66" height="118" fill="url(#win)"/><rect x="1010" y="124" width="66" height="176" fill="url(#bldA)"/><rect x="1010" y="124" width="66" height="176" fill="url(#win)"/><rect x="1016" y="130" width="54" height="4" fill="#ffe600"/><rect x="1080" y="182" width="110" height="118" fill="url(#bldA)"/><rect x="1080" y="182" width="110" height="118" fill="url(#win)"/><rect x="1204" y="236" width="66" height="64" fill="url(#bldB)"/><rect x="1204" y="236" width="66" height="64" fill="url(#win)"/><rect x="1284" y="95" width="110" height="205" fill="url(#bldA)"/><rect x="1284" y="95" width="110" height="205" fill="url(#win)"/><rect x="1337.0" y="69" width="4" height="26" fill="#ffe600"/><rect x="1398" y="236" width="78" height="64" fill="url(#bldA)"/><rect x="1398" y="236" width="78" height="64" fill="url(#win)"/><path d="M570 300C570 80 660 50 720 50C780 50 870 80 870 300" fill="none" stroke="url(#arch)" stroke-width="16" stroke-linecap="butt"/><path d="M578 300C578 90 664 62 720 62" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="2"/>
+<rect y="290" width="1440" height="10" fill="#150a38"/>
+</svg>
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <p class="eyebrow" id="eyebrow">Season 2026</p>
+      <h1 id="title"><span class="kicker" id="kicker">Fantasy Football</span><span class="grad" id="headline">Awards</span></h1>
+      <p class="for" id="for" hidden>You&rsquo;re invited, <b id="for-name"></b>.</p>
+      <ul class="facts" id="facts"></ul>
+      <a class="btn" id="hero-cta" href="#rsvp" hidden>RSVP</a>
+    </div>
+    <img class="emblem" src="logo-mark.png" alt="Fantasy Football Awards emblem" width="200" height="240">
+  </div>
+</header>
 
 <main>
   <section class="gate" id="gate" hidden><div class="wrap narrow"><div class="card">
@@ -165,7 +213,8 @@ details summary { cursor: pointer; min-height: var(--tap-target); display: flex;
   function renderEvent() {
     var e = S.event;
     document.title = e.title;
-    $('title').textContent = e.title;
+    var m = /^(.*?)\s*(Awards|Honors)$/i.exec(e.title);
+    $('kicker').textContent = m && m[1] ? m[1] : e.title; $('headline').textContent = m ? m[2] : 'Awards';
     $('eyebrow').textContent = 'Season ' + e.season;
     var facts = [];
     if (e.when) facts.push('<li>' + esc(e.when) + '</li>');

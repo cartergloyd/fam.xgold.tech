@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 480" role="img" aria-label="Fantasy Football Awards emblem">
+  <defs>
+    <linearGradient id="rim" x1="0.1" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#ffe600"/><stop offset=".35" stop-color="#ff3d9a"/><stop offset=".7" stop-color="#9a55ff"/><stop offset="1" stop-color="#3d8bff"/>
+    </linearGradient>
+    <linearGradient id="face" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5a1fc0"/><stop offset="1" stop-color="#1d0a52"/>
+    </linearGradient>
+    <linearGradient id="ball" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff7ac0"/><stop offset=".5" stop-color="#e0359b"/><stop offset="1" stop-color="#8a3dff"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff35c"/><stop offset="1" stop-color="#ffb800"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <path id="star" d="M0-1 .2245-.309.951-.309.363.118.588.809 0 .382-.588.809-.363.118-.951-.309-.2245-.309Z"/>
+    <path id="shield" d="M200 22C258 54 326 64 380 64V252C380 360 304 430 200 466C96 430 20 360 20 252V64C74 64 142 54 200 22Z"/>
+    <clipPath id="clip"><use href="#shield"/></clipPath>
+  </defs>
+  <use href="#shield" fill="url(#face)"/>
+  <g clip-path="url(#clip)">
+    <path d="M20 64h360v120C300 150 120 150 20 184Z" fill="url(#shine)"/>
+    <g transform="translate(200 312) rotate(-30)">
+      <path d="M-128 0Q0-86 128 0Q0 86-128 0Z" fill="url(#ball)" stroke="#ffe600" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M-92 -26Q-100 0-92 26M-76 -38Q-88 0-76 38M92 -26Q100 0 92 26M76 -38Q88 0 76 38" fill="none" stroke="#ffe600" stroke-width="7" stroke-linecap="round" opacity=".9"/>
+      <path d="M-46 0H46" stroke="#ffe600" stroke-width="7" stroke-linecap="round"/>
+      <path d="M-30 -15V15M-10 -15V15M10 -15V15M30 -15V15" stroke="#ffe600" stroke-width="7" stroke-linecap="round"/>
+    </g>
+  </g>
+  <use href="#shield" fill="none" stroke="url(#rim)" stroke-width="18" stroke-linejoin="round"/>
+  <use href="#shield" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="2" transform="translate(200 250) scale(.9) translate(-200 -250)"/>
+  <g fill="url(#gold)">
+    <use href="#star" transform="translate(112 150) scale(17) rotate(-24)"/>
+    <use href="#star" transform="translate(156 118) scale(21) rotate(-12)"/>
+    <use href="#star" transform="translate(200 106) scale(27)"/>
+    <use href="#star" transform="translate(244 118) scale(21) rotate(12)"/>
+    <use href="#star" transform="translate(288 150) scale(17) rotate(24)"/>
+  </g>
+</svg>
