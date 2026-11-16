@@ -65,6 +65,9 @@ section.block h2, .gate .who b { text-shadow: 0 2px 24px #0008; }
 h2 { margin: 0; font-size: var(--fs-section); font-weight: var(--weight-semibold); line-height: var(--lh-tight); letter-spacing: var(--ls-tight); }
 .lead { margin: var(--space-3) 0 var(--space-7); color: var(--text-secondary); }
 .narrow { max-width: 640px; margin: 0 auto; }
+.center { text-align: center; }
+.center h2 { margin-bottom: var(--space-6); }
+.center .row { justify-content: center; }
 .fine { color: var(--text-secondary); font-size: var(--fs-small); }
 .btn { display: inline-flex; align-items: center; justify-content: center; min-height: var(--tap-target); padding: var(--btn-pad-y) var(--btn-pad-x); border: 0; border-radius: var(--radius-pill); background: var(--accent); color: #1a0a40; font-size: var(--btn-font-size); cursor: pointer; transition: background var(--duration-fast) var(--ease); }
 .btn:hover:not(:disabled) { background: var(--accent-hover); text-decoration: none; }
@@ -92,8 +95,11 @@ input.pin { max-width: 200px; letter-spacing: .5em; text-align: center; font-siz
 
 /* Ballot */
 fieldset.cat { border: 0; margin: 0 0 var(--space-4); }
+.cat-head { display: flex; align-items: center; gap: var(--space-4); margin-bottom: var(--space-3); }
+.cat-head > div { min-width: 0; }
+.trophy { flex: none; width: 96px; height: 120px; object-fit: contain; filter: drop-shadow(0 8px 16px rgba(0, 0, 0, .45)); }
 .cat h3 { margin: 0; font-size: var(--fs-card); font-weight: var(--weight-semibold); line-height: var(--lh-snug); letter-spacing: var(--ls-tight); }
-.cat p { margin: var(--space-1) 0 var(--space-3); color: var(--text-secondary); }
+.cat p { margin: var(--space-1) 0 0; color: var(--text-secondary); }
 .upload-box { display: grid; gap: var(--space-4); justify-items: start; }
 input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .upload-box:focus-within #file-btn { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
@@ -148,8 +154,8 @@ details summary { cursor: pointer; min-height: var(--tap-target); display: flex;
 
   <section class="block" id="note" hidden><div class="wrap narrow"><h2>Scan your invitation.</h2><p class="lead" id="note-text">Each printed invitation has its own QR code. Scan yours to RSVP and nominate.</p></div></section>
 
-  <section class="block" id="rsvp" hidden><div class="wrap narrow">
-    <h2>Will you be there?</h2><p class="lead">One tap. You can change it any time.</p>
+  <section class="block" id="rsvp" hidden><div class="wrap narrow center">
+    <h2>Will you be there?</h2>
     <div class="row"><button class="btn ghost" id="yes" type="button" aria-pressed="false">Yes, I&rsquo;ll be there</button><button class="btn ghost" id="no" type="button" aria-pressed="false">Can&rsquo;t make it</button></div>
     <p class="status" id="rsvp-status" role="status"></p>
     <p class="going" id="going" hidden></p>
@@ -287,10 +293,13 @@ details summary { cursor: pointer; min-height: var(--tap-target); display: flex;
   $('yes').onclick = function () { setRsvp(true); };
   $('no').onclick = function () { setRsvp(false); };
 
+  // Each category's trophy: [file in trophies/, width of the 420px-tall image].
+  var TROPHY = { bonehead: ['bonehead', 249], leech: ['mike-leech', 242], jordan: ['michael-jordan', 281], highlight: ['highlight', 420], folly: ['football-folly', 186], mvp: ['chase-daniel', 185] };
   function renderBallot() {
     var mine = S.me.ballot || {};
     $('ballot-form').innerHTML = S.event.categories.map(function (c) {
-      return '<fieldset class="cat card"><h3><label for="n-' + c.id + '" style="margin:0;font:inherit;color:inherit">' + esc(c.title) + '</label></h3><p>' + esc(c.hint) + '</p>' +
+      var t = TROPHY[c.id], pic = t ? '<img class="trophy" src="trophies/' + t[0] + '.webp" alt="" width="' + t[1] + '" height="420" loading="lazy">' : '';
+      return '<fieldset class="cat card"><div class="cat-head">' + pic + '<div><h3><label for="n-' + c.id + '" style="margin:0;font:inherit;color:inherit">' + esc(c.title) + '</label></h3><p>' + esc(c.hint) + '</p></div></div>' +
         '<textarea id="n-' + c.id + '" rows="3" maxlength="500"></textarea></fieldset>';
     }).join('');
     S.event.categories.forEach(function (c) { $('n-' + c.id).value = mine[c.id] || ''; });
