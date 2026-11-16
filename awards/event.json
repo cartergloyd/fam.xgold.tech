@@ -12,6 +12,7 @@
     { "id": "jordan", "title": "The Michael Jordan Trash Talk Moment of the Year", "hint": "Who said it, and how did it age?" },
     { "id": "highlight", "title": "Reebok Fantasy Files Highlight of the Year", "hint": "The best moment on the field." },
     { "id": "folly", "title": "Football Folly of the Year", "hint": "The biggest blunder on the field." },
-    { "id": "mvp", "title": "Chase Daniel Trophy: League MVP", "hint": "Name the NFL player." }
+    { "id": "mvp", "title": "Chase Daniel Trophy: League MVP", "hint": "Name the NFL player." },
+    { "id": "rules", "title": "Nominate a Rule Change", "hint": "Anything you want different next season: scoring, trades, the playoffs, the draft." }
   ]
 }
