@@ -60,7 +60,6 @@ h1 { margin: 0; font-size: var(--fs-page-title); font-weight: var(--weight-bold)
 
 /* Sections alternate on color, not lines */
 section.block { padding: var(--section-pad-y) 0; }
-section.block:nth-of-type(even) { background: var(--bg-alt); }
 section.block h2, .gate .who b { text-shadow: 0 2px 24px #0008; }
 h2 { margin: 0; font-size: var(--fs-section); font-weight: var(--weight-semibold); line-height: var(--lh-tight); letter-spacing: var(--ls-tight); }
 .lead { margin: var(--space-3) 0 var(--space-7); color: var(--text-secondary); }
@@ -82,7 +81,7 @@ h2 { margin: 0; font-size: var(--fs-section); font-weight: var(--weight-semibold
 .status.err { color: #ff6961; }
 
 /* Gate */
-.gate { background: var(--bg-alt); padding: var(--space-8) 0; }
+.gate { padding: var(--space-8) 0; }
 .card { backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); }
 .card { background: var(--bg-elevated); border-radius: var(--radius-card); padding: var(--space-6); }
 .who { display: flex; align-items: center; gap: var(--space-4); margin-bottom: var(--space-5); }
