@@ -7,6 +7,8 @@
 <link rel="icon" type="image/png" href="logo-mark.png?v=2">
 <meta property="og:image" content="https://fam.xgold.tech/awards/logo.png?v=2">
 <link rel="stylesheet" href="/tokens.css">
+<script src="/family-directory.js?v=2"></script>
+<script src="/ics.js?v=1"></script>
 <style>
 /* Honors night: the site's galaxy stage in violet, with a yellow-to-blue headline and a skyline. Always dark. */
 :root {
@@ -68,6 +70,11 @@ h2 { margin: 0; font-size: var(--fs-section); font-weight: var(--weight-semibold
 .center h2 + .row { margin-top: var(--space-6); }
 .center .row { justify-content: center; }
 .center .upload-box { justify-items: center; }
+.center .card { text-align: left; margin: var(--space-6) 0; }
+.center .card h3 { margin: 0 0 var(--space-2); font-size: var(--fs-card); font-weight: var(--weight-semibold); line-height: var(--lh-snug); }
+.center .card p { margin: 0; color: var(--text-secondary); }
+.center .card .btn { margin-top: var(--space-5); }
+#done h2:focus { outline: none; }
 .fine { color: var(--text-secondary); font-size: var(--fs-small); }
 .btn { display: inline-flex; align-items: center; justify-content: center; min-height: var(--tap-target); padding: var(--btn-pad-y) var(--btn-pad-x); border: 0; border-radius: var(--radius-pill); background: var(--accent); color: #1a0a40; font-size: var(--btn-font-size); cursor: pointer; transition: background var(--duration-fast) var(--ease); }
 .btn:hover:not(:disabled) { background: var(--accent-hover); text-decoration: none; }
@@ -88,7 +95,7 @@ h2 { margin: 0; font-size: var(--fs-section); font-weight: var(--weight-semibold
 .who img, .who .ph { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; background: var(--bg-alt); flex: none; }
 .who b { display: block; font-size: var(--fs-card); line-height: var(--lh-snug); font-weight: var(--weight-semibold); }
 label { display: block; margin: var(--space-4) 0 var(--space-2); font-size: var(--fs-small); color: var(--text-secondary); }
-input[type=text], input[type=password], select, textarea { width: 100%; min-height: var(--tap-target); padding: var(--space-3) var(--space-4); border: 1px solid var(--hairline); border-radius: var(--radius-card-sm); background: rgba(8, 3, 24, .6); }
+input[type=text], input[type=email], input[type=password], select, textarea { width: 100%; min-height: var(--tap-target); padding: var(--space-3) var(--space-4); border: 1px solid var(--hairline); border-radius: var(--radius-card-sm); background: rgba(8, 3, 24, .6); }
 textarea { resize: vertical; min-height: 88px; line-height: var(--lh-body); }
 input.pin { max-width: 200px; letter-spacing: .5em; text-align: center; font-size: var(--fs-card); }
 .gate .btn { margin-top: var(--space-5); }
@@ -187,6 +194,26 @@ details summary { cursor: pointer; min-height: var(--tap-target); display: flex;
     <p class="status" id="ballot-status" role="status"></p>
   </div></section>
 
+  <section class="block" id="done" hidden><div class="wrap narrow center">
+    <h2 id="done-h" tabindex="-1">You&rsquo;re all set.</h2>
+    <p class="lead" id="done-sub" style="margin-bottom:0"></p>
+    <div class="card" id="signup" hidden>
+      <h3>Create your family account</h3>
+      <p>Add your email and a four-digit PIN to sign in across the family site.</p>
+      <form id="signup-form" novalidate>
+        <label for="su-email">Email</label>
+        <input id="su-email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com">
+        <label for="su-pin">PIN</label>
+        <input class="pin" id="su-pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="&bull;&bull;&bull;&bull;">
+        <p class="fine" style="margin-top:var(--space-2)">Use the same four digits you used to sign in here.</p>
+        <p class="status" id="signup-status" role="alert"></p>
+        <button class="btn" id="signup-go" type="submit">Create account</button>
+      </form>
+    </div>
+    <p class="status" id="signup-done" role="status" hidden></p>
+    <div class="row"><button class="btn" id="cal" type="button" hidden>Add to calendar</button><button class="btn ghost" id="edit" type="button">Edit my answers</button></div>
+  </div></section>
+
   <section class="block" id="results" hidden><div class="wrap narrow">
     <h2>Results.</h2><p class="lead">Only you can see this.</p>
     <div id="results-body"></div>
@@ -249,7 +276,7 @@ details summary { cursor: pointer; min-height: var(--tap-target); display: flex;
     show('gate', true);
     $('gate-form').onsubmit = function (ev) {
       ev.preventDefault();
-      var pin = $('pin').value;
+      var pin = $('pin').value; S.pin = pin;
       if (!/^\d{4}$/.test(pin)) return say('gate-status', 'Enter four digits.', true);
       $('gate-go').disabled = true; say('gate-status', '');
       api('POST', '/claim', { k: K, pin: pin }).then(function (r) {
@@ -316,7 +343,7 @@ details summary { cursor: pointer; min-height: var(--tap-target); display: flex;
     var ballot = {};
     S.event.categories.forEach(function (c) { ballot[c.id] = $('n-' + c.id).value; });
     $('ballot-save').disabled = true; say('ballot-status', 'Saving\u2026');
-    api('PATCH', '/ballot', { ballot: ballot }).then(function (r) { S.me.ballot = r.ballot; say('ballot-status', 'Saved. You can change it any time.'); },
+    api('PATCH', '/ballot', { ballot: ballot }).then(function (r) { S.me.ballot = r.ballot; say('ballot-status', 'Saved. You can change it any time.'); finishUp('ballot'); },
       function (e) { say('ballot-status', e.message, true); }).then(function () { $('ballot-save').disabled = false; });
   };
 
@@ -346,8 +373,52 @@ details summary { cursor: pointer; min-height: var(--tap-target); display: flex;
     if (f.size > 8 * 1024 * 1024) return say('upload-status', 'That file is over 8 MB. Try a smaller photo.', true);
     say('upload-status', 'Uploading…');
     api('PATCH', '/upload', new Blob([f], { type: type }), { 'Content-Type': type }).then(function (r) {
-      S.me.upload = r.upload; renderUpload(); say('upload-status', 'Uploaded. Thank you.');
+      S.me.upload = r.upload; renderUpload(); say('upload-status', 'Uploaded. Thank you.'); finishUp('upload');
     }, function (e) { say('upload-status', e.message, true); });
+  };
+
+  // ---- After saving: offer a family account (email and PIN) if they have none, and a calendar file ----
+  function familySessionFor(name) { try { var f = JSON.parse(localStorage.getItem('family-session')); return !!(f && f.token && f.name === name); } catch (e) { return false; } }
+  // Resolves to this person's public profile when they still need an account, otherwise null (or if the directory is down).
+  function profileNeedingAccount() {
+    if (!window.familyDirectory || familySessionFor(S.me.name)) return Promise.resolve(null);
+    return window.familyDirectory.ready.then(function (users) {
+      var me = (users || []).filter(function (u) { return u.name === S.me.name; })[0];
+      return me && !me.registered ? me : null;
+    }, function () { return null; });
+  }
+  function finishUp(kind) {
+    ['rsvp', 'upload', 'ballot', 'hero-cta'].forEach(function (id) { show(id, false); });
+    $('done-sub').textContent = kind === 'upload' ? 'Your paper ballot is in.' : 'Your ballot is saved.';
+    show('cal', !!(S.event.start && window.famIcs)); show('signup', false); $('signup-done').hidden = true;
+    show('done', true);
+    $('done').scrollIntoView({ block: 'start' }); $('done-h').focus({ preventScroll: true });
+    profileNeedingAccount().then(function (profile) {
+      if (!profile || $('done').hidden) return;
+      S.profile = profile; show('signup', true);
+    });
+  }
+  $('edit').onclick = function () {
+    show('done', false); ['rsvp', 'upload', 'ballot', 'hero-cta'].forEach(function (id) { show(id, true); });
+    $('ballot').scrollIntoView({ block: 'start' });
+  };
+  $('cal').onclick = function () {
+    var e = S.event;
+    window.famIcs.download('fantasy-awards.ics', e.title, [{ uid: 'fantasy-awards-' + e.start.slice(0, 4) + '@fam.xgold.tech', summary: e.title, start: e.start, end: e.end, location: e.address || e.where || '', description: e.note || '' }]);
+  };
+  $('signup-form').onsubmit = function (ev) {
+    ev.preventDefault();
+    var email = $('su-email').value.trim(), pin = $('su-pin').value;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { say('signup-status', 'Enter a valid email address.', true); return $('su-email').focus(); }
+    if (!/^\d{4}$/.test(pin)) { say('signup-status', 'Enter four digits.', true); return $('su-pin').focus(); }
+    $('signup-go').disabled = true; say('signup-status', '');
+    window.familyDirectory.register(S.profile.id, email, pin).then(function () {
+      try { localStorage.setItem('destin-who', JSON.stringify({ name: S.me.name, email: email })); } catch (e) {}
+      show('signup', false);
+      var changed = S.pin && S.pin !== pin;
+      $('signup-done').textContent = 'Your account is ready. You’re signed in across the family site.' + (changed ? ' Your PIN changed, so scan your invitation again if you edit your answers.' : '');
+      $('signup-done').hidden = false;
+    }, function (e) { say('signup-status', e.message, true); $('signup-go').disabled = false; });
   };
 
   // ---- Organizer results ----
