@@ -598,6 +598,7 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
         id: r.roster_id,
         name: md.team_name || u.display_name || 'Team ' + r.roster_id,
         owner: family.name || u.display_name || '',
+        family: !!family.name,
         ownerId: r.owner_id,
         avatar: (function () { var id = (r.metadata || {}).avatar || md.avatar || u.avatar; return id ? (/^https:\/\//.test(id) ? id : 'https://sleepercdn.com/avatars/thumbs/' + encodeURIComponent(id)) : ''; })(),
         wins: s.wins || 0, losses: s.losses || 0, ties: s.ties || 0,
@@ -1396,9 +1397,18 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
     if (!h || !h.owners) return '';
     var pf = {};
     (h.standings || []).forEach(function (y) { y.rows.forEach(function (r) { pf[r.owner] = (pf[r.owner] || 0) + r.pf; }); });
-    var tally = function (o) { var w = 0, l = 0; Object.keys(o.seasons).forEach(function (y) { w += o.seasons[y].w; l += o.seasons[y].l; }); return { w: w, l: l, p: w + l ? w / (w + l) : 0 }; };
-    var rows = h.owners.map(function (o) { return { o: o, t: tally(o) }; }).sort(function (x, y) { return y.o.titles - x.o.titles || y.t.p - x.t.p; });
-    var html = '<p class="rb-sub">All-time record</p><div class="panel"><table><thead><tr><th>Owner</th><th class="n">W-L</th><th class="n">Win %</th><th class="n">Titles</th><th class="n hide-sm">Top 3</th><th class="n hide-sm">Playoffs</th><th class="n hide-sm">Last</th><th class="n hide-sm">PF</th></tr></thead><tbody>' + rows.map(function (r) {
+    // This season so far comes live from Sleeper, so anyone who joined after the history (Rick) is in the table too.
+    var owners = h.owners.slice(), cur = {}, thisYear = S.league && S.league.season;
+    S.teams.forEach(function (t) {
+      var n = t.family ? String(t.owner).split(' ')[0] : '';
+      if (!n || !(t.wins + t.losses) || (h.standings || []).some(function (y) { return y.season === thisYear; })) return;
+      cur[n] = { w: t.wins, l: t.losses, pf: t.pf };
+      if (!owners.some(function (o) { return o.owner === n; })) owners.push({ owner: n, seasons: {}, titles: 0, top3: 0, playoffs: 0, last: 0 });
+    });
+    Object.keys(cur).forEach(function (n) { pf[n] = (pf[n] || 0) + cur[n].pf; });
+    var tally = function (o) { var c = cur[o.owner] || { w: 0, l: 0 }, w = c.w, l = c.l; Object.keys(o.seasons).forEach(function (y) { w += o.seasons[y].w; l += o.seasons[y].l; }); return { w: w, l: l, p: w + l ? w / (w + l) : 0 }; };
+    var rows = owners.map(function (o) { return { o: o, t: tally(o) }; }).sort(function (x, y) { return y.o.titles - x.o.titles || y.t.p - x.t.p; });
+    var html = '<p class="rb-sub">All-time record' + (Object.keys(cur).length ? ', including ' + esc(thisYear) + ' so far' : '') + '</p><div class="panel"><table><thead><tr><th>Owner</th><th class="n">W-L</th><th class="n">Win %</th><th class="n">Titles</th><th class="n hide-sm">Top 3</th><th class="n hide-sm">Playoffs</th><th class="n hide-sm">Last</th><th class="n hide-sm">PF</th></tr></thead><tbody>' + rows.map(function (r) {
       return '<tr><td><b>' + esc(r.o.owner) + '</b></td><td class="n">' + r.t.w + '-' + r.t.l + '</td><td class="n">' + r.t.p.toFixed(3).replace(/^0/, '') + '</td><td class="n">' + r.o.titles + '</td><td class="n hide-sm">' + r.o.top3 + '</td><td class="n hide-sm">' + r.o.playoffs + '</td><td class="n hide-sm">' + r.o.last + '</td><td class="n hide-sm">' + (pf[r.o.owner] ? Math.round(pf[r.o.owner]).toLocaleString() : '') + '</td></tr>';
     }).join('') + '</tbody></table></div>';
     // One block per season, newest first: final standings, then that year's awards.
