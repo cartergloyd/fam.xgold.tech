@@ -480,6 +480,8 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
     // Scoreboard shows team names without the town, like Apple Sports ("Webster Warthogs" -> "Warthogs").
     places: ['Boone County', 'Saint Charles', 'St. Charles', 'St Charles', 'Webster', 'Humansville', 'Bridgeton', 'Oakville', 'Hannibal'],
     shortNames: {},
+    // Score corrections: { week, roster (roster_id), points }. Week 9: Chester (roster 6) scored 183.84, not Sleeper's 132.84.
+    scoreFixes: [{ week: 9, roster: 6, points: 183.84 }],
     discordInvite: '',
     playersUrl: 'https://raw.githubusercontent.com/cartergloyd/fam.xgold.tech/ff-data/players.json'
   };
@@ -611,9 +613,28 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
   function matchups(week, fresh) {
     if (!fresh && S.weeks[week]) return Promise.resolve(S.weeks[week]);
     return get('/league/' + S.league.league_id + '/matchups/' + week).then(function (rows) {
-      S.weeks[week] = rows || [];
+      S.weeks[week] = fixScores(week, rows || []);
       return S.weeks[week];
     });
+  }
+  function fixScores(week, rows) {
+    CFG.scoreFixes.forEach(function (f) {
+      if (f.week !== week) return;
+      rows.forEach(function (m) { if (m.roster_id === f.roster) m.custom_points = f.points; });
+    });
+    return rows;
+  }
+  // Sleeper's roster totals ignore commissioner score edits, so rebuild each record from the games themselves.
+  function rebuildRecords() {
+    var rec = {};
+    S.teams.forEach(function (t) { rec[t.id] = { wins: 0, losses: 0, ties: 0, pf: 0, pa: 0 }; });
+    for (var w = S.first; w <= S.done; w++) pairs(S.weeks[w] || []).forEach(function (p) {
+      var x = rec[p[0].roster_id], y = rec[p[1].roster_id], a = pts(p[0]), b = pts(p[1]);
+      if (!x || !y) return;
+      x.pf += a; x.pa += b; y.pf += b; y.pa += a;
+      if (a > b) { x.wins++; y.losses++; } else if (b > a) { y.wins++; x.losses++; } else { x.ties++; y.ties++; }
+    });
+    S.teams.forEach(function (t) { var r = rec[t.id]; t.wins = r.wins; t.losses = r.losses; t.ties = r.ties; t.pf = r.pf; t.pa = r.pa; });
   }
   function pairs(rows) {
     var g = {};
@@ -1049,14 +1070,55 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
       return { team: t, odds: made[t.id] / sims, wins: wins[t.id] / sims, left: left };
     }).sort(function (x, y) { return y.odds - x.odds || y.wins - x.wins || y.team.pf - x.team.pf; });
   }
+  function combos(arr, k) {
+    var out = [];
+    (function go(i, cur) { if (cur.length === k) { out.push(cur.slice()); return; } for (; i < arr.length; i++) { cur.push(arr[i]); go(i + 1, cur); cur.pop(); } })(0, []);
+    return out;
+  }
+  // Exact clinch / elimination, not a simulation. A tie on wins can go either way on points, so it counts against a team
+  // when checking a clinch and for it when checking elimination. Clinched = no way for `cut` other teams to all finish
+  // level or ahead even if this team loses out; out = no way to stay in the top `cut` even winning out.
+  function seedStatus(teams, sched, cut) {
+    var games = [], W = {}, ids = teams.map(function (t) { return t.id; });
+    teams.forEach(function (t) { W[t.id] = t.wins + t.ties / 2; });
+    sched.forEach(function (ps) { ps.forEach(function (p) { var a = p[0].roster_id, b = p[1].roster_id; if (a in W && b in W) games.push([a, b]); }); });
+    function feasible(set, test) { // some way to settle the games between these teams so every team passes `test`
+      var inner = games.filter(function (g) { return set.indexOf(g[0]) >= 0 && set.indexOf(g[1]) >= 0; });
+      for (var m = 0; m < (1 << inner.length); m++) {
+        var w = {}; set.forEach(function (x) { w[x] = 0; });
+        inner.forEach(function (g, k) { w[(m >> k) & 1 ? g[1] : g[0]]++; });
+        if (set.every(function (x) { return test(x, w[x]); })) return true;
+      }
+      return false;
+    }
+    var out = {};
+    ids.forEach(function (id) {
+      var others = ids.filter(function (x) { return x !== id; });
+      var maxT = W[id] + games.filter(function (g) { return g[0] === id || g[1] === id; }).length;
+      var knocked = combos(others, cut).some(function (S) {
+        return feasible(S, function (x, w) { // games against anyone outside S (including this team) go to x
+          var free = games.filter(function (g) { return (g[0] === x && S.indexOf(g[1]) < 0) || (g[1] === x && S.indexOf(g[0]) < 0); }).length;
+          return W[x] + free + w >= W[id];
+        });
+      });
+      var alive = combos(others, ids.length - cut).some(function (Q) {
+        return feasible(Q, function (x, w) { return W[x] + w <= maxT; }); // Q's games against outsiders are all losses
+      });
+      out[id] = { clinched: !knocked, out: !alive };
+    });
+    return out;
+  }
   function renderOdds() {
     var body = $('odds-body');
     if (S.done < 1) { body.innerHTML = '<p class="empty">Odds start after week ' + S.first + '.</p>'; return; }
     var rows = simulateOdds(5000), cut = (S.league.settings || {}).playoff_teams || 4, left = remainingWeeks().length;
+    var flags = left ? seedStatus(Array.from(S.teams.values()), remainingWeeks().map(function (w) { return pairs(S.weeks[w] || []); }), cut) : {};
     $('odds-sub').textContent = left ? 'Top ' + cut + ' make it. From 5,000 simulated finishes; ' + plural(left, 'regular-season week') + ' left.' : 'The regular season is over.';
     body.innerHTML = '<ol class="pr">' + rows.map(function (r, i) {
-      var pct = r.odds * 100, label = pct >= 99.5 ? 'In' : pct < 0.5 ? 'Out' : pct >= 99 ? '>99%' : pct < 1 ? '<1%' : Math.round(pct) + '%';
-      var tag = pct >= 99.5 ? '<span class="tag in">Clinched</span>' : pct < 0.5 ? '<span class="tag">Eliminated</span>' : '';
+      var pct = r.odds * 100, st = flags[r.team.id] || {};
+      var yes = left ? st.clinched : pct >= 99.5, no = left ? st.out : pct < 0.5; // mid-season only the exact check can say In/Out
+      var label = yes ? 'In' : no ? 'Out' : pct >= 99 ? '>99%' : pct < 1 ? '<1%' : Math.round(pct) + '%';
+      var tag = yes ? '<span class="tag in">Clinched</span>' : no ? '<span class="tag">Eliminated</span>' : '';
       var proj = 'Projected ' + r.wins.toFixed(1) + ' wins';
       return '<li><span class="rk">' + (i + 1) + '</span><span>' + avatar(r.team.avatar) + '</span>' +
         '<div class="team"><div><b>' + esc(r.team.name) + tag + '</b><small>' + rec(r.team) + ' now · ' + proj + '</small></div></div>' +
@@ -1377,6 +1439,8 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
         playersLoad
       ]).then(function (res) {
         if (!S.weeks[S.week]) S.weeks[S.week] = [];
+        rebuildRecords();
+        renderStandings();
         var done = weeks.filter(function (i) { return i <= completed; }).map(function (i) { return S.weeks[i]; });
         S.lastPoints = S.current ? (S.weeks[S.current] || []).map(pts).join(',') : null;
         renderScores();
