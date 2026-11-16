@@ -254,3 +254,16 @@ to the map's index.html and serves both files itself, and only when `hub-map-bub
 `hub-minecraft.js`. Without them the map is plain Dynmap, so install order does not matter. `install-backend.py` copies them; restart
 family Directus afterwards. The emoji and color tables in `map-bubbles.js` mirror `mc/page.js`; change both together.
 Tests: `tests/mc-map-assets.mjs` (proxy) and `tests/mc-map-bubbles.mjs` (the script in a page shaped like Dynmap's).
+
+## Fantasy league history (Record book)
+
+`/ff/` shows the league's all-time record and yearly awards in its Record book, but only to a signed-in family member. The data is one
+private jsonb document (`family_ff_history`, id `league`), read by `GET /family/hub/ff-history` with the usual `X-Family-Session`
+header (401 without it). The document is never committed: build it from the awards spreadsheet and load it with psql.
+
+1. `psql ... -d fam < ff-history-schema.sql` (additive).
+2. `python3 install-backend.py`, then `docker restart homelab-directus-fam` as its own command.
+3. Load it: `INSERT INTO family_ff_history(id,doc) VALUES ('league', :'doc') ON CONFLICT (id) DO UPDATE SET doc=EXCLUDED.doc, date_updated=now();`
+   with `\set doc \`cat ff-history.json\``. Shape: `{seasons:[{season,winner,awards:[{category,winner}]}], owners:[{owner,seasons:{"2022":{w,l,place}},titles,top3,playoffs,last}]}`.
+
+Until step 2 the page shows the signed-in Record book as before, without the history section.

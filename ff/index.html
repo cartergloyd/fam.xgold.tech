@@ -1319,16 +1319,16 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
       return Promise.all(chain.map(function (l, i) { return loadSeason(l, i === 0); }));
     });
   }
-  function renderHistory(seasons) {
+  function renderHistory(seasons, family) {
     var body = $('history-body');
     var now = {};   // current owner -> team name, so people keep one name across seasons
     S.teams.forEach(function (t) { now[t.ownerId] = t.name; });
     var nm = function (o, season) { return now[o] || (season && season.names[o]) || 'Former member'; };
     var all = [];
     seasons.forEach(function (s) { s.games.forEach(function (g) { all.push({ s: s, w: g[0], a: g[1], pa: g[2], b: g[3], pb: g[4] }); }); });
-    if (!all.length && !seasons.some(function (s) { return s.champ; })) { body.innerHTML = '<p class="empty panel">Records appear once games have been played.</p>'; return; }
+    var html = familyHistoryHtml(family);
+    if (!all.length && !seasons.some(function (s) { return s.champ; })) { body.innerHTML = html || '<p class="empty panel">Records appear once games have been played.</p>'; return; }
     var lbl = function (g) { return g.s.season + ' week ' + g.w; };
-    var html = '';
 
     // Season by season.
     html += '<div class="panel"><table><thead><tr><th>Season</th><th>Champion</th><th class="hide-sm">Top record</th></tr></thead><tbody>' + seasons.map(function (s) {
@@ -1391,14 +1391,55 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
     }
     body.innerHTML = html;
   }
+  // The all-time record and yearly awards come from a private endpoint that needs a signed-in family session.
+  function familyHistoryHtml(h) {
+    if (!h || !h.owners) return '';
+    var pct = function (o) { var w = 0, l = 0; Object.keys(o.seasons).forEach(function (y) { w += o.seasons[y].w; l += o.seasons[y].l; }); return { w: w, l: l, p: w + l ? w / (w + l) : 0 }; };
+    var rows = h.owners.map(function (o) { return { o: o, t: pct(o) }; }).sort(function (x, y) { return y.o.titles - x.o.titles || y.t.p - x.t.p; });
+    var html = '<p class="rb-sub">All-time record</p><div class="panel"><table><thead><tr><th>Owner</th><th class="n">W-L</th><th class="n">Win %</th><th class="n">Titles</th><th class="n hide-sm">Top 3</th><th class="n hide-sm">Playoffs</th><th class="n hide-sm">Last</th></tr></thead><tbody>' + rows.map(function (r) {
+      return '<tr><td><b>' + esc(r.o.owner) + '</b></td><td class="n">' + r.t.w + '-' + r.t.l + '</td><td class="n">' + r.t.p.toFixed(3).replace(/^0/, '') + '</td><td class="n">' + r.o.titles + '</td><td class="n hide-sm">' + r.o.top3 + '</td><td class="n hide-sm">' + r.o.playoffs + '</td><td class="n hide-sm">' + r.o.last + '</td></tr>';
+    }).join('') + '</tbody></table></div>';
+    (h.seasons || []).slice().reverse().forEach(function (s) {
+      html += '<p class="rb-sub">' + esc(s.season) + ' awards</p><div class="panel"><table><tbody><tr><td><small>League winner</small></td><td><b>' + esc(s.winner) + '</b></td></tr>' +
+        (s.awards || []).map(function (a) { return '<tr><td><small>' + esc(a.category) + '</small></td><td>' + esc(a.winner) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+    });
+    return html;
+  }
+  // The family sign-in the rest of the site uses: a saved session whose name matches the signed-in person.
+  function familyToken() {
+    var s = null, me = window.familyAccount && window.familyAccount.current;
+    try { s = JSON.parse(localStorage.getItem('family-session')); } catch (e) {}
+    return s && s.token && me && s.name === me.name ? s.token : '';
+  }
+  function loadFamilyHistory(token) {
+    return fetch('https://fam-api.xgold.tech/family/hub/ff-history', { headers: { 'X-Family-Session': token }, cache: 'no-store' })
+      .then(function (r) {
+        if (r.status === 401) { try { localStorage.removeItem('family-session'); } catch (e) {} throw 401; }
+        return r.ok ? r.json() : null;   // not installed yet or down: show the rest of the record book without it
+      }).then(function (d) { return d && d.history; });
+  }
   function initHistory() {
-    var go = function () {
-      loadHistory().then(function (s) { safe(function () { renderHistory(s); }); })
-        .catch(function (e) { console.error(e); $('history-body').innerHTML = '<p class="empty panel">Couldn’t load league history.</p>'; });
+    var near = false, loaded = false, known = false, body = $('history-body');
+    var gate = function () {
+      loaded = false;
+      body.innerHTML = '<div class="panel" style="padding:28px;text-align:center"><p class="empty" style="padding:0 0 18px">The record book is for the family. Sign in to see it.</p><button class="btn" type="button" id="history-signin">Sign in</button></div>';
+      $('history-signin').addEventListener('click', function () { window.familyAccount.show(); });
     };
+    var sync = function () {
+      var token = familyToken();
+      if (!token) { if (known) gate(); return; }   // wait for the sign-in check so a member never sees the gate flash
+      if (loaded || !near) return;
+      loaded = true;
+      Promise.all([loadHistory(), loadFamilyHistory(token).catch(function (e) { if (e === 401) throw e; return null; })])
+        .then(function (r) { safe(function () { renderHistory(r[0], r[1]); }); })
+        .catch(function (e) { if (e === 401) { gate(); return; } console.error(e); body.innerHTML = '<p class="empty panel">Couldn’t load league history.</p>'; });
+    };
+    var learn = function () { known = true; sync(); };
+    window.addEventListener('family-account-change', learn);
+    window.familyAccount.ready.then(learn, learn);
     // Past seasons are many requests, so wait until the section is near the screen.
-    if (!('IntersectionObserver' in window)) { go(); return; }
-    var io = new IntersectionObserver(function (e) { if (e[0].isIntersecting) { io.disconnect(); go(); } }, { rootMargin: '600px 0px' });
+    if (!('IntersectionObserver' in window)) { near = true; sync(); return; }
+    var io = new IntersectionObserver(function (e) { if (e[0].isIntersecting) { io.disconnect(); near = true; sync(); } }, { rootMargin: '600px 0px' });
     io.observe($('history'));
   }
 
