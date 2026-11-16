@@ -1394,14 +1394,23 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
   // The all-time record and yearly awards come from a private endpoint that needs a signed-in family session.
   function familyHistoryHtml(h) {
     if (!h || !h.owners) return '';
-    var pct = function (o) { var w = 0, l = 0; Object.keys(o.seasons).forEach(function (y) { w += o.seasons[y].w; l += o.seasons[y].l; }); return { w: w, l: l, p: w + l ? w / (w + l) : 0 }; };
-    var rows = h.owners.map(function (o) { return { o: o, t: pct(o) }; }).sort(function (x, y) { return y.o.titles - x.o.titles || y.t.p - x.t.p; });
-    var html = '<p class="rb-sub">All-time record</p><div class="panel"><table><thead><tr><th>Owner</th><th class="n">W-L</th><th class="n">Win %</th><th class="n">Titles</th><th class="n hide-sm">Top 3</th><th class="n hide-sm">Playoffs</th><th class="n hide-sm">Last</th></tr></thead><tbody>' + rows.map(function (r) {
-      return '<tr><td><b>' + esc(r.o.owner) + '</b></td><td class="n">' + r.t.w + '-' + r.t.l + '</td><td class="n">' + r.t.p.toFixed(3).replace(/^0/, '') + '</td><td class="n">' + r.o.titles + '</td><td class="n hide-sm">' + r.o.top3 + '</td><td class="n hide-sm">' + r.o.playoffs + '</td><td class="n hide-sm">' + r.o.last + '</td></tr>';
+    var pf = {};
+    (h.standings || []).forEach(function (y) { y.rows.forEach(function (r) { pf[r.owner] = (pf[r.owner] || 0) + r.pf; }); });
+    var tally = function (o) { var w = 0, l = 0; Object.keys(o.seasons).forEach(function (y) { w += o.seasons[y].w; l += o.seasons[y].l; }); return { w: w, l: l, p: w + l ? w / (w + l) : 0 }; };
+    var rows = h.owners.map(function (o) { return { o: o, t: tally(o) }; }).sort(function (x, y) { return y.o.titles - x.o.titles || y.t.p - x.t.p; });
+    var html = '<p class="rb-sub">All-time record</p><div class="panel"><table><thead><tr><th>Owner</th><th class="n">W-L</th><th class="n">Win %</th><th class="n">Titles</th><th class="n hide-sm">Top 3</th><th class="n hide-sm">Playoffs</th><th class="n hide-sm">Last</th><th class="n hide-sm">PF</th></tr></thead><tbody>' + rows.map(function (r) {
+      return '<tr><td><b>' + esc(r.o.owner) + '</b></td><td class="n">' + r.t.w + '-' + r.t.l + '</td><td class="n">' + r.t.p.toFixed(3).replace(/^0/, '') + '</td><td class="n">' + r.o.titles + '</td><td class="n hide-sm">' + r.o.top3 + '</td><td class="n hide-sm">' + r.o.playoffs + '</td><td class="n hide-sm">' + r.o.last + '</td><td class="n hide-sm">' + (pf[r.o.owner] ? Math.round(pf[r.o.owner]).toLocaleString() : '') + '</td></tr>';
     }).join('') + '</tbody></table></div>';
-    (h.seasons || []).slice().reverse().forEach(function (s) {
-      html += '<p class="rb-sub">' + esc(s.season) + ' awards</p><div class="panel"><table><tbody><tr><td><small>League winner</small></td><td><b>' + esc(s.winner) + '</b></td></tr>' +
-        (s.awards || []).map(function (a) { return '<tr><td><small>' + esc(a.category) + '</small></td><td>' + esc(a.winner) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+    // One block per season, newest first: final standings, then that year's awards.
+    var awards = {};
+    (h.seasons || []).forEach(function (a) { awards[a.season.slice(0, 4)] = a; });
+    (h.standings || []).slice().reverse().forEach(function (y) {
+      html += '<p class="rb-sub">' + esc(y.season) + ' final standings</p><div class="panel"><table><thead><tr><th class="n">#</th><th>Team</th><th class="n">W-L</th><th class="n hide-sm">PF</th><th class="n hide-sm">PA</th></tr></thead><tbody>' + y.rows.map(function (r) {
+        return '<tr><td class="rk n">' + r.place + '</td><td><div class="team"><div><b>' + esc(r.team) + '</b><small>' + esc(r.owner) + '</small></div></div></td><td class="n">' + r.w + '-' + r.l + '</td><td class="n hide-sm">' + r.pf.toFixed(1) + '</td><td class="n hide-sm">' + r.pa.toFixed(1) + '</td></tr>';
+      }).join('') + '</tbody></table></div>';
+      var a = awards[y.season];
+      if (a) html += '<div class="panel" style="margin-top:12px"><table><tbody><tr><td><small>League winner</small></td><td><b>' + esc(a.winner) + '</b></td></tr>' +
+        (a.awards || []).map(function (x) { return '<tr><td><small>' + esc(x.category) + '</small></td><td>' + esc(x.winner) + '</td></tr>'; }).join('') + '</tbody></table></div>';
     });
     return html;
   }
