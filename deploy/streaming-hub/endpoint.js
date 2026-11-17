@@ -237,11 +237,17 @@ export default function streamingHub(router, { database }, options = {}) {
       const radarrQueue = movies.length ? (await (await client('radarr')).get('/queue?page=1&pageSize=200')).records : [];
       const shows = live.some(r => r.media_type === 'tv') ? await (await client('sonarr')).get('/series') : [];
       const sonarrQueue = shows.length ? (await (await client('sonarr')).get('/queue?page=1&pageSize=500')).records : [];
+      // If Radarr/Sonarr have no working indexer, "still looking" would be a lie: say what is actually wrong.
+      const noSource = {};
+      for (const [type, kind] of [['movie', 'radarr'], ['tv', 'sonarr']])
+        if (live.some(r => r.media_type === type && r.state === 'searching'))
+          noSource[type] = (await (await client(kind)).get('/health').catch(() => [])).some(h => /no indexers|indexers are unavailable/i.test(h.message));
       for (const row of live) {
         const watch = jf && inJellyfin(jf, { type: row.media_type, tmdbId: row.tmdb_id, tvdbId: row.tvdb_id, title: row.title, year: row.year });
         const next = row.media_type === 'movie'
           ? (m => deriveMovie(row, m, m && radarrQueue.find(q => q.movieId === m.id), watch, now()))(movies.find(m => String(m.tmdbId) === row.tmdb_id))
           : (s => deriveSeries(row, s, s ? sonarrQueue.filter(q => q.seriesId === s.id) : [], watch, now()))(shows.find(s => s.id === row.arr_id || String(s.tvdbId) === row.tvdb_id));
+        if (next.state === 'searching' && noSource[row.media_type]) next.detail = 'Nothing can search for this yet: no working indexer. An admin needs to add or fix one.';
         if (next.state === 'importing' && row.state === 'importing' && now() - new Date(row.updated_at) > 60000 && now() - lastRefresh > 600000) { lastRefresh = now(); await refreshJellyfin().catch(() => {}); }
         const changed = next.state !== row.state || next.detail !== row.detail || Math.abs((next.progress ?? 0) - (row.progress ?? 0)) >= 0.01;
         if (changed) await save(row.id, { state: next.state, progress: next.progress, detail: next.detail, ...(next.state === 'available' ? { available_at: new Date(now()) } : {}) });
