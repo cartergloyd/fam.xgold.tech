@@ -1,3 +1,5 @@
+> **Retired 2026-11-17.** Replaced by `../streaming-hub/` (family sign-in, roles, approvals). The routes are no longer registered. This folder is kept for history; the table and its rows are in use by the new hub.
+
 # Streaming title requests
 
 The family Directus endpoint uses Jellyfin's configured TheMovieDb remote-search

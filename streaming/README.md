@@ -20,3 +20,9 @@ Sources checked 2026-10-25:
 - iOS registration: https://github.com/jellyfin/jellyfin-ios/blob/master/ios/Jellyfin/Info.plist
 - Android manifest: https://github.com/jellyfin/jellyfin-android/blob/master/app/src/main/AndroidManifest.xml
 - Chrome requirement: https://developer.chrome.com/docs/android/intents
+
+## Requests
+
+The Discover, My requests and Admin sections on this page (`hub.js`, `hub.css`) talk to the
+signed-in streaming API described in `deploy/streaming-hub/README.md`. They need the family
+sign-in (the `family-session` the site already stores) and show a sign-in prompt otherwise.

@@ -17,8 +17,8 @@
   <script src="/streaming/launch.js?v=3" defer></script>
   <link rel="stylesheet" href="/streaming/hero.css?v=1">
   <script src="/streaming/hero.js?v=1" defer></script>
-  <link rel="stylesheet" href="/streaming/requests.css?v=1">
-  <script src="/streaming/requests.js?v=1" defer></script>
+  <link rel="stylesheet" href="/streaming/hub.css?v=1">
+  <script src="/streaming/hub.js?v=1" defer></script>
   <style>
     :root { color-scheme:dark; font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,Arial,sans-serif; color:#f5f5f7; background:#000; }
     * { box-sizing:border-box; }
@@ -67,15 +67,41 @@
       </ol>
       <p class="small">Just created your profile or changed your PIN? Allow about a minute, then try signing in to Jellyfin.</p>
     </section>
-    <section class="streaming-requests" aria-labelledby="requests-title">
-      <h2 id="requests-title">What would you like to watch?</h2>
-      <form id="title-search" role="search" autocomplete="off">
-        <label class="requests-label" for="request-query">Search movies and TV shows</label>
-        <input id="request-query" type="search" placeholder="Search movies and TV shows" maxlength="100" aria-describedby="request-status" aria-controls="request-results">
-      </form>
-      <p id="request-status" class="request-status" role="status" aria-live="polite"></p>
-      <div id="request-results" class="request-results"></div>
-      <details class="search-credits"><summary>Search credits</summary><p><a href="https://www.themoviedb.org" target="_blank" rel="noopener"><img src="/assets/tmdb.svg" width="90" height="12" alt="TMDB"></a></p><p>This product uses the TMDB API but is not endorsed or certified by TMDB.</p></details>
+    <section class="hub" id="hub" aria-labelledby="hub-title">
+      <h2 id="hub-title">What would you like to watch?</h2>
+      <div id="hub-signin" hidden>
+        <p class="hub-note">Sign in with your email and PIN to browse, request, and track movies and shows.</p>
+        <p><button class="btn" id="hub-signin-button" type="button">Sign in</button></p>
+      </div>
+      <div id="hub-app" hidden>
+        <div class="hub-tabs" role="tablist" aria-label="Streaming sections">
+          <button role="tab" id="tab-discover" data-tab="discover" aria-controls="panel-discover" aria-selected="true">Discover</button>
+          <button role="tab" id="tab-requests" data-tab="requests" aria-controls="panel-requests" aria-selected="false" tabindex="-1">My requests</button>
+          <button role="tab" id="tab-admin" data-tab="admin" aria-controls="panel-admin" aria-selected="false" tabindex="-1" hidden>Admin</button>
+        </div>
+        <div id="panel-discover" role="tabpanel" aria-labelledby="tab-discover">
+          <form id="hub-search" class="hub-search" role="search" autocomplete="off">
+            <label for="hub-query">Search movies and TV shows</label>
+            <input id="hub-query" type="search" placeholder="Search movies and TV shows" maxlength="100" aria-describedby="hub-status" aria-controls="hub-results">
+          </form>
+          <p id="hub-status" class="hub-note" role="status" aria-live="polite"></p>
+          <div id="hub-results"></div>
+          <div id="hub-shelves"></div>
+        </div>
+        <div id="panel-requests" role="tabpanel" aria-labelledby="tab-requests" hidden>
+          <div id="hub-mine" class="rows"></div>
+        </div>
+        <div id="panel-admin" role="tabpanel" aria-labelledby="tab-admin" hidden>
+          <div class="hub-block" style="margin-top:0"><h3>Waiting for approval</h3><div id="hub-queue" class="rows"></div></div>
+          <div class="hub-block"><h3>Recent requests</h3><div id="hub-all" class="rows"></div></div>
+          <div class="hub-block"><h3>People</h3><p id="hub-people-note" class="hub-note" role="status"></p>
+            <p class="hub-note">Standard needs approval. Trusted is approved automatically. Admins approve requests and manage people.</p>
+            <div id="hub-people" class="people"></div></div>
+          <div class="hub-block"><h3>System</h3><div id="hub-health"></div></div>
+        </div>
+      </div>
+      <dialog id="hub-sheet" class="sheet" aria-label="Title details"></dialog>
+      <details class="search-credits"><summary>Search credits</summary><p>Artwork and details come from TMDB and TheTVDB. This product uses the TMDB API but is not endorsed or certified by TMDB.</p></details>
     </section>
   </main>
 </body>

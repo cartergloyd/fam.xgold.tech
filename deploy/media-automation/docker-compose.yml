@@ -1,0 +1,44 @@
+# Radarr (movies), Sonarr (TV), Prowlarr (indexers). Private: loopback ports only, plus internal Docker networks.
+# qBittorrent stays in its own VPN stack (../qbittorrent-vpn); these containers only talk to its web UI.
+# The media folder is mounted at the SAME path qBittorrent uses, so reported download paths need no remapping and imports hardlink.
+x-arr: &arr
+  restart: unless-stopped
+  environment: &env
+    PUID: "1000"
+    PGID: "1000"
+    TZ: America/Chicago
+  security_opt: [no-new-privileges:true]
+  logging: {driver: json-file, options: {max-size: 5m, max-file: "3"}}
+services:
+  radarr:
+    <<: *arr
+    image: lscr.io/linuxserver/radarr:7.0.3.10918-ls328
+    container_name: radarr
+    mem_limit: 512m
+    ports: ["127.0.0.1:7878:7878"]
+    volumes:
+      - ./config/radarr:/config
+      - "/home/gold/Jellyfin Server/media:/home/gold/Jellyfin Server/media"
+    networks: [media, qbit]
+  sonarr:
+    <<: *arr
+    image: lscr.io/linuxserver/sonarr:4.0.20.3014-ls5
+    container_name: sonarr
+    mem_limit: 512m
+    ports: ["127.0.0.1:8989:8989"]
+    volumes:
+      - ./config/sonarr:/config
+      - "/home/gold/Jellyfin Server/media:/home/gold/Jellyfin Server/media"
+    networks: [media, qbit]
+  prowlarr:
+    <<: *arr
+    image: lscr.io/linuxserver/prowlarr:3.0.2.5780-ls169
+    container_name: prowlarr
+    mem_limit: 384m
+    ports: ["127.0.0.1:9696:9696"]
+    volumes:
+      - ./config/prowlarr:/config
+    networks: [media]
+networks:
+  media: {name: media-net, ipam: {config: [{subnet: 172.31.88.0/24}]}}
+  qbit: {name: qbittorrent-vpn_default, external: true}
