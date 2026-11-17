@@ -50,10 +50,10 @@
     async show() {
       await mounted;
       openGate();
-      document.getElementById('g-err').textContent = 'Loading the family directory…';
+      document.getElementById('g-err').textContent = 'Loading the directory…';
       document.getElementById('g-close').focus();
       try { await account.ready; showReadyGate(); }
-      catch (_) { document.getElementById('g-err').textContent = 'The family directory could not load. Please try again later.'; }
+      catch (_) { document.getElementById('g-err').textContent = 'The directory could not load. Please try again later.'; }
     },
   };
   const DIALOG = `<div class="gate" id="gate" hidden>
@@ -86,7 +86,7 @@
           <button class="go" id="g-signup" type="button">Sign up</button>
         </div>
         <div class="step2" id="g2" hidden>
-          <label id="g-lbl">Which family member are you?</label>
+          <label id="g-lbl">Who are you?</label>
           <div class="dd">
             <button class="dd-btn" id="dd-btn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="g-lbl dd-btn"><span class="ph" id="dd-val">Choose your name</span><svg class="arr" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
             <ul class="dd-list" id="dd-list" role="listbox" aria-labelledby="g-lbl" tabindex="-1" hidden></ul>
@@ -190,7 +190,7 @@
         members = docs; buildList(); setMode('pick');
         if (suggestion && AVAIL.indexOf(suggestion.name) >= 0) { pick(suggestion.name); gPin.focus(); }
         else if (AVAIL.length) ddBtn.focus();
-      }, function () { gErr.textContent = 'Could not reach the family list. Try again.'; refreshEnabled(); });
+      }, function () { gErr.textContent = 'Could not reach the list. Try again.'; refreshEnabled(); });
     }
     gGuessGo.addEventListener('click', function () { if (validEmail() && guess && !guess.registered) chooseProfile(guess); });
     document.getElementById('g-guess-other').addEventListener('click', function () { chooseProfile(null); });
@@ -215,7 +215,7 @@
     gSignup.addEventListener('click', function () {
       gSignup.disabled = true;
       fetchClaims().then(function (docs) { members = docs; buildList(); setMode('pick'); if (AVAIL.length) ddBtn.focus(); },
-        function () { gErr.textContent = 'Couldn\u2019t reach the family list. Try again.'; })
+        function () { gErr.textContent = 'Couldn\u2019t reach the list. Try again.'; })
         .then(function () { gSignup.disabled = false; });
     });
     gGo.addEventListener('click', function () {

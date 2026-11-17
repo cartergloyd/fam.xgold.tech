@@ -6,15 +6,15 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#161617">
-  <title>Streaming · Gold Family</title>
-  <meta name="description" content="Watch with Jellyfin. Use your family email and four-digit PIN to sign in.">
+  <title>Streaming</title>
+  <meta name="description" content="Watch with Jellyfin. Use your email and four-digit PIN to sign in.">
   <script src="/family-directory.js"></script>
   <script src="/profile-match.js?v=1"></script>
-  <script src="/family-account.js?v=2"></script>
+  <script src="/family-account.js?v=3"></script>
   <link rel="stylesheet" href="/family-account.css?v=3">
   <link rel="stylesheet" href="/ribbon.css?v=6">
-  <script src="/ribbon.js?v=6" defer></script>
-  <script src="/streaming/launch.js?v=2" defer></script>
+  <script src="/ribbon.js?v=7" defer></script>
+  <script src="/streaming/launch.js?v=3" defer></script>
   <link rel="stylesheet" href="/streaming/hero.css?v=1">
   <script src="/streaming/hero.js?v=1" defer></script>
   <link rel="stylesheet" href="/streaming/requests.css?v=1">
@@ -63,7 +63,7 @@
       <h2 id="setup-title">Get signed in.</h2>
       <ol>
         <li><strong>Connect to our server.</strong><p>In the Jellyfin app, choose Add Server and enter<br><a class="server" href="https://streaming.xgold.tech">https://streaming.xgold.tech</a></p></li>
-        <li><strong>Sign in with your family profile.</strong><p>Enter <span id="login-email">your family email</span> as the username and your four-digit family PIN as the password.<br><button class="text-button" id="streaming-signin" type="button">Sign in or create your profile</button> if you need to get set up.</p></li>
+        <li><strong>Sign in with your profile.</strong><p>Enter <span id="login-email">your email</span> as the username and your four-digit PIN as the password.<br><button class="text-button" id="streaming-signin" type="button">Sign in or create your profile</button> if you need to get set up.</p></li>
       </ol>
       <p class="small">Just created your profile or changed your PIN? Allow about a minute, then try signing in to Jellyfin.</p>
     </section>

@@ -29,7 +29,7 @@
   document.getElementById('streaming-signin').addEventListener('click', () => window.familyAccount.show());
   const paintLogin = () => {
     const current = window.familyAccount.current;
-    document.getElementById('login-email').textContent = current ? current.email : 'your family email';
+    document.getElementById('login-email').textContent = current ? current.email : 'your email';
     document.getElementById('streaming-signin').textContent = current ? `Signed in as ${current.name}` : 'Sign in or create your profile';
   };
   window.addEventListener('family-account-change', paintLogin);

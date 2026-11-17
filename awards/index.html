@@ -7,7 +7,7 @@
 <link rel="icon" type="image/png" href="logo-mark.png?v=2">
 <meta property="og:image" content="https://fam.xgold.tech/awards/logo.png?v=2">
 <link rel="stylesheet" href="/tokens.css">
-<script src="/family-directory.js?v=2"></script>
+<script src="/family-directory.js?v=3"></script>
 <script src="/ics.js?v=1"></script>
 <style>
 /* Honors night: the site's galaxy stage in violet, with a yellow-to-blue headline and a skyline. Always dark. */
@@ -95,6 +95,7 @@ h2 { margin: 0; font-size: var(--fs-section); font-weight: var(--weight-semibold
 .card { background: var(--bg-elevated); border-radius: var(--radius-card); padding: var(--space-6); }
 .who { display: flex; align-items: center; gap: var(--space-4); margin-bottom: var(--space-5); }
 .who img, .who .ph { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; background: var(--bg-alt); flex: none; }
+#su-who { justify-content: center; }
 .who b { display: block; font-size: var(--fs-card); line-height: var(--lh-snug); font-weight: var(--weight-semibold); }
 label { display: block; margin: var(--space-4) 0 var(--space-2); font-size: var(--fs-small); color: var(--text-secondary); }
 input[type=text], input[type=email], input[type=password], select, textarea { width: 100%; min-height: var(--tap-target); padding: var(--space-3) var(--space-4); border: 1px solid var(--hairline); border-radius: var(--radius-card-sm); background: rgba(8, 3, 24, .6); }
@@ -201,9 +202,10 @@ details summary { cursor: pointer; min-height: var(--tap-target); display: flex;
     <p class="lead" id="done-sub" style="margin-bottom:0"></p>
     <div class="row"><button class="btn" id="cal" type="button" hidden>Add to calendar</button><button class="btn ghost" id="edit" type="button">Edit my answers</button></div>
     <div class="card" id="signup" hidden>
-      <h3>Create your family account</h3>
-      <p>Add your email and pick a four-digit PIN. You&rsquo;ll use it to sign in across the family site.</p>
+      <h3>Create your account</h3>
+      <p>Add your email and pick a four-digit PIN. You&rsquo;ll use it to sign in across the site.</p>
       <form id="signup-form" novalidate>
+        <div class="who" id="su-who"><div id="su-photo"></div><div><b id="su-name"></b></div></div>
         <label for="su-email">Email</label>
         <input id="su-email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com">
         <label for="su-pin">PIN</label>
@@ -290,7 +292,7 @@ details summary { cursor: pointer; min-height: var(--tap-target); display: flex;
   function pinGate(inv) {
     $('gate-photo').innerHTML = inv.photo_url ? '<img src="' + esc(inv.photo_url) + '" alt="">' : '<div class="ph" aria-hidden="true"></div>';
     $('gate-name').textContent = inv.name;
-    $('gate-sub').textContent = inv.hasPin ? 'Enter your four-digit passcode.' : 'Pick a four-digit passcode. It becomes your family PIN, the same one used across the site.';
+    $('gate-sub').textContent = inv.hasPin ? 'Enter your four-digit passcode.' : 'Pick a four-digit passcode. It becomes your PIN, the same one used across the site.';
     $('pin-label').textContent = inv.hasPin ? 'Passcode' : 'Create a passcode';
     show('gate', true);
     $('gate-form').onsubmit = function (ev) {
@@ -410,7 +412,10 @@ details summary { cursor: pointer; min-height: var(--tap-target); display: flex;
     $('done').scrollIntoView({ block: 'start' }); $('done-h').focus({ preventScroll: true });
     profileNeedingAccount().then(function (profile) {
       if (!profile || $('done').hidden) return;
-      S.profile = profile; show('signup', true);
+      S.profile = profile;
+      $('su-name').textContent = profile.name;
+      $('su-photo').innerHTML = profile.photo_url ? '<img src="' + esc(profile.photo_url) + '" alt="">' : '<div class="ph" aria-hidden="true"></div>';
+      show('signup', true);
     });
   }
   $('edit').onclick = function () {
@@ -433,7 +438,7 @@ details summary { cursor: pointer; min-height: var(--tap-target); display: flex;
       // Setting a PIN ends the passcode-free session, so sign back in with it while the invitation link is still in memory.
       var back = K ? api('POST', '/claim', { k: K, pin: pin }).then(keepSession, function () { return false; }) : Promise.resolve(false);
       back.then(function (ok) {
-        $('signup-done').textContent = 'Your account is ready. You’re signed in across the family site.' + (ok === false ? ' Scan your invitation again if you edit your answers.' : '');
+        $('signup-done').textContent = 'Your account is ready. You’re signed in across the site.' + (ok === false ? ' Scan your invitation again if you edit your answers.' : '');
         $('signup-done').hidden = false;
       });
     }, function (e) { say('signup-status', e.message, true); $('signup-go').disabled = false; });

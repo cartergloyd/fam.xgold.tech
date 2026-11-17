@@ -7,7 +7,7 @@
     return fetch(BASE + path, { method: body === undefined ? 'GET' : 'POST', cache: 'no-store', credentials: 'omit', signal: controller.signal,
       headers: body === undefined ? { Accept: 'application/json' } : { Accept: 'application/json', 'Content-Type': 'application/json' },
       body: body === undefined ? undefined : JSON.stringify(body)
-    }).then(function (r) { return r.json().then(function (result) { if (!r.ok) throw new Error(result.error || 'Could not reach the family directory.'); return result; }); })
+    }).then(function (r) { return r.json().then(function (result) { if (!r.ok) throw new Error(result.error || 'Could not reach the directory.'); return result; }); })
       .finally(function () { clearTimeout(timer); });
   }
   function signedIn(result) {

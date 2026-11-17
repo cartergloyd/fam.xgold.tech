@@ -4,13 +4,13 @@
 
 <script src="/family-directory.js"></script>
 <script src="/profile-match.js?v=1"></script>
-<script src="/family-account.js?v=2"></script>
+<script src="/family-account.js?v=3"></script>
 <script src="/ics.js?v=1" defer></script>
 <link rel="stylesheet" href="/family-account.css?v=3">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#161617">
-<title>Family trip</title>
+<title>The trip</title>
 <style>
 /* Layout: centered dark stage. Icon nav row, oversized headline + lede, booking card, photo pair, rooms and spaces lists, dim promo strip. Single dark look by design. */
 :root {
@@ -487,12 +487,12 @@ h2 { margin: 0 0 20px; font-size: clamp(1.75rem, 6vw, 3rem); line-height: 1.08; 
 @media (max-width: 380px) { .dates { grid-template-columns: 1fr 1fr; } .dates svg { display: none; } }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .btn { transition: none; } }
 </style><link rel="stylesheet" href="/ribbon.css?v=6">
-<script src="/ribbon.js?v=6" defer></script>
+<script src="/ribbon.js?v=7" defer></script>
 </head><body>
 
 
 <family-ribbon></family-ribbon>
-<section class="vhero" id="vhero" aria-label="Family trip">
+<section class="vhero" id="vhero" aria-label="The trip">
   <div class="reel" id="reel"></div>
   <div class="shade"></div>
   <div class="vh-copy">
@@ -500,7 +500,7 @@ h2 { margin: 0 0 20px; font-size: clamp(1.75rem, 6vw, 3rem); line-height: 1.08; 
       <span class="mini" aria-hidden="true"><svg viewBox="0 0 36 36"><circle cx="18" cy="15" r="6"/><path d="M3 29c4 0 4-3 8-3s4 3 8 3 4-3 8-3 4 3 8 3"/></svg></span>
       <span class="ename" id="ename"></span>
     </div>
-    <h1 id="trip-title">Family trip</h1>
+    <h1 id="trip-title">The trip</h1>
     <p class="kicker" id="kicker"></p>
     <p class="vh-note" id="trip-note" role="status" hidden></p>
   </div>
@@ -667,7 +667,7 @@ h2 { margin: 0 0 20px; font-size: clamp(1.75rem, 6vw, 3rem); line-height: 1.08; 
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-t">
     <div class="sheet-top"><h3 id="sheet-t">Book a bedroom</h3>
       <button class="xbtn" id="sheet-x" type="button" aria-label="Close"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"/></svg></button></div>
-    <p class="sub2">Claim a room for your family. Release it if plans change.</p>
+    <p class="sub2">Claim a room. Release it if plans change.</p>
     <div class="claim-for" id="claim-for" hidden><p class="fl-lbl">Claiming for</p><div class="chips" id="claim-chips" role="group" aria-label="Claiming for"></div></div>
     <ul class="rooms-list" id="rooms-list"></ul>
     <p class="msg" id="rooms-msg" role="status"></p>

@@ -61,7 +61,7 @@ test('ribbon appearance and actual Streaming clicks agree on every page', async 
         let popups = 0;
         page.on('popup', () => popups++);
         await page.goto(origin + path, { waitUntil: 'domcontentloaded' });
-        const nav = page.getByRole('navigation', { name: 'Family sites' });
+        const nav = page.getByRole('navigation', { name: 'Site navigation' });
         await nav.waitFor();
         await nav.locator('img').evaluateAll(imgs => Promise.all(imgs.map(img => img.decode())));
         assert.equal(await nav.locator('[aria-current="page"]').getAttribute('href'), path);
