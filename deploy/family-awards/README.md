@@ -1,12 +1,14 @@
 # Fantasy awards: invitations, RSVP and ballots
 
 The page is `/awards/` (static; event details and categories are in `awards/event.json`). Each printed invitation carries a QR code to
-`/awards/?k=<token>`. The link opens a sign-in card with that person's name already chosen: first visit they pick a four-digit
-passcode (their family PIN), later visits they enter it. Then they RSVP, nominate in each category, and/or upload a photo or PDF of a handwritten ballot.
+`/awards/?k=<token>`. Someone with no family PIN yet is signed in by the link alone (no passcode) and can RSVP and nominate at once;
+after they save, the page offers an email and PIN account. Someone who already has a PIN enters it first. Then they RSVP, nominate in each
+category, and/or upload a photo or PDF of a handwritten ballot.
 Until this server side is installed the page still shows the invitation and says RSVP is not open yet.
 
-The passcode is the family PIN. Someone with no PIN yet types one once and it is saved to `family_users` (hash only, same scheme as
-normal registration; their status and email are untouched, so they can still register with an email later, which replaces the PIN).
+The passcode is the family PIN. A PIN-less session is signed with the invitation's token hash instead, so creating a PIN (the sign-up
+step on the page, which then signs in again with it) ends it. A server that predates this still asks for a passcode first and the page
+falls back to that card. A passcode sent with the claim becomes the PIN (hash only, same scheme as normal registration; status and email untouched).
 Someone who already has a family PIN enters it. Registered members also receive the regular family session, so signing in here signs
 them in across the site. Tokens are stored only as sha256. Five wrong passcodes lock that invitation for 15 minutes. A session never
 expires, but it is signed with the current PIN hash, so changing the PIN ends it. Uploads (JPEG, PNG, WebP, HEIC, PDF, up to 8 MB)

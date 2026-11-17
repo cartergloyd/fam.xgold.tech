@@ -7,7 +7,8 @@ const sha = v => createHash('sha256').update(v).digest('hex');
 export const familyHash = (name, pin) => sha(`destin|${name}|${pin}`);
 const sign = (secret, id, pinHash) => createHmac('sha256', secret).update(`awards|${id}|${pinHash}`).digest('base64url');
 // A session never expires but is signed with the person's current PIN hash, so changing the PIN ends it.
-export const issue = (user, secret) => `${user.id}.${sign(secret, user.id, user.pin_hash)}`;
+// Before they have a PIN it is signed with their invitation's token hash instead, so setting a PIN ends that one too.
+export const issue = (user, secret, tokenHash) => `${user.id}.${sign(secret, user.id, user.pin_hash || tokenHash)}`;
 function failure(code, message) { const e = Error(message); e.status = code; throw e; }
 const readBody = req => new Promise((resolve, reject) => {
  const chunks = []; let size = 0;
@@ -37,7 +38,7 @@ export default function awards(router, { database }, options = {}) {
   const [id, sig, extra] = (req.get('X-Family-Session') || '').split('.');
   if (extra || !sig || !/^[\da-f-]{36}$/i.test(id)) failure(401, 'Scan your invitation to sign in.');
   const [g, user] = await Promise.all([database('family_award_guests').where({ user_id: id }).first(), userOf(id)]);
-  const expected = g && user?.pin_hash ? sign(secret(), id, user.pin_hash) : '';
+  const expected = g && user ? sign(secret(), id, user.pin_hash || g.token_hash) : '';
   if (!expected || expected.length !== sig.length || !timingSafeEqual(Buffer.from(expected), Buffer.from(sig))) failure(401, 'Scan your invitation to sign in.');
   return { ...g, user };
  };
@@ -56,11 +57,16 @@ export default function awards(router, { database }, options = {}) {
   res.json({ name: u.name, first_name: first(u), hasPin: !!u.pin_hash,
    photo_url: u.photo ? `https://fam-api.xgold.tech/family/photos/${u.id}?v=${encodeURIComponent(u.photo)}` : null });
  }));
- // First visit with no family PIN yet: the passcode they enter becomes their family PIN. Otherwise it must match.
+ // No family PIN yet: scanning the invitation signs them in with no passcode (they are asked for one after they answer).
+ // A passcode sent with the scan becomes their family PIN. Once a PIN exists it must match.
  router.post('/awards/claim', run(async (req, res) => {
   limited(req, 40);
   const g = await byToken(req.body?.k), pin = req.body?.pin;
   let u = g.user;
+  if (pin === undefined && !u.pin_hash) {
+   if (g.locked_until && new Date(g.locked_until) > new Date()) failure(429, 'Too many wrong passcodes. Try again in 15 minutes.');
+   return res.json({ session: issue(u, secret(), g.token_hash), name: u.name });
+  }
   if (typeof pin !== 'string' || !/^\d{4}$/.test(pin)) failure(400, 'Enter four digits.');
   if (g.locked_until && new Date(g.locked_until) > new Date()) failure(429, 'Too many wrong passcodes. Try again in 15 minutes.');
   const created = !u.pin_hash;

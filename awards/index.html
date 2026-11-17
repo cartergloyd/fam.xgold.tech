@@ -199,13 +199,12 @@ details summary { cursor: pointer; min-height: var(--tap-target); display: flex;
     <p class="lead" id="done-sub" style="margin-bottom:0"></p>
     <div class="card" id="signup" hidden>
       <h3>Create your family account</h3>
-      <p>Add your email and a four-digit PIN to sign in across the family site.</p>
+      <p>Add your email and pick a four-digit PIN. You&rsquo;ll use it to sign in across the family site.</p>
       <form id="signup-form" novalidate>
         <label for="su-email">Email</label>
         <input id="su-email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com">
         <label for="su-pin">PIN</label>
         <input class="pin" id="su-pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="&bull;&bull;&bull;&bull;">
-        <p class="fine" style="margin-top:var(--space-2)">Use the same four digits you used to sign in here.</p>
         <p class="status" id="signup-status" role="alert"></p>
         <button class="btn" id="signup-go" type="submit">Create account</button>
       </form>
@@ -267,8 +266,26 @@ details summary { cursor: pointer; min-height: var(--tap-target); display: flex;
   function greet(name) { $('for-name').textContent = name; show('for', true); }
 
   // ---- Sign in from the QR code ----
+  // Keeps the session the server just issued, and the family sign-in too when they are a registered member.
+  function keepSession(r) {
+    S.token = r.session;
+    try {
+      localStorage.setItem(SAVED, JSON.stringify({ token: r.session }));
+      if (r.family) localStorage.setItem('family-session', JSON.stringify({ token: r.family, name: r.name }));  // same sign-in the rest of the site uses
+    } catch (e) {}
+  }
   function showGate(inv) {
     greet(inv.first_name);
+    // No family PIN yet: the invitation is enough. They are asked to make an account after they answer.
+    if (!inv.hasPin) {
+      return api('POST', '/claim', { k: K }).then(function (r) {
+        keepSession(r); history.replaceState(null, '', location.pathname);  // the link is a secret, keep it out of history
+        return start();
+      }, function (e) { if (e.status === 400) return pinGate(inv); throw e; });  // 400: a server that still asks for a passcode first
+    }
+    pinGate(inv);
+  }
+  function pinGate(inv) {
     $('gate-photo').innerHTML = inv.photo_url ? '<img src="' + esc(inv.photo_url) + '" alt="">' : '<div class="ph" aria-hidden="true"></div>';
     $('gate-name').textContent = inv.name;
     $('gate-sub').textContent = inv.hasPin ? 'Enter your four-digit passcode.' : 'Pick a four-digit passcode. It becomes your family PIN, the same one used across the site.';
@@ -276,16 +293,12 @@ details summary { cursor: pointer; min-height: var(--tap-target); display: flex;
     show('gate', true);
     $('gate-form').onsubmit = function (ev) {
       ev.preventDefault();
-      var pin = $('pin').value; S.pin = pin;
+      var pin = $('pin').value;
       if (!/^\d{4}$/.test(pin)) return say('gate-status', 'Enter four digits.', true);
       $('gate-go').disabled = true; say('gate-status', '');
       api('POST', '/claim', { k: K, pin: pin }).then(function (r) {
-        S.token = r.session;
-        try {
-          localStorage.setItem(SAVED, JSON.stringify({ token: r.session }));
-          if (r.family) localStorage.setItem('family-session', JSON.stringify({ token: r.family, name: r.name }));  // same sign-in the rest of the site uses
-        } catch (e) {}
-        history.replaceState(null, '', location.pathname);  // the link is a secret, keep it out of history
+        keepSession(r);
+        history.replaceState(null, '', location.pathname);
         show('gate', false); return start();
       }, function (e) { say('gate-status', e.message, true); $('pin').value = ''; $('pin').focus(); })
         .then(function () { $('gate-go').disabled = false; });
@@ -415,9 +428,12 @@ details summary { cursor: pointer; min-height: var(--tap-target); display: flex;
     window.familyDirectory.register(S.profile.id, email, pin).then(function () {
       try { localStorage.setItem('destin-who', JSON.stringify({ name: S.me.name, email: email })); } catch (e) {}
       show('signup', false);
-      var changed = S.pin && S.pin !== pin;
-      $('signup-done').textContent = 'Your account is ready. You’re signed in across the family site.' + (changed ? ' Your PIN changed, so scan your invitation again if you edit your answers.' : '');
-      $('signup-done').hidden = false;
+      // Setting a PIN ends the passcode-free session, so sign back in with it while the invitation link is still in memory.
+      var back = K ? api('POST', '/claim', { k: K, pin: pin }).then(keepSession, function () { return false; }) : Promise.resolve(false);
+      back.then(function (ok) {
+        $('signup-done').textContent = 'Your account is ready. You’re signed in across the family site.' + (ok === false ? ' Scan your invitation again if you edit your answers.' : '');
+        $('signup-done').hidden = false;
+      });
     }, function (e) { say('signup-status', e.message, true); $('signup-go').disabled = false; });
   };
 

@@ -93,12 +93,20 @@ test('awards: invite, family PIN, session, rsvp, ballot, upload, results', { ski
   const back = await call('GET', '/awards/upload/:id', { session: rick2, params: { id: 'me' } });
   assert.deepEqual([back.headers['Content-Type'], Buffer.compare(back.bytes, file)], ['image/png', 0]);
   assert.equal((await call('GET', '/awards/upload/:id', { session: carter.session, params: { id: ids.Rick } })).status, 200, 'organizer reads any');
+  // no PIN needed to sign in the first time: the invitation alone does it, and setting a PIN later ends that session
+  const patNoPin = await call('POST', '/awards/claim', { body: { k: tokens.Pat } });
+  assert.deepEqual([patNoPin.status, patNoPin.data.family, (await db('family_users').where({ id: ids.Pat }).first()).pin_hash], [200, undefined, null], 'no PIN created');
+  assert.equal((await call('GET', '/awards/me', { session: patNoPin.data.session })).status, 200);
+  assert.equal((await call('PATCH', '/awards/rsvp', { session: patNoPin.data.session, body: { going: true } })).status, 200);
+  assert.equal((await call('POST', '/awards/claim', { body: { k: tokens.Carter } })).status, 400, 'someone with a PIN must still enter it');
+  await db('family_users').where({ id: ids.Pat }).update({ pin_hash: familyHash('Pat', '5555'), pin_salt_name: 'Pat' });
+  assert.equal((await call('GET', '/awards/me', { session: patNoPin.data.session })).status, 401, 'setting a PIN ends the PIN-less session');
   const pat = (await call('POST', '/awards/claim', { body: { k: tokens.Pat, pin: '5555' } })).data.session;
   assert.equal((await call('GET', '/awards/upload/:id', { session: pat, params: { id: ids.Rick } })).status, 403, 'others cannot');
   // results are organizer-only
   assert.equal((await call('GET', '/awards/results', { session: rick2 })).status, 403);
   const results = (await call('GET', '/awards/results', { session: carter.session })).data.guests;
-  assert.deepEqual(results.map(g => [g.name, g.rsvp, g.upload, g.joined]), [['Carter', null, null, true], ['Pat', null, null, true], ['Rick', true, 'ballot.png', true]]);
+  assert.deepEqual(results.map(g => [g.name, g.rsvp, g.upload, g.joined]), [['Carter', null, null, true], ['Pat', true, null, true], ['Rick', true, 'ballot.png', true]]);
   assert.equal((await call('DELETE', '/awards/upload', { session: rick2 })).data.upload, null);
   assert.equal((await call('GET', '/awards/me', { session: rick2 })).data.upload, null);
   await db.destroy();
