@@ -75,6 +75,8 @@ h2 { margin: 0; font-size: var(--fs-section); font-weight: var(--weight-semibold
 .center .card p { margin: 0; color: var(--text-secondary); }
 .center .card .btn { margin-top: var(--space-5); }
 #done h2:focus { outline: none; }
+#done .row { margin-top: var(--space-6); }
+#done .card { margin-top: var(--space-7); }
 .fine { color: var(--text-secondary); font-size: var(--fs-small); }
 .btn { display: inline-flex; align-items: center; justify-content: center; min-height: var(--tap-target); padding: var(--btn-pad-y) var(--btn-pad-x); border: 0; border-radius: var(--radius-pill); background: var(--accent); color: #1a0a40; font-size: var(--btn-font-size); cursor: pointer; transition: background var(--duration-fast) var(--ease); }
 .btn:hover:not(:disabled) { background: var(--accent-hover); text-decoration: none; }
@@ -197,6 +199,7 @@ details summary { cursor: pointer; min-height: var(--tap-target); display: flex;
   <section class="block" id="done" hidden><div class="wrap narrow center">
     <h2 id="done-h" tabindex="-1">You&rsquo;re all set.</h2>
     <p class="lead" id="done-sub" style="margin-bottom:0"></p>
+    <div class="row"><button class="btn" id="cal" type="button" hidden>Add to calendar</button><button class="btn ghost" id="edit" type="button">Edit my answers</button></div>
     <div class="card" id="signup" hidden>
       <h3>Create your family account</h3>
       <p>Add your email and pick a four-digit PIN. You&rsquo;ll use it to sign in across the family site.</p>
@@ -210,7 +213,6 @@ details summary { cursor: pointer; min-height: var(--tap-target); display: flex;
       </form>
     </div>
     <p class="status" id="signup-done" role="status" hidden></p>
-    <div class="row"><button class="btn" id="cal" type="button" hidden>Add to calendar</button><button class="btn ghost" id="edit" type="button">Edit my answers</button></div>
   </div></section>
 
   <section class="block" id="results" hidden><div class="wrap narrow">
