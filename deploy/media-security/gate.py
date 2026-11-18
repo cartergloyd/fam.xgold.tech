@@ -388,6 +388,13 @@ if __name__ == '__main__':
         try:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
+            config = json.loads(Path(args.config).read_text())
+            status_path = Path(config['status_file'])
+            if status_path.exists():
+                status = json.loads(status_path.read_text())
+                status.update(updatedAt=time.time(), ok=False,
+                    issue='The scanner is busy with another scan or signature update; new downloads remain quarantined.')
+                atomic(status_path, status, 0o644)
             print('Another scan or signature update is running; downloads remain quarantined')
             raise SystemExit(0)
         cycle(json.loads(Path(args.config).read_text()))
