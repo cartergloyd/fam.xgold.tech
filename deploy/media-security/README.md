@@ -48,6 +48,14 @@ Arr and qBittorrent drop all capabilities, adding back only CHOWN, DAC_OVERRIDE,
 
 ## Recovery and residual risk
 
+### Existing-library audit
+
+`library_audit.py` audits the existing media library without modifying, deleting, moving or executing any original file. It records an inventory and file metadata, runs whole-file antivirus on files within the 1900 MiB limit, and runs offline file-signature/stream/eight-second decode checks on legacy video formats too. Files that change during the audit are not counted as confirmed results. Reports distinguish antivirus detections, incomplete checks, and policy/media-format findings; a format warning is not a malware verdict.
+
+Oversized files receive supplementary antivirus scans of overlapping 1 GiB byte ranges plus full-container media inspection. This covers their bytes for some signatures but loses whole-file hashing and parsing context. They remain explicitly labelled **limited coverage, not whole-file antivirus clearance**. This audit does not weaken the new-download size limit or publish any existing file through the gate.
+
+Run with `systemd-run --user --unit=media-library-audit --no-block --property=Nice=15 --property=IOSchedulingClass=idle --property=Type=oneshot python3 /home/gold/server-platform/fam-site-src/deploy/media-security/library_audit.py`. It shares the scanner lock, so incoming downloads remain quarantined while it uses the scanner. Progress and reports live under `~/server-platform/media-security/library-audit-status.json` and `library-audit-*/`; verbose per-file progress is in `antivirus.log` and `inspection.log`. Mounts are read-only except private audit output, with no network, no capabilities, bounded memory and one CPU. This is a media-library audit, not a host/process/rootkit assessment.
+
 Backups are under `/home/gold/server-platform/backup-private/media-security-*`; `installed.json` identifies the applicable backup. They include old compose/config/resume data, preferences, Arr clients/mappings and the dashboard env. One private recovery copy of the legacy partial download is retained under `security-store/`.
 
 To pause scanning safely: `systemctl --user stop media-security.timer` (then wait for any active scan or stop its disposable container). Raw downloads remain inaccessible to the importers. Fix a failed scanner or mapping while keeping that boundary. Do not point Arr at raw quarantine or restore the old broad writable qBittorrent media mount as a workaround. Restoring pre-install credentials requires changing all consumers together; restore resume data only with qBittorrent stopped and paths reviewed.

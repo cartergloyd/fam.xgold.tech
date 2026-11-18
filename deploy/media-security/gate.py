@@ -385,5 +385,9 @@ if __name__ == '__main__':
     parser.add_argument('--config', default=str(ROOT / 'config.json'))
     args = parser.parse_args()
     with (ROOT / 'gate.lock').open('a') as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            print('Another scan or signature update is running; downloads remain quarantined')
+            raise SystemExit(0)
         cycle(json.loads(Path(args.config).read_text()))
