@@ -2,15 +2,25 @@ import importlib.util
 import os
 from pathlib import Path
 import sys
+import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
 
 SOURCE = Path(__file__).resolve().parents[1] / 'deploy/media-security'
 sys.path.insert(0, str(SOURCE))
-from gate import snapshot, publish, Rejected, Held, safe_relative, MAX_FILE, open_raw, retry_rejected
+from gate import snapshot, publish, Rejected, Held, safe_relative, MAX_FILE, open_raw, retry_rejected, clam_verdict
 
 class GateTests(unittest.TestCase):
+    def test_scanner_limits_hold_without_malware_blocklisting(self):
+        limit='/candidate/movie.mkv: Heuristics.Limits.Exceeded.MaxScanTime FOUND\n'
+        with self.assertRaises(Held):clam_verdict(subprocess.CompletedProcess([],1,limit,''))
+        with self.assertRaises(Rejected):clam_verdict(subprocess.CompletedProcess([],1,limit+'/candidate/extra: Eicar-Test-Signature FOUND\n',''))
+        with self.assertRaises(Held):clam_verdict(subprocess.CompletedProcess([],2,'','ERROR scanner failed'))
+        with self.assertRaises(Held):clam_verdict(subprocess.CompletedProcess([],0,'','WARNING scan skipped'))
+        with self.assertRaises(Held):clam_verdict(subprocess.CompletedProcess([],1,'',''))
+        self.assertIsNone(clam_verdict(subprocess.CompletedProcess([],0,'/candidate/movie.mp4: OK\n','')))
+
     def test_path_traversal_and_control_characters(self):
         for value in ['/etc/passwd', '../escape', 'a/../../b', 'evil\nname']:
             with self.assertRaises(Rejected): safe_relative(value)

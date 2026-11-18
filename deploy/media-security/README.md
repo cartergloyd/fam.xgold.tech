@@ -25,11 +25,16 @@ Snapshots use separate file data, not raw hardlinks. Raw writes after a scan can
 - File extensions and detected MIME/signatures must agree. Executables, scripts, archives, active text, unsupported extensions and embedded attachment/data streams are rejected. FFprobe requires a video stream and finite positive duration; FFmpeg decodes eight seconds with file-only protocols.
 - Individual files above **1900 MiB (1.86 GiB)** are held, because this configuration does not claim complete antivirus coverage above ClamAV's supported limits. Many 4K releases will therefore remain held. There is no automatic override or chunk-scan shortcut.
 - One torrent per cycle; at least 1.7 GiB available host memory before ClamAV, at most 1408 MiB scanner RAM with no scanner swap. Parser gets 512 MiB. OOM, timeout, stale signatures and tool errors keep files held. A held download is retried after ten minutes; a long scan can take up to 30 minutes.
+- ClamAV gets ten minutes per file within the overall scan deadline. Engine scan-limit alerts are held as incomplete checks, not classified as malware or used to blocklist a release. Confirmed detection alerts still reject the release.
 - Rejected files remain outside the library and the torrent is stopped. For Arr-owned downloads, the matching queue item is marked failed/blocklisted with redownload requested; no raw files are deleted. Manual downloads stay quarantined. Without a working indexer, a replacement cannot be found.
 
 ## Indexers and authentication
 
 Prowlarr applications require the `security-approved` tag. The registry in private `config.json` records each approved indexer's ID, name, provider/settings fingerprint and reason. The gate removes approval tags from unknown/changed sources each cycle. To approve a source **after owner approval**, run `approve_indexer.py ID --reason 'source, authorized use and owner approval'`. It records the decision, tags and syncs the source. Sources added without the approval tag cannot sync to Arr. An administrator manually changing tags/Arr configuration remains a trusted administrative action.
+
+52BT is installed disabled; see [its connectivity and metadata review](52BT-REVIEW.md). Internet Archive is enabled, but enabled is not evidence of a working connection. Both installed definitions use placeholder seeder counts, so neither can supply a meaningful real-seeder reputation filter. The Internet Archive definition currently declares both movie and TV categories; earlier deployment notes describing it as movies-only are superseded.
+
+Verified category directories `media/Verified/radarr/` and `media/Verified/sonarr/` must exist even before the first passing release. The installer creates them. They were checked from inside the respective containers and their health warnings cleared on November 17, 2026.
 
 qBittorrent has a random password, localhost and subnet bypasses are off, and CSRF protection is on. Dashboard, Radarr, Sonarr and the controller have credentials. qBittorrent 5.3 uses HTTP 204 and `QBT_SID_<port>` cookies; the dashboard client was updated for both. Credentials are only in private host files; retrieve them from `/home/gold/server-platform/media-security/webui-credentials.txt` (0600). Prefer an SSH tunnel for WebUI use: the existing LAN listener uses HTTP.
 

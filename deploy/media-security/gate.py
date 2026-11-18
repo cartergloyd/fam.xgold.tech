@@ -180,6 +180,19 @@ def snapshot(source, destination, max_total=100 * 1024**3):
     if not count:
         raise Rejected('Empty download')
 
+def clam_verdict(result):
+    """Engine limits are incomplete scans, not malware verdicts or blocklist reasons."""
+    if result.returncode == 1:
+        alerts = [s.rsplit(': ', 1)[-1] for s in result.stdout.splitlines() if s.endswith(' FOUND')]
+        detections = [s for s in alerts if not s.startswith('Heuristics.Limits.Exceeded.')]
+        if detections:
+            raise Rejected('ClamAV detection: ' + detections[0])
+        if alerts:
+            raise Held('ClamAV scan limit reached; nothing released')
+        raise Held('ClamAV returned an unconfirmed alert; nothing released')
+    if result.returncode or 'ERROR' in result.stdout + result.stderr or 'WARNING' in result.stdout + result.stderr:
+        raise Held('ClamAV failed or could not finish; nothing released')
+
 def scan(candidate, config):
     updated = json.loads((ROOT / 'database.json').read_text())['updatedAt']
     if time.time() - updated > 48 * 3600:
@@ -188,13 +201,10 @@ def scan(candidate, config):
     if mem < 1700 * 1024**2:
         raise Held('Waiting for 1.7 GiB available memory for antivirus')
     r = isolated(CLAM, [(candidate, '/candidate'), (ROOT / 'clamdb', '/var/lib/clamav')], 'clamscan',
-        ['--recursive', '--stdout', '--infected', '--max-filesize=1900M', '--max-scansize=2000M',
+        ['--recursive', '--stdout', '--infected', '--max-filesize=1900M', '--max-scansize=2000M', '--max-scantime=600000',
          '--alert-exceeds-max=yes', '--alert-encrypted=yes', '--alert-broken=yes',
          '--follow-dir-symlinks=0', '--follow-file-symlinks=0', '/candidate'], memory='1408m', timeout=1800)
-    if r.returncode == 1:
-        raise Rejected('ClamAV detection: ' + next((s.rsplit(': ', 1)[-1] for s in r.stdout.splitlines() if ' FOUND' in s), 'malware or scan limit'))
-    if r.returncode or 'ERROR' in r.stdout + r.stderr or 'WARNING' in r.stdout + r.stderr:
-        raise Held('ClamAV failed or could not finish; nothing released')
+    clam_verdict(r)
     r = isolated(config['inspector_image'], [(candidate, '/candidate')], 'python3', ['/inspect_media.py'], timeout=900)
     if r.returncode == 1:
         raise Rejected('File checks failed: ' + r.stderr.strip()[-200:])

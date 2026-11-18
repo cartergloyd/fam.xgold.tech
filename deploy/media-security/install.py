@@ -62,6 +62,8 @@ def run(args):
 if __name__ == '__main__':
     if (ROOT/'installed.json').exists(): raise SystemExit('Already installed; use the documented update procedure')
     config=json.loads((ROOT/'config.json').read_text())
+    for category in ['radarr','sonarr','manual']:
+        (Path(config['verified'])/category).mkdir(mode=0o755,parents=True,exist_ok=True)
     verification=json.loads((ROOT/'scanner-verification.json').read_text())
     assert verification['clean']['result']=='passed' and verification['eicar']['result']=='rejected'
     now=datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')
