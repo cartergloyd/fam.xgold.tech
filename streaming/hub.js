@@ -209,7 +209,8 @@
     tab = name;
     for (const t of tabs) { const on = t.dataset.tab === name; t.setAttribute('aria-selected', on); t.tabIndex = on ? 0 : -1; $('panel-' + t.dataset.tab).hidden = !on; }
     clearInterval(poll);
-    if (name === 'requests' || name === 'admin') { refreshRequests(); poll = setInterval(() => { if (!document.hidden) { refreshRequests(); if (tab === 'admin') loadAdmin(); } }, 15000); }
+    // Admin refresh reads four endpoints; pace it within the shared read rate limit.
+    if (name === 'requests' || name === 'admin') { refreshRequests(); poll = setInterval(() => { if (!document.hidden) { refreshRequests(); if (tab === 'admin') loadAdmin(); } }, name === 'admin' ? 60000 : 15000); }
     if (name === 'admin') loadAdmin();
   };
   tabs.forEach((t, i) => {
