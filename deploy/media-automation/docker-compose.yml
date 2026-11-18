@@ -1,6 +1,6 @@
 # Radarr (movies), Sonarr (TV), Prowlarr (indexers). Private: loopback ports only, plus internal Docker networks.
 # qBittorrent stays in its own VPN stack (../qbittorrent-vpn); these containers only talk to its web UI.
-# The media folder is mounted at the SAME path qBittorrent uses, so reported download paths need no remapping and imports hardlink.
+# qBittorrent /incoming paths map to media/Verified; raw quarantine lives outside this mount.
 x-arr: &arr
   restart: unless-stopped
   environment: &env
@@ -8,6 +8,9 @@ x-arr: &arr
     PGID: "1000"
     TZ: America/Chicago
   security_opt: [no-new-privileges:true]
+  cap_drop: [ALL]
+  cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETUID, SETGID, KILL]
+  pids_limit: 128
   logging: {driver: json-file, options: {max-size: 5m, max-file: "3"}}
 services:
   radarr:

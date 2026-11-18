@@ -72,6 +72,21 @@ test('routes refuse anonymous callers, wrong origins and non-admins', async () =
   };
   for (const key of ['GET /streaming/me', 'GET /streaming/discover', 'GET /streaming/search', 'POST /streaming/requests', 'GET /streaming/requests', 'POST /streaming/requests/:id/approve', 'POST /streaming/requests/:id/deny', 'GET /streaming/admin/users', 'POST /streaming/admin/users/:id/role', 'GET /streaming/admin/health'])
     assert.equal((await call(key)).status, 401, key);
+  assert.equal((await call('GET /streaming/admin/security')).status, 401);
   assert.equal((await call('POST /streaming/requests', { origin: 'https://evil.example' })).status, 403);
   assert.equal((await call('POST /streaming/admin/users/:id/role', { origin: '' })).status, 403);
+});
+
+test('security status is admin-only and stale reports cannot appear healthy', async () => {
+  for (const role of ['standard', 'admin']) {
+    const handlers = {};
+    const router = { get: (p, fn) => handlers[p] = fn, post() {} };
+    streamingHub(router, { database: () => ({}) }, { noSync: true, now: () => 4000000,
+      sessionUser: async () => ({ streaming_role: role }),
+      securityStatus: async () => ({ updatedAt: 1, ok: true, counts: {}, events: [], indexers: [] }) });
+    const out = {}, res = { set() {}, status(c) { out.status = c; return res; }, json(data) { out.data = data; } };
+    await handlers['/streaming/admin/security']({ get() { return 'session'; }, ip: role }, res);
+    if (role === 'standard') assert.equal(out.status, 403);
+    else { assert.equal(out.data.stale, true); assert.equal(out.data.ok, false); }
+  }
 });

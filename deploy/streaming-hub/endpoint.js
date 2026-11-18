@@ -424,5 +424,17 @@ export default function streamingHub(router, { database }, options = {}) {
     return { ok: !out.some(i => i.level === 'error'), issues: out };
   });
 
+  route('get', '/streaming/admin/security', async req => {
+    await admin(req);
+    try {
+      const data = options.securityStatus ? await options.securityStatus()
+        : JSON.parse(await readFile(new URL('../.media-security-status.json', import.meta.url), 'utf8'));
+      const stale = now() - data.updatedAt * 1000 > 45 * 60000;
+      return { ...data, ok: data.ok && !stale, stale };
+    } catch {
+      return { ok: false, issue: 'The quarantine gate has not reported its status.', counts: {}, events: [], indexers: [] };
+    }
+  });
+
   return { syncOnce, dispatch };
 }

@@ -1,0 +1,70 @@
+services:
+  gluetun:
+    image: qmcgaw/gluetun:latest
+    container_name: qbittorrent-vpn
+    cap_add:
+    - NET_ADMIN
+    devices:
+    - /dev/net/tun:/dev/net/tun
+    env_file:
+    - .env
+    environment:
+      VPN_SERVICE_PROVIDER: nordvpn
+      VPN_TYPE: openvpn
+      SERVER_COUNTRIES: United States
+      SERVER_CATEGORIES: Standard VPN servers
+      TZ: America/Chicago
+      FIREWALL_INPUT_PORTS: '8080'
+      FIREWALL_OUTBOUND_SUBNETS: 192.168.1.0/24,127.0.0.1/32
+    ports:
+    - 8080:8080
+    restart: unless-stopped
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:5.3.0_v2.1.2-ls487
+    container_name: qbittorrent
+    mem_limit: 512m
+    memswap_limit: 512m
+    network_mode: service:gluetun
+    depends_on:
+    - gluetun
+    environment:
+      PUID: '1000'
+      PGID: '1000'
+      TZ: America/Chicago
+      WEBUI_PORT: '8080'
+    volumes:
+    - type: bind
+      source: ./config
+      target: /config
+    - type: bind
+      source: /home/gold/Jellyfin Server/security-store/raw
+      target: /incoming
+    - type: bind
+      source: /home/gold/Jellyfin Server/media/Movies
+      target: /downloads
+      read_only: true
+    - type: bind
+      source: /home/gold/Jellyfin Server/media/Movies
+      target: /movies
+      read_only: true
+    - type: bind
+      source: /home/gold/Jellyfin Server/media/Movies
+      target: /home/gold/Jellyfin Server/media/Movies
+      read_only: true
+    - type: bind
+      source: /home/gold/Jellyfin Server/media/Shows
+      target: /home/gold/Jellyfin Server/media/Shows
+      read_only: true
+    restart: unless-stopped
+    cap_drop:
+    - ALL
+    cap_add:
+    - CHOWN
+    - DAC_OVERRIDE
+    - FOWNER
+    - SETUID
+    - SETGID
+    - KILL
+    security_opt:
+    - no-new-privileges:true
+    pids_limit: 128

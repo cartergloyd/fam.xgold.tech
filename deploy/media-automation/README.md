@@ -2,6 +2,8 @@
 
 Installed 2026-11-17 on gold-server. The family site (`/streaming/`) is the only interface people use; these services are private.
 
+**Security update:** [media-security](../media-security/README.md) replaces the original download paths and anonymous qBittorrent access described below. Raw downloads now live outside the media mount, `/incoming/` maps to verified copies for Arr, and new indexers require documented approval. Read that document for the current storage boundary, password location and scan limits.
+
 ```
 fam.xgold.tech/streaming  ->  fam-api (Directus extension streaming-hub.js)  ->  Radarr / Sonarr  ->  qBittorrent (behind gluetun VPN)  ->  Jellyfin
                                                                                     ^ Prowlarr pushes indexers to both

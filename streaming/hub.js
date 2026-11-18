@@ -181,7 +181,7 @@
   const peopleBox = $('hub-people'), healthBox = $('hub-health'), peopleNote = $('hub-people-note');
   const loadAdmin = async () => {
     try {
-      const [{ users }, health] = await Promise.all([api('/admin/users'), api('/admin/health')]);
+      const [{ users }, health, security] = await Promise.all([api('/admin/users'), api('/admin/health'), api('/admin/security')]);
       peopleBox.replaceChildren(...users.map(u => {
         const select = h('select', { 'aria-label': `Role for ${u.name}`, onchange: async () => {
           select.disabled = true;
@@ -192,6 +192,14 @@
       }));
       healthBox.replaceChildren(health.issues.length ? h('ul', { class: 'issues' }, health.issues.map(i => h('li', {}, h('b', {}, i.source), ': ', i.message)))
         : h('p', { class: 'empty' }, 'Everything is working.'));
+      $('hub-security').replaceChildren(
+        h('p', { class: 'line' }, security.ok ? 'Quarantine gate is running.' : (security.stale ? 'Security status is out of date.' : security.issue || 'Security needs attention.')),
+        h('p', { class: 'hub-note' }, `${security.counts.passed || 0} passed · ${security.counts.held || 0} held · ${security.counts.rejected || 0} rejected`),
+        security.alertError ? h('p', { class: 'line', role: 'alert' }, security.alertError) : null,
+        h('p', { class: 'hub-note' }, 'Files stay outside the library until checks pass. Checks reduce risk; they cannot guarantee a file is safe.'),
+        h('p', { class: 'hub-note' }, `Files above ${security.maxFileGiB || '1.86'} GiB are held for review. Existing library files are outside this gate.`),
+        h('ul', { class: 'issues' }, security.indexers.map(i => h('li', {}, `${i.name}: ${i.approved ? 'approved' : 'awaiting approval'}`))),
+        security.events.length ? h('details', {}, h('summary', {}, 'Recent checks'), h('ul', { class: 'issues' }, security.events.map(e => h('li', {}, `${e.status}: ${e.reason}`)))) : null);
     } catch (e) { if (e instanceof NeedsSignIn) return show(); healthBox.replaceChildren(h('p', { class: 'empty' }, e.message)); }
   };
 
@@ -201,7 +209,7 @@
     tab = name;
     for (const t of tabs) { const on = t.dataset.tab === name; t.setAttribute('aria-selected', on); t.tabIndex = on ? 0 : -1; $('panel-' + t.dataset.tab).hidden = !on; }
     clearInterval(poll);
-    if (name === 'requests' || name === 'admin') { refreshRequests(); poll = setInterval(() => { if (!document.hidden) refreshRequests(); }, 15000); }
+    if (name === 'requests' || name === 'admin') { refreshRequests(); poll = setInterval(() => { if (!document.hidden) { refreshRequests(); if (tab === 'admin') loadAdmin(); } }, 15000); }
     if (name === 'admin') loadAdmin();
   };
   tabs.forEach((t, i) => {

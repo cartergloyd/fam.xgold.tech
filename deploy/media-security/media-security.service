@@ -1,0 +1,14 @@
+[Unit]
+Description=Scan completed quarantined media before library import
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /home/gold/server-platform/fam-site-src/deploy/media-security/gate.py
+Nice=15
+IOSchedulingClass=idle
+TimeoutStartSec=40min
+UMask=0077
+# Controller needs Docker, but each parser receives only a read-only candidate and no network.
+NoNewPrivileges=true
+

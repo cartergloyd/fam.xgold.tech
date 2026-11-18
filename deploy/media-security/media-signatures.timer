@@ -1,0 +1,10 @@
+[Unit]
+Description=Update media malware signatures daily
+
+[Timer]
+OnCalendar=*-*-* 03:15:00 America/Chicago
+Persistent=true
+RandomizedDelaySec=15min
+
+[Install]
+WantedBy=timers.target

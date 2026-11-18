@@ -1,0 +1,9 @@
+[Unit]
+Description=Update ClamAV signatures without exposing media
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /home/gold/server-platform/fam-site-src/deploy/media-security/update_database.py
+Nice=15
+TimeoutStartSec=16min
+NoNewPrivileges=true
