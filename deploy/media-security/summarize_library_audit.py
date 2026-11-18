@@ -8,6 +8,7 @@ import datetime
 import json
 from pathlib import Path
 import time
+from zoneinfo import ZoneInfo
 from gate import ROOT, atomic
 
 statusfile=ROOT/'library-audit-status.json'
@@ -16,26 +17,29 @@ directory=Path(status['directory'])
 reportfile=directory/'report.json'
 if reportfile.exists():
     r=json.loads(reportfile.read_text())
-    date=datetime.datetime.fromtimestamp(r['finishedAt'],datetime.timezone.utc).isoformat()
+    date=datetime.datetime.fromtimestamp(r['finishedAt'],ZoneInfo('America/Chicago')).strftime('%Y-%m-%d %I:%M %p %Z')
+    limits={p:v for p,v in r['detections'].items() if 'Heuristics.Limits.Exceeded.' in v}
+    detections={p:v for p,v in r['detections'].items() if p not in limits}
     lines=['# Existing media library scan', '', 'Finished: '+date, '',
         f"Inventoried {r['files']} files ({r['totalBytes']/1024**3:.2f} GiB).",
         f"Whole-file antivirus returned no detections for {r['wholeFileNoDetections']} unchanged files.",
-        f"Antivirus detections: {len(r['detections'])}. Unconfirmed AV entries: {len(r['unconfirmedAntivirus'])}.",
+        f"Antivirus detections: {len(detections)}. Scan-limit alerts: {len(limits)}. Unconfirmed AV entries: {len(r['unconfirmedAntivirus'])}.",
         f"File/signature/media inspections completed: {r['filesInspected']}. Findings needing review: {len(r['inspectionFindings'])}.",
         f"Files changed during scanning: {len(r['changedDuringScan'])}.", '',
         'Media-format/policy findings are not malware verdicts. No files were deleted or moved.', '',
         '## Oversized files: limited coverage', '',
         'These received overlapping chunk scans and media checks. They did not receive whole-file antivirus clearance.', '']
     lines += ['- '+i['path']+f" ({i['size']/1024**3:.2f} GiB)" for i in r['largeFileLimitedCoverage']]
-    if r['detections']:
+    if detections:
         lines+=['','## Antivirus detections','']
-        lines += ['- '+path+': '+verdict for path,verdict in r['detections'].items()]
+        lines += ['- '+path+': '+verdict for path,verdict in detections.items()]
     if r['inspectionFindings']:
         lines+=['','## File and media findings','']
         lines += ['- '+i['path']+': '+('; '.join(i['warnings']) or i['error']) for i in r['inspectionFindings']]
-    if r['antivirusErrors'] or r['unconfirmedAntivirus'] or r['changedDuringScan']:
+    if r['antivirusErrors'] or r['unconfirmedAntivirus'] or r['changedDuringScan'] or limits:
         lines+=['','## Incomplete coverage','']
         lines += ['- '+v for v in r['antivirusErrors']+r['unconfirmedAntivirus']+r['changedDuringScan']]
+        lines += ['- '+path+': '+verdict+' (scan incomplete, not a malware verdict)' for path,verdict in limits.items()]
     lines+=['','This is a snapshot-in-time media audit. It does not establish that the host has never been compromised, inspect processes/rootkits, or rule out unknown malware/player exploits.',
         '', 'Detailed evidence: '+str(reportfile)]
 else:
