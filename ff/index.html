@@ -383,6 +383,55 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
 .hist-bar { display:flex; align-items:center; flex-wrap:wrap; gap:10px 14px; margin:0 0 14px; }
 .hist-bar span { color:var(--muted); font-size:15px; }
 .rb-sub { margin:26px 4px 4px; color:var(--muted); font-size:15px; font-weight:600; }
+
+/* League funds, laid out like a quote in Apple's Stocks app: name, value and change, a segmented picker,
+   an area chart against a dashed cost line, then a grid of stats. */
+#funds { padding-top:22px; }
+.funds { --num:system-ui,-apple-system,"SF Pro Display",sans-serif; padding:clamp(18px,3vw,28px) clamp(16px,3vw,28px); border-radius:32px; background:rgba(20,23,34,.84); border:1px solid var(--glass-edge); -webkit-backdrop-filter:blur(22px) saturate(145%); backdrop-filter:blur(22px) saturate(145%); box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 14px 45px rgba(0,0,0,.20); }
+.fd-head { display:flex; align-items:baseline; flex-wrap:wrap; gap:2px 14px; padding-bottom:14px; border-bottom:1px solid var(--line); }
+.fd-head h2 { margin:0; font-size:clamp(2rem,6vw,2.75rem); font-weight:800; letter-spacing:-0.03em; line-height:1.1; }
+.fd-head span { color:var(--muted); font-size:17px; font-weight:500; min-width:0; overflow-wrap:anywhere; }
+.fd-quote { display:flex; flex-wrap:wrap; gap:12px 0; padding:14px 0 12px; }
+.fd-quote > div { padding-right:22px; }
+.fd-quote > div + div { padding-left:22px; border-left:1px solid var(--line); }
+.fd-quote b { font-family:var(--num); font-size:26px; font-weight:700; letter-spacing:-0.01em; font-variant-numeric:tabular-nums; }
+.fd-chg { margin-left:10px; font-size:20px; font-weight:500; font-variant-numeric:tabular-nums; }
+.fd-chg.up,.fd-stats .up { color:var(--up); } .fd-chg.down,.fd-stats .down { color:var(--down); }
+.fd-quote small { display:block; margin-top:2px; color:var(--muted); font-size:17px; font-weight:600; }
+.fd-src { margin:0; padding-bottom:14px; border-bottom:1px solid var(--line); color:var(--faint); font-size:15px; font-weight:500; }
+.fd-tabs { display:flex; gap:4px; margin:10px -6px 6px; overflow-x:auto; scrollbar-width:none; }
+.fd-tabs::-webkit-scrollbar { display:none; }
+.fd-tabs button { flex:none; min-width:56px; min-height:44px; padding:0 16px; border:0; border-radius:999px; background:none; color:var(--fg); font-size:17px; font-weight:500; cursor:pointer; transition:background .2s; }
+.fd-tabs button:hover { background:rgba(255,255,255,.07); }
+.fd-tabs button[aria-pressed="true"] { background:rgba(255,255,255,.14); font-weight:700; }
+.fd-plot { --axis:56px; position:relative; height:clamp(190px,32vw,300px); margin-top:8px; }
+.fd-plot svg { position:absolute; left:0; top:0; width:calc(100% - var(--axis)); height:100%; overflow:visible; }
+.fd-grid { position:absolute; left:0; right:0; border-top:1px solid rgba(255,255,255,.1); }
+.fd-grid.base { border-top-color:rgba(255,255,255,.3); }
+.fd-grid span { position:absolute; right:0; top:4px; font-family:var(--num); font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; }
+.fd-grid.base span { top:auto; bottom:5px; }
+.fd-plot .cost { stroke:var(--muted); stroke-width:1.5; stroke-dasharray:5 5; vector-effect:non-scaling-stroke; }
+.fd-plot .line { fill:none; stroke-width:2.5; stroke-linecap:round; vector-effect:non-scaling-stroke; }
+.fd-plot .up { stroke:var(--up); } .fd-plot .down { stroke:var(--down); }
+.fd-plot stop.up { stop-color:var(--up); } .fd-plot stop.down { stop-color:var(--down); }
+.fd-x { display:flex; justify-content:space-between; margin:8px 56px 0 0; color:var(--muted); font-size:15px; font-weight:500; }
+.fd-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); margin-top:16px; }
+.fd-stats dl { margin:0; }
+.fd-stats > dl { padding:0 18px; border-left:1px solid var(--line); }
+.fd-stats > dl:first-child { padding-left:0; border-left:0; }
+.fd-stats > dl:last-child { padding-right:0; }
+.fd-stats dl > div { display:flex; justify-content:space-between; gap:10px; padding:5px 0; font-size:16px; }
+.fd-stats dt { color:var(--faint); font-weight:500; white-space:nowrap; }
+.fd-stats dd { margin:0; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.fd-note { margin:14px 4px 0; color:var(--faint); font-size:13px; line-height:1.45; }
+@media (max-width:640px) {
+  .fd-stats { grid-template-columns:1fr; }
+  .fd-stats > dl { padding:0; border-left:0; }
+  .fd-quote > div { padding-right:14px; } .fd-quote > div + div { padding-left:14px; }
+  .fd-quote b { font-size:22px; } .fd-chg { margin-left:8px; font-size:17px; } .fd-quote small { font-size:15px; }
+  .fd-plot { --axis:46px; } .fd-x { margin-right:46px; font-size:13px; } .fd-grid span { font-size:13px; }
+}
+@media(prefers-reduced-transparency:reduce) { .funds { background:#202129; -webkit-backdrop-filter:none; backdrop-filter:none; } }
 </style><link rel="stylesheet" href="/ribbon.css?v=6">
 <script src="/ribbon.js?v=7" defer></script>
 </head><body>
@@ -398,6 +447,18 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
 </header>
 
 <main id="main">
+  <section id="funds" aria-labelledby="funds-h">
+    <div class="funds">
+      <div class="fd-head"><h2 id="funds-h">League Funds</h2><span id="fd-name"></span></div>
+      <div class="fd-quote" id="fd-quote"></div>
+      <p class="fd-src" id="fd-src"></p>
+      <div class="fd-tabs" id="fd-tabs" role="group" aria-label="Choose a holding"></div>
+      <div id="fd-chart"></div>
+      <div class="fd-stats" id="fd-stats"></div>
+    </div>
+    <p class="fd-note">A snapshot of the league's holding account, updated by hand. The chart runs from what was paid in to what it is worth now; the dashed line is the cost.</p>
+  </section>
+
   <section id="scores" aria-labelledby="scores-h">
     <div class="sec-head">
       <div><h2 id="scores-h">Scoreboard</h2><p id="scores-sub">Tap a matchup to see both lineups.</p></div>
@@ -469,6 +530,102 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
   <p>Scores, rosters and moves come straight from <a href="https://sleeper.com" target="_blank" rel="noopener">Sleeper</a> and refresh every minute while games are on. Player injury designations update daily. League news also posts to our Discord.</p>
 </footer>
 
+
+<script>
+// League funds. A hand-kept snapshot of the holding account: to update it, change asOf and each
+// holding's shares, cost (total paid) and value (worth today). Everything else is worked out from these.
+(function () {
+  var FUNDS = {
+    name: 'Fantasy Football Holding Account',
+    asOf: '2026-11-21',
+    holdings: [
+      { id: 'NVDL', shares: 3.618, cost: 119.95, value: 37.37, low52: 10.05, high52: 43.27 },
+      { id: 'SHAZ', shares: 1.71, cost: 120.00, value: 28.77, low52: 1.90, high52: 139.00 },
+      { id: 'Cash', sub: 'SPAXX money market', cash: true, cost: 83.16, value: 83.16 }
+    ]
+  };
+  var $ = function (id) { return document.getElementById(id); };
+  var sum = function (key) { return FUNDS.holdings.reduce(function (t, h) { return t + h[key]; }, 0); };
+  var total = { cost: sum('cost'), value: sum('value') };
+  var money = function (n) { return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+  var signed = function (n, suffix) { var r = Math.round(n * 100) / 100; return (r > 0 ? '+' : r < 0 ? '−' : '') + money(Math.abs(r)) + (suffix || ''); };
+  var pct = function (from, to) { return from ? (to - from) / from * 100 : 0; };
+  var dir = function (from, to) { return Math.round((to - from) * 100) < 0 ? 'down' : 'up'; };
+  var when = new Date(FUNDS.asOf + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  var shortWhen = when.replace(/,.*/, '');
+
+  // Round gridlines that bracket both ends of the line, three or four of them.
+  function ticks(lo, hi) {
+    var span = (hi - lo) || hi * 0.1 || 1, raw = span / 3, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    var step = [1, 2, 2.5, 5, 10].map(function (m) { return m * mag; }).filter(function (s) { return s >= raw; })[0];
+    var out = [];
+    for (var t = Math.floor(lo / step) * step; t < hi + step - 1e-9; t += step) out.push(Math.round(t * 100) / 100);
+    if (out.length < 2) out.push(out[0] + step);
+    return out;
+  }
+
+  // Gridlines and labels are HTML so the type stays one size; only the line stretches with the card.
+  function chart(from, to, label) {
+    var tk = ticks(Math.min(from, to), Math.max(from, to)), lo = tk[0], hi = tk[tk.length - 1];
+    var y = function (v) { return (100 - (v - lo) / (hi - lo) * 94).toFixed(2); };
+    var d = dir(from, to), y0 = y(from), y1 = y(to), whole = tk.every(function (t) { return t % 1 === 0; });
+    return '<div class="fd-plot" role="img" aria-label="' + label + '">' +
+      tk.map(function (t, i) { return '<div class="fd-grid' + (i ? '' : ' base') + '" style="top:' + y(t) + '%"><span>' + (whole ? t : money(t)) + '</span></div>'; }).join('') +
+      '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' +
+      '<defs><linearGradient id="fd-fill" x1="0" y1="0" x2="0" y2="1"><stop class="' + d + '" offset="0" stop-opacity=".3"/><stop class="' + d + '" offset="1" stop-opacity="0"/></linearGradient></defs>' +
+      '<path fill="url(#fd-fill)" d="M0 ' + y0 + 'L100 ' + y1 + 'V100H0Z"/>' +
+      '<line class="cost" x1="0" x2="100" y1="' + y0 + '" y2="' + y0 + '"/>' +
+      '<path class="line ' + d + '" d="M0 ' + y0 + 'L100 ' + y1 + '"/></svg></div>' +
+      '<div class="fd-x" aria-hidden="true"><span>Paid in</span><span>' + shortWhen + '</span></div>';
+  }
+
+  var stat = function (k, v, cls) { return '<div><dt>' + k + '</dt><dd' + (cls ? ' class="' + cls + '"' : '') + '>' + v + '</dd></div>'; };
+  var col = function (rows) { return '<dl>' + rows.join('') + '</dl>'; };
+
+  function show(id) {
+    var h = FUNDS.holdings.filter(function (x) { return x.id === id; })[0], src = h || total, change = pct(src.cost, src.value), cols, quote, from, to, what;
+    Array.prototype.forEach.call($('fd-tabs').children, function (b) { b.setAttribute('aria-pressed', String(b.dataset.id === id)); });
+    if (!h) {
+      var stocks = FUNDS.holdings.filter(function (x) { return !x.cash; }), cash = total.value - stocks.reduce(function (t, x) { return t + x.value; }, 0);
+      from = total.cost; to = total.value; what = 'The fund';
+      $('fd-name').textContent = FUNDS.name;
+      quote = [[money(to), 'Value', true], [money(from), 'Paid In']];
+      cols = [
+        [stat('Paid In', money(from)), stat('Value', money(to)), stat('Return', signed(to - from), dir(from, to))],
+        [stat('Stocks', money(to - cash)), stat('Cash', money(cash)), stat('In Cash', (cash / to * 100).toFixed(2) + '%')],
+        stocks.map(function (x) { return stat(x.id, signed(pct(x.cost, x.value), '%'), dir(x.cost, x.value)); })
+      ];
+    } else if (h.cash) {
+      from = h.cost; to = h.value; what = 'Cash';
+      $('fd-name').textContent = h.sub;
+      quote = [[money(to), 'Balance'], [(to / total.value * 100).toFixed(2) + '%', 'Of Fund']];
+      cols = [[stat('Balance', money(to)), stat('Of Fund', (to / total.value * 100).toFixed(2) + '%')]];
+    } else {
+      // The chart and quote are per share for a holding, as a stock quote would be.
+      from = h.cost / h.shares; to = h.value / h.shares; what = h.id;
+      $('fd-name').textContent = h.id + ' \u00b7 ' + h.shares + ' shares';
+      quote = [[money(to), 'Price', true], [money(from), 'Avg Cost']];
+      cols = [
+        [stat('Shares', h.shares), stat('Avg Cost', money(from)), stat('Price', money(to))],
+        [stat('Cost', money(h.cost)), stat('Value', money(h.value)), stat('Return', signed(h.value - h.cost), dir(h.cost, h.value))],
+        [stat('52W H', money(h.high52)), stat('52W L', money(h.low52)), stat('Of Fund', (h.value / total.value * 100).toFixed(2) + '%')]
+      ];
+    }
+    $('fd-quote').innerHTML = quote.map(function (q) {
+      return '<div><b>' + q[0] + '</b>' + (q[2] ? '<span class="fd-chg ' + dir(from, to) + '">' + signed(change, '%') + '</span>' : '') + '<small>' + q[1] + '</small></div>';
+    }).join('');
+    $('fd-chart').innerHTML = chart(from, to, what + ' went from ' + money(from) + ' paid in to ' + money(to) + ' on ' + when + ', ' + signed(change, ' percent') + '.');
+    $('fd-stats').innerHTML = cols.map(col).join('');
+  }
+
+  $('fd-src').textContent = 'Fidelity · USD · As of ' + when;
+  $('fd-tabs').innerHTML = ['All'].concat(FUNDS.holdings.map(function (h) { return h.id; })).map(function (id) {
+    return '<button type="button" data-id="' + id + '">' + id + '</button>';
+  }).join('');
+  $('fd-tabs').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) show(b.dataset.id); });
+  show('All');
+})();
+</script>
 
 <script>
 (function () {
@@ -1466,7 +1623,8 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
   function fail(e) {
     console.error(e);
     $('title').textContent = 'Couldn’t reach Sleeper';
-    $('main').innerHTML = '<div class="err"><p>Sleeper didn’t answer. It may be down for a minute.</p><button class="btn" type="button" onclick="location.reload()">Try again</button></div>';
+    Array.prototype.slice.call($('main').children).forEach(function (el) { if (el.id !== 'funds') el.remove(); });  // the funds don't need Sleeper
+    $('main').insertAdjacentHTML('beforeend', '<div class="err" style="padding-top:48px"><p>Sleeper didn’t answer. It may be down for a minute.</p><button class="btn" type="button" onclick="location.reload()">Try again</button></div>');
   }
 
   var playersLoad = fetch(CFG.playersUrl).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
