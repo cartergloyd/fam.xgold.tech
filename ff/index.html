@@ -411,7 +411,7 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
 .fd-grid span { position:absolute; right:0; top:4px; font-family:var(--num); font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; }
 .fd-grid.base span { top:auto; bottom:5px; }
 .fd-plot .cost { stroke:var(--muted); stroke-width:1.5; stroke-dasharray:5 5; vector-effect:non-scaling-stroke; }
-.fd-plot .line { fill:none; stroke-width:2.5; stroke-linecap:round; vector-effect:non-scaling-stroke; }
+.fd-plot .line { fill:none; stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; vector-effect:non-scaling-stroke; }
 .fd-plot .up { stroke:var(--up); } .fd-plot .down { stroke:var(--down); }
 .fd-plot stop.up { stop-color:var(--up); } .fd-plot stop.down { stop-color:var(--down); }
 .fd-x { display:flex; justify-content:space-between; margin:8px 56px 0 0; color:var(--muted); font-size:15px; font-weight:500; }
@@ -456,7 +456,7 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
       <div id="fd-chart"></div>
       <div class="fd-stats" id="fd-stats"></div>
     </div>
-    <p class="fd-note">A snapshot of the league's holding account, updated by hand. The chart runs from what was paid in to what it is worth now; the dashed line is the cost.</p>
+    <p class="fd-note">A snapshot of the league's holding account, updated by hand. The chart runs from what was paid in, through each saved checkpoint, to what it is worth now; the dashed line is the cost.</p>
   </section>
 
   <section id="scores" aria-labelledby="scores-h">
@@ -534,10 +534,16 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
 <script>
 // League funds. A hand-kept snapshot of the holding account: to update it, change asOf and each
 // holding's shares, cost (total paid) and value (worth today). Everything else is worked out from these.
+// Before overwriting the values, copy the old ones into history as a checkpoint, oldest first:
+//   { date: '2026-11-21', NVDL: 37.37, SHAZ: 28.77, Cash: 83.16 }
+// The chart runs paid in, then each checkpoint, then today. Set bought to the purchase date
+// (YYYY-MM-DD) to space the points by time; without it they are spaced evenly.
 (function () {
   var FUNDS = {
     name: 'Fantasy Football Holding Account',
     asOf: '2026-11-21',
+    bought: '',
+    history: [],
     holdings: [
       { id: 'NVDL', shares: 3.618, cost: 119.95, value: 37.37, low52: 10.05, high52: 43.27 },
       { id: 'SHAZ', shares: 1.71, cost: 120.00, value: 28.77, low52: 1.90, high52: 139.00 },
@@ -565,17 +571,22 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
   }
 
   // Gridlines and labels are HTML so the type stays one size; only the line stretches with the card.
-  function chart(from, to, label) {
-    var tk = ticks(Math.min(from, to), Math.max(from, to)), lo = tk[0], hi = tk[tk.length - 1];
+  function chart(vals, label) {
+    var tk = ticks(Math.min.apply(null, vals), Math.max.apply(null, vals)), lo = tk[0], hi = tk[tk.length - 1];
     var y = function (v) { return (100 - (v - lo) / (hi - lo) * 94).toFixed(2); };
-    var d = dir(from, to), y0 = y(from), y1 = y(to), whole = tk.every(function (t) { return t % 1 === 0; });
+    var day = function (s) { return new Date(s + 'T12:00:00').getTime(); }, last = vals.length - 1;
+    var dates = [FUNDS.bought].concat(FUNDS.history.map(function (c) { return c.date; }), FUNDS.asOf).map(day);
+    var timed = FUNDS.bought && dates.every(function (t, i) { return t === t && (!i || t > dates[i - 1]); });
+    var x = function (i) { return (timed ? (dates[i] - dates[0]) / (dates[last] - dates[0]) * 100 : i / last * 100).toFixed(2); };
+    var d = dir(vals[0], vals[last]), y0 = y(vals[0]), whole = tk.every(function (t) { return t % 1 === 0; });
+    var path = vals.map(function (v, i) { return (i ? 'L' : 'M') + x(i) + ' ' + y(v); }).join('');
     return '<div class="fd-plot" role="img" aria-label="' + label + '">' +
       tk.map(function (t, i) { return '<div class="fd-grid' + (i ? '' : ' base') + '" style="top:' + y(t) + '%"><span>' + (whole ? t : money(t)) + '</span></div>'; }).join('') +
       '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' +
       '<defs><linearGradient id="fd-fill" x1="0" y1="0" x2="0" y2="1"><stop class="' + d + '" offset="0" stop-opacity=".3"/><stop class="' + d + '" offset="1" stop-opacity="0"/></linearGradient></defs>' +
-      '<path fill="url(#fd-fill)" d="M0 ' + y0 + 'L100 ' + y1 + 'V100H0Z"/>' +
+      '<path fill="url(#fd-fill)" d="' + path + 'V100H0Z"/>' +
       '<line class="cost" x1="0" x2="100" y1="' + y0 + '" y2="' + y0 + '"/>' +
-      '<path class="line ' + d + '" d="M0 ' + y0 + 'L100 ' + y1 + '"/></svg></div>' +
+      '<path class="line ' + d + '" d="' + path + '"/></svg></div>' +
       '<div class="fd-x" aria-hidden="true"><span>Paid in</span><span>' + shortWhen + '</span></div>';
   }
 
@@ -583,7 +594,13 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
   var col = function (rows) { return '<dl>' + rows.join('') + '</dl>'; };
 
   function show(id) {
-    var h = FUNDS.holdings.filter(function (x) { return x.id === id; })[0], src = h || total, change = pct(src.cost, src.value), cols, quote, from, to, what;
+    var h = FUNDS.holdings.filter(function (x) { return x.id === id; })[0], src = h || total;
+    // A checkpoint's worth for this view: the whole fund, a cash balance, or one share of a holding.
+    var mids = FUNDS.history.map(function (c) {
+      if (!h) return FUNDS.holdings.reduce(function (t, x) { return t + (c[x.id] || 0); }, 0);
+      return (c[h.id] || 0) / (h.cash ? 1 : h.shares);
+    });
+    var change = pct(src.cost, src.value), cols, quote, from, to, what;
     Array.prototype.forEach.call($('fd-tabs').children, function (b) { b.setAttribute('aria-pressed', String(b.dataset.id === id)); });
     if (!h) {
       var stocks = FUNDS.holdings.filter(function (x) { return !x.cash; }), cash = total.value - stocks.reduce(function (t, x) { return t + x.value; }, 0);
@@ -614,7 +631,7 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
     $('fd-quote').innerHTML = quote.map(function (q) {
       return '<div><b>' + q[0] + '</b>' + (q[2] ? '<span class="fd-chg ' + dir(from, to) + '">' + signed(change, '%') + '</span>' : '') + '<small>' + q[1] + '</small></div>';
     }).join('');
-    $('fd-chart').innerHTML = chart(from, to, what + ' went from ' + money(from) + ' paid in to ' + money(to) + ' on ' + when + ', ' + signed(change, ' percent') + '.');
+    $('fd-chart').innerHTML = chart([from].concat(mids, to), what + ' went from ' + money(from) + ' paid in to ' + money(to) + ' on ' + when + ', ' + signed(change, ' percent') + '.');
     $('fd-stats').innerHTML = cols.map(col).join('');
   }
 
