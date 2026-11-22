@@ -1,0 +1,50 @@
+name: League funds prices
+
+# Publishes ff-funds/funds.json (a year of daily closes for the league's stocks)
+# for the League Funds chart on the /ff/ page. Like the players list, it lives on
+# its own single-commit branch and the page reads it from raw.githubusercontent.com.
+# ff/funds.json on main is the copy the page falls back to.
+
+on:
+  schedule:
+    - cron: "23 22 * * 1-5"   # weekdays, after the market closes
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/ff-funds.yml
+      - .github/scripts/ff-funds.mjs
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ff-funds
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build funds.json from Yahoo Finance
+        run: |
+          mkdir -p "$RUNNER_TEMP/ff-funds"
+          node .github/scripts/ff-funds.mjs "$RUNNER_TEMP/ff-funds/funds.json" NVDL SHAZ
+
+      - name: Publish to the ff-funds branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd "$RUNNER_TEMP/ff-funds"
+          git init -q -b ff-funds
+          git add funds.json
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "Fund prices $(date -u +%F)"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ff-funds
