@@ -405,7 +405,7 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
 .fd-tabs button { flex:none; min-width:56px; min-height:44px; padding:0 16px; border:0; border-radius:999px; background:none; color:var(--fg); font-size:17px; font-weight:500; cursor:pointer; transition:background .2s; }
 .fd-tabs button:hover { background:rgba(255,255,255,.07); }
 .fd-tabs button[aria-pressed="true"] { background:rgba(255,255,255,.14); font-weight:700; }
-.fd-plot { --axis:56px; position:relative; height:clamp(190px,32vw,300px); margin-top:8px; }
+.fd-plot { --axis:56px; position:relative; height:clamp(190px,32vw,300px); }
 .fd-plot svg { position:absolute; left:0; top:0; width:calc(100% - var(--axis)); height:100%; overflow:visible; }
 .fd-grid { position:absolute; left:0; right:0; border-top:1px solid rgba(255,255,255,.1); }
 .fd-grid.base { border-top-color:rgba(255,255,255,.3); }
@@ -415,6 +415,14 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
 .fd-plot .line { fill:none; stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; vector-effect:non-scaling-stroke; }
 .fd-plot .up { stroke:var(--up); } .fd-plot .down { stroke:var(--down); }
 .fd-plot stop.up { stop-color:var(--up); } .fd-plot stop.down { stop-color:var(--down); }
+.fd-plot { cursor:crosshair; touch-action:pan-y; border-radius:8px; }
+.fd-scrub { position:absolute; left:0; top:0; width:calc(100% - var(--axis)); height:100%; pointer-events:none; }
+.fd-scrub i { position:absolute; top:0; bottom:0; width:1.5px; margin-left:-.75px; background:var(--accent); }
+.fd-scrub b { position:absolute; width:16px; height:16px; margin:-8px 0 0 -8px; border-radius:50%; background:var(--accent); border:2px solid #14171f; }
+.fd-read { position:relative; height:46px; margin-top:6px; }
+.fd-read p { margin:0; color:var(--faint); font-size:13px; line-height:46px; }
+.fd-read div { position:absolute; top:0; transform:translateX(-50%); text-align:center; white-space:nowrap; font-size:15px; font-weight:600; line-height:1.4; font-variant-numeric:tabular-nums; }
+.fd-read div span { display:block; color:var(--accent); font-family:var(--num); font-size:17px; }
 .fd-x { display:flex; justify-content:space-between; margin:8px 56px 0 0; color:var(--muted); font-size:15px; font-weight:500; }
 .fd-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); margin-top:16px; }
 .fd-stats dl { margin:0; }
@@ -457,7 +465,7 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
       <div id="fd-chart"></div>
       <div class="fd-stats" id="fd-stats"></div>
     </div>
-    <p class="fd-note">Prices update each weekday after the market closes. The line shows what the league's holdings were worth on each day; the dashed line is what was paid in.</p>
+    <p class="fd-note">Prices update each weekday after the market closes. Tap or drag the chart to see what the league's holdings were worth on any day; the dashed line is what was paid in.</p>
   </section>
 
   <section id="scores" aria-labelledby="scores-h">
@@ -556,7 +564,7 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
   var pct = function (from, to) { return from ? (to - from) / from * 100 : 0; };
   var dir = function (from, to) { return Math.round((to - from) * 100) < 0 ? 'down' : 'up'; };
   var date = function (iso, year) { return new Date(iso + 'T12:00:00').toLocaleDateString('en-US', year ? { month: 'short', day: 'numeric', year: 'numeric' } : { month: 'short', day: 'numeric' }); };
-  var total, days = null, view = 'All', range = 6;   // days: [{ d: '2026-11-20', NVDL: 10.33, SHAZ: 16.83 }, ...] once prices load
+  var total, scrub, days = null, view = 'All', range = 6;   // days: [{ d: '2026-11-20', NVDL: 10.33, SHAZ: 16.83 }, ...] once prices load
 
   // Round gridlines that bracket the whole line, three or four of them.
   function ticks(lo, hi) {
@@ -569,20 +577,54 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
   }
 
   // Gridlines and labels are HTML so the type stays one size; only the line stretches with the card.
-  function chart(vals, cost, left, right, label) {
+  function chart(vals, names, cost, left, right, label) {
     var tk = ticks(Math.min.apply(null, vals.concat(cost)), Math.max.apply(null, vals.concat(cost))), lo = tk[0], hi = tk[tk.length - 1];
     var y = function (v) { return (100 - (v - lo) / (hi - lo) * 94).toFixed(2); }, last = vals.length - 1;
     var d = dir(vals[0], vals[last]), yc = y(cost), whole = tk.every(function (t) { return t % 1 === 0; });
     var path = vals.map(function (v, i) { return (i ? 'L' : 'M') + (i / last * 100).toFixed(2) + ' ' + y(v); }).join('');
-    return '<div class="fd-plot" role="img" aria-label="' + label + '">' +
+    scrub = { vals: vals, names: names, y: y, at: -1 };
+    return '<div class="fd-read" id="fd-read"><p>Tap or drag the chart to see any day.</p></div>' +
+      '<div class="fd-plot" id="fd-plot" tabindex="0" role="slider" aria-label="' + label + ' Use the arrow keys to step through the days." aria-valuemin="0" aria-valuemax="' + last + '" aria-valuenow="' + last + '" aria-valuetext="' + names[last] + ': ' + money(vals[last]) + '">' +
       tk.map(function (t, i) { return '<div class="fd-grid' + (i ? '' : ' base') + '" style="top:' + y(t) + '%"><span>' + (whole ? t : money(t)) + '</span></div>'; }).join('') +
       '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' +
       '<defs><linearGradient id="fd-fill" x1="0" y1="0" x2="0" y2="1"><stop class="' + d + '" offset="0" stop-opacity=".3"/><stop class="' + d + '" offset="1" stop-opacity="0"/></linearGradient></defs>' +
       '<path fill="url(#fd-fill)" d="' + path + 'V100H0Z"/>' +
       '<line class="cost" x1="0" x2="100" y1="' + yc + '" y2="' + yc + '"/>' +
-      '<path class="line ' + d + '" d="' + path + '"/></svg></div>' +
+      '<path class="line ' + d + '" d="' + path + '"/></svg><div class="fd-scrub" id="fd-scrub" hidden><i></i><b></b></div></div>' +
       '<div class="fd-x" aria-hidden="true"><span>' + left + '</span><span>' + right + '</span></div>';
   }
+
+  // Scrubbing, as in Stocks: a cursor line and dot on the nearest day, with that day's date and worth above it.
+  function mark(i) {
+    var last = scrub.vals.length - 1, plot = $('fd-plot'), cur = $('fd-scrub'), read = $('fd-read');
+    i = Math.max(0, Math.min(last, i));
+    if (i === scrub.at) return;
+    scrub.at = i;
+    var x = i / last * 100, w = cur.parentNode.clientWidth, pw = w - parseFloat(getComputedStyle(plot).getPropertyValue('--axis'));
+    cur.hidden = false;
+    cur.firstChild.style.left = cur.lastChild.style.left = x + '%';
+    cur.lastChild.style.top = scrub.y(scrub.vals[i]) + '%';
+    read.innerHTML = '<div>' + scrub.names[i] + '<span>' + money(scrub.vals[i]) + '</span></div>';
+    var tip = read.firstChild, half = tip.offsetWidth / 2;
+    tip.style.left = Math.max(half, Math.min(w - half, x / 100 * pw)) + 'px';
+    plot.setAttribute('aria-valuenow', i);
+    plot.setAttribute('aria-valuetext', scrub.names[i] + ': ' + money(scrub.vals[i]));
+  }
+  function point(e) {
+    if (!e.target.closest || !e.target.closest('#fd-plot')) return;
+    var box = $('fd-scrub');
+    box.hidden = false;
+    var r = box.getBoundingClientRect();
+    mark(Math.round((e.clientX - r.left) / r.width * (scrub.vals.length - 1)));
+  }
+  $('fd-chart').addEventListener('pointerdown', point);
+  $('fd-chart').addEventListener('pointermove', point);
+  $('fd-chart').addEventListener('keydown', function (e) {
+    var step = { ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1, Home: -1e9, End: 1e9 }[e.key];
+    if (!step || e.target.id !== 'fd-plot') return;
+    e.preventDefault();
+    mark((scrub.at < 0 ? scrub.vals.length - 1 : scrub.at) + step);
+  });
 
   var stat = function (k, v, cls) { return '<div><dt>' + k + '</dt><dd' + (cls ? ' class="' + cls + '"' : '') + '>' + v + '</dd></div>'; };
   var col = function (rows) { return '<dl>' + rows.join('') + '</dl>'; };
@@ -630,10 +672,10 @@ family-ribbon,.hero,main,footer { position:relative; z-index:1; }
       var since = range ? start.toISOString().slice(0, 10) : '', shown = days.filter(function (p) { return p.d >= since; });
       if (shown.length < 2) shown = days;
       var vals = shown.map(function (p) { return h ? p[h.id] : stocks.reduce(function (t, x) { return t + x.shares * p[x.id]; }, sum('value') - stocks.reduce(function (t, x) { return t + x.value; }, 0)); });
-      $('fd-chart').innerHTML = chart(vals, from, date(shown[0].d), date(shown[shown.length - 1].d),
+      $('fd-chart').innerHTML = chart(vals, shown.map(function (p) { return date(p.d, true); }), from, date(shown[0].d), date(shown[shown.length - 1].d),
         what + ' from ' + date(shown[0].d, true) + ' to ' + when + ': ' + money(vals[0]) + ' to ' + money(vals[vals.length - 1]) + ', against ' + money(from) + ' paid in.');
     } else {
-      $('fd-chart').innerHTML = chart([from, to], from, 'Paid in', date(FUNDS.asOf), what + ' went from ' + money(from) + ' paid in to ' + money(to) + ' on ' + when + ', ' + signed(change, ' percent') + '.');
+      $('fd-chart').innerHTML = chart([from, to], ['Paid in', when], from, 'Paid in', date(FUNDS.asOf), what + ' went from ' + money(from) + ' paid in to ' + money(to) + ' on ' + when + ', ' + signed(change, ' percent') + '.');
     }
     $('fd-stats').innerHTML = cols.map(col).join('');
   }
